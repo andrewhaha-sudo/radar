@@ -1,3 +1,4 @@
+import { SchoolJoinRequest } from '@/components/forms/SchoolJoinRequest';
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
   Building2,
@@ -301,6 +302,32 @@ export function SchoolWorkspaceBoundary({ children }: { children: ReactNode }) {
     }
   }
   if (
+    !selected &&
+    !activeWorkspaceId &&
+    user?.accountScope?.startsWith('supabase:') &&
+    !can('admin:users')
+  )
+    return (
+      <section className="ops-card school-welcome">
+        <span className="command-feature-icon">
+          <School size={30} />
+        </span>
+        <p className="command-eyebrow">WELCOME TO RADAR</p>
+        <h1>Connect with your school</h1>
+        <p>
+          Your account is ready. Choose your school in Camarines Norte and request access. School
+          staff verify identities and assign roles before campus records become available.
+        </p>
+        <button className="command-action blue" onClick={open}>
+          Choose my school
+        </button>
+        <p className="ops-footnote">
+          Already requested access? Choose your school to see the request status, or open its
+          workspace after approval.
+        </p>
+      </section>
+    );
+  if (
     (window.location.pathname === '/operations' &&
       new URLSearchParams(window.location.search).has('school')) ||
     !selected ||
@@ -342,6 +369,9 @@ export function SchoolWorkspaceBoundary({ children }: { children: ReactNode }) {
             </div>
           ))}
         </div>
+        {!workspaces.includes(selected.id) && !can('admin:users') && (
+          <SchoolJoinRequest schoolId={selected.id} />
+        )}
         <div className="school-not-connected">
           <ShieldCheck size={26} />
           <div>

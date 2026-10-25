@@ -32,18 +32,24 @@ const SEEDED_ACCOUNTS = [
 export function LoginPage() {
   const { user, loading: authLoading, login } = useAuth();
   const [signupEnabled, setSignupEnabled] = useState(false);
+  const [recoveryEnabled, setRecoveryEnabled] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [configError, setConfigError] = useState('');
   const [cloudAuth, setCloudAuth] = useState(true);
   const [signup, setSignup] = useState(false);
   const [name, setName] = useState('');
   const [notice, setNotice] = useState('');
   useEffect(() => {
     api
-      .get<{ signupEnabled: boolean; provider: string }>('/api/auth/config')
+      .get<{ signupEnabled: boolean; provider: string; recoveryEnabled?: boolean }>(
+        '/api/auth/config',
+      )
       .then((config) => {
         setSignupEnabled(config.signupEnabled);
+        setRecoveryEnabled(config.recoveryEnabled ?? config.provider === 'supabase');
         setCloudAuth(config.provider === 'supabase');
       })
-      .catch(() => {});
+      .catch((err) => setConfigError(errorMessage(err)));
   }, []);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -69,6 +75,10 @@ export function LoginPage() {
     setSubmitting(true);
     try {
       if (signup) {
+        if (password !== confirmPassword) {
+          setError('Passwords do not match.');
+          return;
+        }
         const result = await api.post<{ message: string }>('/api/auth/signup', {
           name,
           email: email.trim(),
@@ -196,7 +206,7 @@ export function LoginPage() {
           <Card hover={false} className="shadow-xl">
             <CardHeader>
               <CardTitle>{signup ? 'Create your account' : 'Sign in'}</CardTitle>
-              <CardDescription>Use your school account to continue.</CardDescription>
+              <CardDescription>Gmail and other valid email addresses are welcome.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-5">
               {notice && (
@@ -223,7 +233,8 @@ export function LoginPage() {
                     label="Email address"
                     type="email"
                     autoComplete="username"
-                    placeholder="name@school.edu"
+                    placeholder="yourname@gmail.com"
+                    helper="No .edu email is required."
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="pl-9"
@@ -237,7 +248,9 @@ export function LoginPage() {
                     label="Password"
                     type={showPassword ? 'text' : 'password'}
                     autoComplete={signup ? 'new-password' : 'current-password'}
-                    placeholder="••••••••"
+                    placeholder={signup ? 'At least 8 characters' : 'Your password'}
+                    minLength={signup ? 8 : undefined}
+                    required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="pl-9 pr-10"
@@ -253,6 +266,23 @@ export function LoginPage() {
                   </button>
                 </div>
 
+                {signup && (
+                  <Input
+                    label="Confirm password"
+                    type={showPassword ? 'text' : 'password'}
+                    autoComplete="new-password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                    minLength={8}
+                    disabled={submitting}
+                  />
+                )}
+                {configError && (
+                  <p role="alert" className="text-danger">
+                    {configError}
+                  </p>
+                )}
                 {error && (
                   <div
                     role="alert"
@@ -267,7 +297,34 @@ export function LoginPage() {
                 </Button>
               </form>
 
-              {signupEnabled && <button type="button" className="w-full text-center text-xs text-primary" disabled={submitting} onClick={async()=>{setError(null);if(!email.trim()){setError('Enter your email address above first.');return;}setSubmitting(true);try{const result=await api.post<{message:string}>('/api/auth/password-reset',{email:email.trim()});setNotice(result.message);}catch(err){setError(errorMessage(err));}finally{setSubmitting(false);}}}>Forgot password? Send recovery email</button>}
+              {recoveryEnabled && (
+                <button
+                  type="button"
+                  className="w-full text-center text-xs text-primary"
+                  disabled={submitting}
+                  onClick={async () => {
+                    setError(null);
+                    if (!email.trim()) {
+                      setError('Enter your email address above first.');
+                      return;
+                    }
+                    setSubmitting(true);
+                    try {
+                      const result = await api.post<{ message: string }>(
+                        '/api/auth/password-reset',
+                        { email: email.trim() },
+                      );
+                      setNotice(result.message);
+                    } catch (err) {
+                      setError(errorMessage(err));
+                    } finally {
+                      setSubmitting(false);
+                    }
+                  }}
+                >
+                  Forgot password? Send recovery email
+                </button>
+              )}
               {signupEnabled && (
                 <button
                   type="button"
@@ -281,8 +338,8 @@ export function LoginPage() {
                   {signup ? 'Already have an account? Sign in' : 'New to RADAR? Create an account'}
                 </button>
               )}
-              <p className="text-center text-[11px] text-muted-foreground">
-                Sessions are stored in an HttpOnly cookie. Access is enforced on the server.
+              <p className="text-center text-xs text-muted-foreground">
+                After signing in, choose your school and request access. Staff approve school roles.
               </p>
 
               {/* Development convenience only: seeded credentials must never be

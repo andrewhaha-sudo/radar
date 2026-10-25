@@ -59,11 +59,11 @@ export function parseCookies(header = '') {
 }
 
 export function sessionCookie(token, expires) {
-  return `${COOKIE_NAME}=${token}; Path=/; HttpOnly; SameSite=Lax; Expires=${expires.toUTCString()}`;
+  return `${COOKIE_NAME}=${token}; Path=/; HttpOnly; SameSite=Lax; Expires=${expires.toUTCString()}${process.env.RADAR_PUBLIC_URL?.startsWith('https://') ? '; Secure' : ''}`;
 }
 
 export function clearCookie() {
-  return `${COOKIE_NAME}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`;
+  return `${COOKIE_NAME}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${process.env.RADAR_PUBLIC_URL?.startsWith('https://') ? '; Secure' : ''}`;
 }
 
 export async function getUserFromRequest(req) {

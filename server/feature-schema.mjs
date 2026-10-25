@@ -1,5 +1,8 @@
 export const FEATURE_TABLES = [
   'workspace_members',
+  'school_join_requests',
+  'upload_receipts',
+  'auth_rate_limits',
   'inspection_schedules',
   'room_assets',
   'room_features',
@@ -20,6 +23,9 @@ export const FEATURE_TABLES = [
   'delivery_jobs',
 ];
 export const FEATURE_SCHEMA = `
+CREATE TABLE IF NOT EXISTS auth_rate_limits (key TEXT PRIMARY KEY,count INTEGER NOT NULL,expires_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS upload_receipts (id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT NOT NULL UNIQUE,user_id INTEGER NOT NULL REFERENCES users(id),mime TEXT NOT NULL,bytes INTEGER NOT NULL,state TEXT NOT NULL DEFAULT 'pending',expires_at TEXT NOT NULL,created_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS school_join_requests (id INTEGER PRIMARY KEY AUTOINCREMENT,workspace_id TEXT NOT NULL,user_id INTEGER NOT NULL REFERENCES users(id),requested_role TEXT NOT NULL,note TEXT NOT NULL DEFAULT '',state TEXT NOT NULL DEFAULT 'pending',decided_by INTEGER REFERENCES users(id),decision_note TEXT NOT NULL DEFAULT '',created_at TEXT NOT NULL,updated_at TEXT NOT NULL,UNIQUE(workspace_id,user_id));
 CREATE TABLE IF NOT EXISTS school_workspaces (beis_id TEXT PRIMARY KEY, owner_user_id INTEGER NOT NULL REFERENCES users(id), created_at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS workspace_members (workspace_id TEXT NOT NULL REFERENCES school_workspaces(beis_id), user_id INTEGER NOT NULL REFERENCES users(id), role TEXT NOT NULL, active INTEGER NOT NULL DEFAULT 1, PRIMARY KEY(workspace_id,user_id));
 CREATE TABLE IF NOT EXISTS inspection_schedules (id INTEGER PRIMARY KEY AUTOINCREMENT, room_id INTEGER NOT NULL UNIQUE REFERENCES rooms(id), interval_days INTEGER NOT NULL, next_due_at TEXT NOT NULL, reviewer_id INTEGER REFERENCES users(id), updated_at TEXT NOT NULL);

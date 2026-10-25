@@ -409,6 +409,8 @@ CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id);
     }
   }
 
+  await ensureColumn('schools', 'location_source', "TEXT NOT NULL DEFAULT ''");
+  await ensureColumn('schools', 'location_updated_at', 'TEXT');
   await ensureColumn('schools', 'location_verified', 'INTEGER NOT NULL DEFAULT 1');
   await ensureColumn('users', 'supabase_auth_id', 'TEXT');
   await db.exec(

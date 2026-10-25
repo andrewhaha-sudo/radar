@@ -27,10 +27,12 @@ Supabase Auth manages registration and password verification. Passwords are neve
 
 `radar_main` stores profiles, sessions and school ownership. Each school has its own `radar_school_<BEIS ID>` PostgreSQL schema containing the complete campus model (buildings, floors, rooms, inspections, hazards, alerts, incidents, resources, recovery and audit records). Database ownership is checked on the server. RLS is enabled on application tables, PUBLIC privileges are revoked, and these schemas must remain outside the schemas exposed by the Supabase Data API. Browser clients receive no database connection string or service-role key. The Node server uses the trusted database connection; application authorization remains server-enforced.
 
-Only the workspace creator can open a school workspace in this version; school-member invitations remain a separate feature. A student signup does not grant access to another school's private records. Confirmation and password policies follow your Supabase Authentication settings. Workspace creation is local application setup and does not verify an official school affiliation.
+The workspace creator and approved school members can open a school workspace. New users request access from the directory; administrators review requests and assign school-specific roles in Campus operations → School members. Revocation removes access while retaining historical records. A student signup does not grant access to another school's private records. Confirmation and password policies follow your Supabase Authentication settings. Workspace creation is local application setup and does not verify an official school affiliation.
 
 ## Verification and limits
 
 The test suite exercises the PostgreSQL queries and school isolation against embedded PostgreSQL (PGlite), in addition to the original SQLite integration tests. Auth request and profile flows are tested against a mock Supabase Auth service. Those tests do not establish connectivity to your actual hosted project, successful real email delivery or live bucket access. Real hosted validation requires the private settings above.
 
 For deployment, set `RADAR_PUBLIC_URL`, Supabase Site URL/redirects and your server environment variables to the deployed values; build with `npm run build` and run `npm start`. Keep private keys exclusively on the Node server. Use Supabase's backup facilities for the hosted database and storage. A filesystem backup of this app does not back up hosted data.
+
+For Vercel deployment, private server variables, Gmail registration, school-location setup and serverless maintenance, see [VERCEL.md](VERCEL.md).

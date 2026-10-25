@@ -37,6 +37,7 @@ async function api(cookie, route, body, workspace) {
   return {
     status: res.status,
     body: await res.json(),
+    rawCookie: res.headers.getSetCookie().join('; '),
     cookie: res.headers
       .getSetCookie()
       .map((c) => c.split(';')[0])
@@ -84,6 +85,30 @@ before(async () => {
         }),
       );
     }
+    if (
+      req.method === 'POST' &&
+      url.pathname.startsWith('/storage/v1/object/upload/sign/radar-uploads/')
+    )
+      return res.end(
+        JSON.stringify({
+          url: url.pathname.replace('/storage/v1', '') + '?token=fixture-signed-token',
+        }),
+      );
+    if (
+      req.method === 'PUT' &&
+      url.pathname.startsWith('/storage/v1/object/upload/sign/radar-uploads/')
+    ) {
+      if (url.searchParams.get('token') !== 'fixture-signed-token') {
+        res.writeHead(403);
+        return res.end('{}');
+      }
+      files.set(url.pathname.replace('/storage/v1/object/upload/sign/', ''), bytes);
+      return res.end(JSON.stringify({ Key: 'stored' }));
+    }
+    if (req.method === 'DELETE' && url.pathname === '/storage/v1/object/radar-uploads') {
+      for (const name of JSON.parse(bytes).prefixes ?? []) files.delete('radar-uploads/' + name);
+      return res.end('[]');
+    }
     if (url.pathname === '/storage/v1/bucket/radar-uploads')
       return res.end(JSON.stringify({ id: 'radar-uploads', name: 'radar-uploads', public: false }));
     if (req.method === 'POST' && url.pathname.startsWith('/storage/v1/object/radar-uploads/')) {
@@ -115,6 +140,7 @@ before(async () => {
       RADAR_TWILIO_SID: '',
       RADAR_TWILIO_TOKEN: '',
       NODE_ENV: 'test',
+      RADAR_PUBLIC_URL: 'https://radar.example.test',
       PORT: '8912',
       HOST: '127.0.0.1',
       RADAR_DATABASE_DRIVER: 'postgres',
@@ -190,6 +216,8 @@ test('Supabase password verification creates persistent app profiles with contro
   assert.equal(owner.status, 200, JSON.stringify(owner.body));
   assert.equal(owner.body.user.role, 'admin');
   assert.equal(owner.body.user.accountScope, 'supabase:11111111-1111-4111-8111-111111111111');
+  assert.match(owner.rawCookie, /; Secure/);
+  assert.match(owner.rawCookie, /; HttpOnly/);
   admin = owner.cookie;
   const other = await api(null, '/api/auth/login', {
     email: 'student@example.test',
@@ -197,6 +225,8 @@ test('Supabase password verification creates persistent app profiles with contro
   });
   assert.equal(other.body.user.role, 'student');
   student = other.cookie;
+  assert.equal((await api(student, '/api/dashboard')).status, 403);
+  assert.equal((await api(student, '/api/map')).status, 403);
   const repeat = await api(null, '/api/auth/login', {
     email: 'owner@example.test',
     password: 'TestPassword123!',
@@ -221,4 +251,62 @@ test('hosted school records and private files are scoped to the workspace owner'
   assert.equal((await fetch(BASE + url, { headers: { Cookie: student } })).status, 403);
   assert.equal((await fetch(BASE + url)).status, 403);
   assert.equal(files.size, 1);
+});
+
+test('signed direct uploads remain private until completion, validate models and bind receipts to the uploader', async () => {
+  const signed = await api(admin, '/api/uploads/sign', { mime: 'image/png', bytes: 4 }, '309622');
+  assert.equal(signed.status, 201, JSON.stringify(signed.body));
+  assert.ok(signed.body.path.startsWith('schools/309622/direct-'));
+  assert.equal(signed.body.token, 'fixture-signed-token');
+  assert.equal(signed.body.serviceRoleKey, undefined);
+  const directPath = `/uploads/workspaces/309622/${signed.body.path.split('/').at(-1)}`;
+  assert.equal((await fetch(BASE + directPath, { headers: { Cookie: admin } })).status, 404);
+  assert.equal(
+    (await api(admin, '/api/uploads/complete', { receiptId: signed.body.receiptId }, '309622'))
+      .status,
+    400,
+  );
+  await fetch(
+    `http://127.0.0.1:8911/storage/v1/object/upload/sign/radar-uploads/${signed.body.path}?token=${signed.body.token}`,
+    { method: 'PUT', body: Buffer.from([1, 2, 3, 4]) },
+  );
+  const completed = await api(
+    admin,
+    '/api/uploads/complete',
+    { receiptId: signed.body.receiptId },
+    '309622',
+  );
+  assert.equal(completed.status, 200, JSON.stringify(completed.body));
+  assert.equal(
+    (await fetch(BASE + completed.body.url, { headers: { Cookie: admin } })).status,
+    200,
+  );
+  assert.equal(
+    (await api(student, '/api/uploads/complete', { receiptId: signed.body.receiptId })).status,
+    403,
+  );
+  const invalid = await api(
+    admin,
+    '/api/uploads/sign',
+    { mime: 'model/gltf-binary', bytes: 4 },
+    '309622',
+  );
+  assert.equal(invalid.status, 201, JSON.stringify(invalid.body));
+  await fetch(
+    `http://127.0.0.1:8911/storage/v1/object/upload/sign/radar-uploads/${invalid.body.path}?token=${invalid.body.token}`,
+    { method: 'PUT', body: Buffer.from([0, 0, 0, 0]) },
+  );
+  assert.equal(
+    (await api(admin, '/api/uploads/complete', { receiptId: invalid.body.receiptId }, '309622'))
+      .status,
+    400,
+  );
+  assert.equal(
+    (
+      await fetch(BASE + `/uploads/workspaces/309622/${invalid.body.path.split('/').at(-1)}`, {
+        headers: { Cookie: admin },
+      })
+    ).status,
+    404,
+  );
 });

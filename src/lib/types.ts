@@ -4,6 +4,8 @@ export type HazardStatus = 'new' | 'pending_review' | 'verified' | 'in_progress'
 export type ResolvedMode = 'light' | 'dark';
 
 export interface School {
+  locationSource?: string;
+  locationUpdatedAt?: string;
   id: number;
   name: string;
   address: string;

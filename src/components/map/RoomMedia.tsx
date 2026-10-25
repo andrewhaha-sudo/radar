@@ -1,12 +1,20 @@
+import { PreparedCampusModel, type ModelMapping } from './PreparedCampusModel';
 import { FirstPersonModel } from './FirstPersonModel';
 import { createElement, useEffect, useRef, useState } from 'react';
 
 type Asset = { id: number; kind: string; url: string; title: string; metadata?: string };
-export function RoomMedia({ assets }: { assets: Asset[] }) {
+export function RoomMedia({
+  assets,
+  onRoomSelect,
+}: {
+  assets: Asset[];
+  onRoomSelect?: (id: number) => void;
+}) {
   const [selected, setSelected] = useState('');
   const [walk, setWalk] = useState(false);
   const asset = assets.find((a) => String(a.id) === selected) ?? assets[0];
   let metadata: {
+    mapping?: ModelMapping;
     walkthrough?: { spawn: [number, number, number]; eyeHeight: number; verified: boolean };
   } = {};
   try {
@@ -54,6 +62,14 @@ export function RoomMedia({ assets }: { assets: Asset[] }) {
               )}
               {walk && metadata.walkthrough?.verified ? (
                 <FirstPersonModel url={asset.url} setup={metadata.walkthrough} />
+              ) : metadata.mapping &&
+                (metadata.mapping.rooms.length > 0 || metadata.mapping.floors.length > 0) ? (
+                <PreparedCampusModel
+                  key={asset.id}
+                  url={asset.url}
+                  mapping={metadata.mapping}
+                  onRoomSelect={onRoomSelect}
+                />
               ) : (
                 <>
                   {createElement('model-viewer', {

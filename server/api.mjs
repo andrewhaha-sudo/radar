@@ -1,3 +1,4 @@
+import { productHandlers } from './product.mjs';
 import { queueAlertDelivery, drainDeliveryJobs } from './delivery.mjs';
 import { inspectionReminders } from './maintenance.mjs';
 import { featureHandlers } from './features.mjs';
@@ -30,6 +31,7 @@ import {
   publicUser,
   sessionCookie,
   verifyPassword,
+  hashPassword,
 } from './auth.mjs';
 
 /* ------------------------------------------------------------------ */
@@ -61,6 +63,24 @@ function json(res, status, payload) {
 }
 
 function readJson(req) {
+  if (req.body !== undefined) {
+    try {
+      const serialized =
+        typeof req.body === 'string' || Buffer.isBuffer(req.body)
+          ? req.body
+          : JSON.stringify(req.body);
+      if (Buffer.byteLength(serialized) > MAX_JSON)
+        return Promise.reject(new HttpError(413, 'Request body is too large.'));
+      const parsed =
+        typeof req.body === 'object' && !Buffer.isBuffer(req.body)
+          ? req.body
+          : JSON.parse(serialized.toString());
+      if (!parsed || Array.isArray(parsed) || typeof parsed !== 'object') throw new Error();
+      return Promise.resolve(parsed);
+    } catch {
+      return Promise.reject(new HttpError(400, 'Request body must be valid JSON.'));
+    }
+  }
   return new Promise((resolve, reject) => {
     let size = 0;
     const chunks = [];
@@ -76,7 +96,9 @@ function readJson(req) {
     req.on('end', () => {
       if (chunks.length === 0) return resolve({});
       try {
-        resolve(JSON.parse(Buffer.concat(chunks).toString('utf8')));
+        const parsed = JSON.parse(Buffer.concat(chunks).toString('utf8'));
+        if (!parsed || Array.isArray(parsed) || typeof parsed !== 'object') throw new Error();
+        resolve(parsed);
       } catch {
         reject(new HttpError(400, 'Request body must be valid JSON.'));
       }
@@ -86,6 +108,22 @@ function readJson(req) {
 }
 
 function readBinary(req) {
+  if (req.body !== undefined) {
+    const buffer = Buffer.isBuffer(req.body)
+      ? req.body
+      : Buffer.from(
+          typeof req.body === 'string'
+            ? req.body
+            : String(req.headers['content-type'] ?? '').includes(
+                  'application/x-www-form-urlencoded',
+                )
+              ? new URLSearchParams(req.body).toString()
+              : JSON.stringify(req.body),
+        );
+    return buffer.length > MAX_UPLOAD
+      ? Promise.reject(new HttpError(413, 'Upload exceeds the 10 MB limit.'))
+      : Promise.resolve(buffer);
+  }
   return new Promise((resolve, reject) => {
     let size = 0;
     const chunks = [];
@@ -572,14 +610,16 @@ const handlers = {};
 handlers['GET /api/auth/config'] = async (ctx) =>
   json(ctx.res, 200, {
     provider: usesSupabase ? 'supabase' : 'local',
-    signupEnabled: usesSupabase,
+    signupEnabled: usesSupabase || process.env.RADAR_ALLOW_LOCAL_SIGNUP !== 'false',
+    recoveryEnabled: usesSupabase,
+    largeCloudUploads: Boolean(process.env.VERCEL) && usesSupabase,
   });
 handlers['POST /api/auth/password-reset'] = async (ctx) => {
   if (!usesSupabase)
     throw new HttpError(400, 'Password recovery requires the configured Supabase Auth service.');
   const body = await readJson(ctx.req);
   const email = str(body.email, 200, 'email').toLowerCase();
-  checkAuthRate(ctx.req, email);
+  await checkAuthRate(ctx.req, email);
   if (!email.includes('@')) throw new HttpError(400, 'Enter a valid email address.');
   try {
     await cloudRequestPasswordReset(email);
@@ -607,14 +647,36 @@ handlers['POST /api/auth/password-update'] = async (ctx) => {
 };
 
 handlers['POST /api/auth/signup'] = async (ctx) => {
-  if (!usesSupabase) throw new HttpError(400, 'Cloud account registration is not configured.');
+  if (!usesSupabase && process.env.RADAR_ALLOW_LOCAL_SIGNUP === 'false')
+    throw new HttpError(400, 'Account registration is disabled by this installation.');
   const body = await readJson(ctx.req);
   const email = str(body.email, 200, 'email').toLowerCase();
   const name = str(body.name, 120, 'name');
   const password = String(body.password ?? '');
-  checkAuthRate(ctx.req, email);
-  if (!email.includes('@') || !name || password.length < 8 || password.length > 200)
+  await checkAuthRate(ctx.req, email);
+  if (
+    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ||
+    !name ||
+    password.length < 8 ||
+    password.length > 200
+  )
     throw new HttpError(400, 'Enter your name, a valid email, and a password of 8–200 characters.');
+  if (!usesSupabase) {
+    if (await coreDb.prepare('SELECT id FROM users WHERE lower(email)=?').get(email))
+      throw new HttpError(409, 'An account with this email already exists. Sign in instead.');
+    const result = await coreDb
+      .prepare(
+        "INSERT INTO users(email,password_hash,name,role,school_id,created_at) VALUES (?,?,?,'student',1,?) ON CONFLICT(email) DO NOTHING RETURNING id",
+      )
+      .get(email, hashPassword(password), name, nowIso());
+    if (!result)
+      throw new HttpError(409, 'An account with this email already exists. Sign in instead.');
+    await audit(result.id, 'auth.signup', 'user', result.id, { provider: 'local' });
+    return json(ctx.res, 201, {
+      message:
+        'Account created. Sign in with your email, then choose your school and request access. School permissions require administrator approval.',
+    });
+  }
   try {
     return json(ctx.res, 200, await cloudSignUp(email, password, name));
   } catch (error) {
@@ -626,7 +688,7 @@ handlers['POST /api/auth/login'] = async (ctx) => {
   const body = await readJson(ctx.req);
   const email = str(body.email, 200, 'email').toLowerCase();
   const password = String(body.password ?? '');
-  checkAuthRate(ctx.req, email);
+  await checkAuthRate(ctx.req, email);
   if (!email || !password) throw new HttpError(400, 'Email and password are required.');
 
   const row = usesSupabase
@@ -3955,24 +4017,46 @@ Object.assign(
     notifyRoles,
   }),
 );
-const authAttempts = new Map();
-function checkAuthRate(req, email) {
-  const key = `${req.socket.remoteAddress}:${String(email).toLowerCase()}:${req.url.split('?')[0]}`;
-  const now = Date.now();
-  const current = authAttempts.get(key);
-  if (current && current.until > now && current.count >= 20)
-    throw new HttpError(
-      429,
-      'Too many authentication attempts. Wait ten minutes before trying again.',
-    );
-  authAttempts.set(
-    key,
-    current && current.until > now
-      ? { ...current, count: current.count + 1 }
-      : { count: 1, until: now + 600000 },
-  );
-  if (authAttempts.size > 10000)
-    for (const [name, item] of authAttempts) if (item.until < now) authAttempts.delete(name);
+Object.assign(
+  handlers,
+  productHandlers({
+    requireUser,
+    requirePermission,
+    readJson,
+    json,
+    HttpError,
+    camel,
+    camelAll,
+    str,
+    oneOf,
+    finiteNumber,
+  }),
+);
+async function checkAuthRate(req, email) {
+  const address = process.env.VERCEL
+    ? String(req.headers['x-vercel-forwarded-for'] ?? req.socket.remoteAddress)
+        .split(',')[0]
+        .trim()
+    : req.socket.remoteAddress;
+  const at = nowIso(),
+    expires = new Date(Date.now() + 600000).toISOString();
+  for (const [identity, limit] of [
+    [`account:${address}:${String(email).toLowerCase()}:${req.url.split('?')[0]}`, 20],
+    [`address:${address}`, 100],
+  ]) {
+    const key = crypto.createHash('sha256').update(identity).digest('hex');
+    const row = await coreDb
+      .prepare(
+        'INSERT INTO auth_rate_limits(key,count,expires_at) VALUES (?,1,?) ON CONFLICT(key) DO UPDATE SET count=CASE WHEN auth_rate_limits.expires_at<=? THEN 1 ELSE auth_rate_limits.count+1 END,expires_at=CASE WHEN auth_rate_limits.expires_at<=? THEN excluded.expires_at ELSE auth_rate_limits.expires_at END RETURNING count',
+      )
+      .get(key, expires, at, at);
+    if (row.count > limit)
+      throw new HttpError(
+        429,
+        'Too many authentication attempts. Wait ten minutes before trying again.',
+      );
+  }
+  await coreDb.prepare('DELETE FROM auth_rate_limits WHERE expires_at<?').run(at);
 }
 const ROUTES = Object.keys(handlers).map((key) => {
   const [method, pattern] = key.split(' ');
@@ -4019,6 +4103,20 @@ export async function handleApi(req, res) {
       url.pathname === '/api/notifications/sms-status' ||
       (url.pathname.startsWith('/api/auth/') && url.pathname !== '/api/auth/me');
     const active = account?.workspaceId ?? null;
+    if (
+      usesSupabase &&
+      account &&
+      !active &&
+      account.role !== 'admin' &&
+      !control &&
+      url.pathname !== '/api/auth/me' &&
+      !url.pathname.startsWith('/api/schools/') &&
+      !['/api/health', '/api/me'].includes(url.pathname)
+    )
+      throw new HttpError(
+        403,
+        'Choose a school and obtain school administrator approval before accessing campus records.',
+      );
     // Reject writes from a stale tab instead of applying them to a newly selected school.
     if (
       !control &&

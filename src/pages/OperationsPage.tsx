@@ -1,3 +1,6 @@
+import { MembershipRequests } from '@/components/forms/MembershipRequests';
+import { SetupReadiness } from '@/components/forms/SetupReadiness';
+import { HazardReviewTools } from '@/components/forms/HazardReviewTools';
 import { useCallback, useEffect, useState, useRef, type FormEvent } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { ArrowRight, RefreshCw, ShieldCheck } from 'lucide-react';
@@ -180,7 +183,9 @@ function OperationsContent() {
   const { user, can } = useAuth();
   const [params, setParams] = useSearchParams();
   const navigate = useNavigate();
-  const tab = params.get('tab') ?? (can('buildings:read') ? 'rooms' : 'response');
+  const tab =
+    params.get('tab') ??
+    (can('admin:users') ? 'readiness' : can('buildings:read') ? 'rooms' : 'response');
   const [data, setData] = useState<Row | null>(null),
     [error, setError] = useState(''),
     [busy, setBusy] = useState(false);
@@ -305,6 +310,8 @@ function OperationsContent() {
     { id: 'members', name: 'School members', show: can('admin:users') },
     { id: 'guardians', name: 'Guardian updates', show: user?.role === 'parent' },
     { id: 'settings', name: 'Emergency settings', show: can('admin:users') },
+    { id: 'readiness', name: 'Setup & launch', show: can('admin:users') },
+    { id: 'review', name: 'Review patterns', show: can('hazards:read') },
   ].filter((t) => t.show);
   return (
     <div className="stack-page operations-page">
@@ -435,7 +442,13 @@ function OperationsContent() {
                 </section>
               </div>
               <EvidenceCompare photos={record.photos} />
-              <RoomMedia assets={record.assets} />
+              <RoomMedia
+                assets={record.assets}
+                onRoomSelect={(id) => {
+                  setRoomId(String(id));
+                  setParams({ tab: 'rooms', roomId: String(id) });
+                }}
+              />
               {can('scan:write') && (
                 <ActionForm
                   title="Recurring inspection schedule"
@@ -674,6 +687,19 @@ function OperationsContent() {
               fields={[
                 { name: 'name', label: 'Class / section name' },
                 { name: 'grade', label: 'Grade level' },
+                ...(can('admin:users')
+                  ? [
+                      {
+                        name: 'teacherId',
+                        label: 'Assigned teacher',
+                        options: options(
+                          members.filter(
+                            (m) => m.active !== 0 && ['teacher', 'admin'].includes(m.role),
+                          ),
+                        ),
+                      },
+                    ]
+                  : []),
                 { name: 'expected', label: 'Expected headcount', type: 'number', value: 0 },
               ]}
             />
@@ -1071,6 +1097,7 @@ function OperationsContent() {
       )}
       {data && tab === 'members' && can('admin:users') && (
         <>
+          <MembershipRequests onSaved={() => void load()} />
           <ActionForm
             title="Add an existing RADAR account to this school"
             path="/api/members"
@@ -1096,10 +1123,10 @@ function OperationsContent() {
                 <div>
                   <strong>{m.name}</strong>
                   <p>
-                    {m.email} · account {m.id} · {m.role}
+                    {m.email} · account {m.id} · {m.role} {m.active === 0 ? '· access revoked' : ''}
                   </p>
                 </div>
-                {m.id !== user?.id && (
+                {m.id !== user?.id && m.active !== 0 && (
                   <button
                     className="school-back"
                     onClick={() => {
@@ -1119,6 +1146,8 @@ function OperationsContent() {
           </section>
         </>
       )}
+      {tab === 'readiness' && can('admin:users') && <SetupReadiness />}
+      {tab === 'review' && can('hazards:read') && <HazardReviewTools />}
       {data && tab === 'settings' && can('admin:users') && (
         <>
           <ActionForm
@@ -1245,6 +1274,8 @@ function AssetForm({
   floorId: number;
   onSaved: () => void;
 }) {
+  const [assetKind, setAssetKind] = useState('photo');
+  const [notice, setNotice] = useState('');
   const [error, setError] = useState(''),
     [busy, setBusy] = useState(false);
   async function submit(e: FormEvent<HTMLFormElement>) {
@@ -1255,12 +1286,15 @@ function AssetForm({
     if (!(file instanceof File) || !file.size) return;
     setBusy(true);
     setError('');
+    setNotice('');
     try {
       if (
         d.get('walkVerified') === 'on' &&
         ['spawnX', 'spawnY', 'spawnZ'].some((k) => !String(d.get(k) ?? '').trim())
       )
         throw new Error('Enter all three verified model starting coordinates.');
+      const mappingText = String(d.get('mapping') ?? '').trim();
+      const mapping = mappingText ? JSON.parse(mappingText) : undefined;
       const result = await api.upload(file);
       if (d.get('kind') === 'floorplan')
         await api.post(`/api/floors/${floorId}/plan`, {
@@ -1275,6 +1309,7 @@ function AssetForm({
           url: result.url,
           kind: d.get('kind'),
           title: d.get('title'),
+          mapping,
           walkthrough:
             d.get('walkVerified') === 'on'
               ? {
@@ -1289,6 +1324,8 @@ function AssetForm({
               : undefined,
         });
       form.reset();
+      setAssetKind('photo');
+      setNotice('Asset saved to this school’s room record.');
       onSaved();
     } catch (err) {
       setError(errorMessage(err));
@@ -1298,60 +1335,114 @@ function AssetForm({
   }
   return (
     <section className="ops-card">
-      <h3>Upload actual room imagery or a prepared 3D model</h3>
+      <h3>Add a room photo, floor plan or recorded 3D view</h3>
+      <p>Upload an actual school asset. Choose its type to see the matching setup fields.</p>
       <form onSubmit={submit}>
         <fieldset className="ops-form-grid" disabled={busy}>
           <label>
             Asset type
-            <select name="kind">
+            <select name="kind" value={assetKind} onChange={(e) => setAssetKind(e.target.value)}>
               <option value="photo">Photo</option>
-              <option value="panorama">360° panorama (equirectangular)</option>
-              <option value="model">Self-contained GLB model</option>
-              <option value="floorplan">Approved floor-plan image</option>
+              <option value="panorama">360° panorama</option>
+              <option value="model">Prepared GLB model</option>
+              <option value="floorplan">Floor-plan image</option>
             </select>
           </label>
           <label>
-            Asset title / floor-plan source
-            <input name="title" required />
+            {assetKind === 'floorplan' ? 'Approved plan source' : 'Asset title'}
+            <input name="title" required maxLength={200} />
           </label>
-          <label>
-            Floor-plan pixel width (for plan images)
-            <input name="width" type="number" defaultValue={1000} />
-          </label>
-          <label>
-            Floor-plan pixel height
-            <input name="height" type="number" defaultValue={620} />
-          </label>
-          <label>
-            <input name="verified" type="checkbox" /> Floor-plan source and alignment verified
-          </label>
-          <label>
-            Model starting floor X (metres)
-            <input name="spawnX" type="number" step="any" />
-          </label>
-          <label>
-            Model starting floor Y (metres)
-            <input name="spawnY" type="number" step="any" />
-          </label>
-          <label>
-            Model starting floor Z (metres)
-            <input name="spawnZ" type="number" step="any" />
-          </label>
-          <label>
-            Virtual eye height (metres)
-            <input name="eyeHeight" type="number" step="any" defaultValue={1.6} />
-          </label>
+          {assetKind === 'floorplan' && (
+            <>
+              <label>
+                Floor-plan pixel width
+                <input name="width" type="number" min={1} defaultValue={1000} required />
+              </label>
+              <label>
+                Floor-plan pixel height
+                <input name="height" type="number" min={1} defaultValue={620} required />
+              </label>
+              <label className="wide setup-confirm">
+                <input name="verified" type="checkbox" />I verified the floor-plan source and
+                alignment with registered rooms.
+              </label>
+            </>
+          )}
+          {assetKind === 'panorama' && (
+            <p className="wide">
+              Use actual equirectangular 360° room imagery, typically twice as wide as it is high.
+              An ordinary photo cannot show the full room.
+            </p>
+          )}
+          {assetKind === 'model' && (
+            <details className="wide model-import-settings">
+              <summary>Optional floor links and first-person navigation</summary>
+              <p>
+                These settings require a prepared school model. Leave them blank for simple orbit
+                view. Current record: room {roomId}, floor {floorId}.
+              </p>
+              <div className="ops-form-grid">
+                <label className="wide">
+                  Prepared floor/room object mapping (JSON)
+                  <textarea
+                    name="mapping"
+                    placeholder={JSON.stringify({
+                      floors: [{ node: 'actual_floor_object_name', floorId }],
+                      rooms: [{ node: 'actual_room_object_name', roomId: Number(roomId) }],
+                    })}
+                  />
+                  <small>
+                    Object names must match the actual GLB. Mapped rooms and floors must belong to
+                    this building.
+                  </small>
+                </label>
+                {['X', 'Y', 'Z'].map((axis) => (
+                  <label key={axis}>
+                    Starting floor {axis} (metres)
+                    <input name={`spawn${axis}`} type="number" step="any" />
+                  </label>
+                ))}
+                <label>
+                  Virtual eye height (metres)
+                  <input
+                    name="eyeHeight"
+                    type="number"
+                    min={0.5}
+                    max={3}
+                    step="any"
+                    defaultValue={1.6}
+                  />
+                </label>
+                <label className="wide setup-confirm">
+                  <input name="walkVerified" type="checkbox" />I verified the model’s metric scale
+                  and starting floor position.
+                </label>
+              </div>
+            </details>
+          )}
           <label className="wide">
-            <input name="walkVerified" type="checkbox" /> I verified the model’s metric scale and
-            starting floor position for walkthrough navigation
+            {assetKind === 'model'
+              ? 'GLB file, self-contained with embedded textures'
+              : 'Image file'}{' '}
+            (up to 10 MB)
+            <input
+              key={assetKind}
+              name="file"
+              type="file"
+              required
+              accept={
+                assetKind === 'model' ? '.glb,model/gltf-binary' : 'image/jpeg,image/png,image/webp'
+              }
+            />
           </label>
-          <label className="wide">
-            File (up to 10 MB)
-            <input name="file" type="file" required accept="image/jpeg,image/png,image/webp,.glb" />
-          </label>
-          <button className="command-action blue">{busy ? 'Uploading…' : 'Upload asset'}</button>
+          <button className="command-action blue">{busy ? 'Uploading…' : 'Save asset'}</button>
         </fieldset>
       </form>
+      {notice && (
+        <p role="status" className="text-success">
+          {notice}
+        </p>
+      )}
       {error && (
         <p role="alert" className="text-danger">
           {error}

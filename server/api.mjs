@@ -16,6 +16,7 @@ import {
 import fs from 'node:fs';
 import {
   workspaceRecord,
+  rememberWorkspace,
   workspaceAccess,
   workspaceSchool,
   createWorkspace,
@@ -700,27 +701,25 @@ handlers['POST /api/auth/login'] = async (ctx) => {
   const row = usesSupabase
     ? await cloudSignIn(email, password)
     : await db.prepare('SELECT * FROM users WHERE lower(email) = ?').get(email);
-  if (!row || (!usesSupabase && !verifyPassword(password, row.password_hash))) {
+  if (!row || row.active === 0 || (!usesSupabase && !verifyPassword(password, row.password_hash))) {
     throw new HttpError(401, 'Those credentials do not match an active account.');
   }
-  const { token, expires } = await createSession(row.id);
+  const { token, expires, workspaceId } = await createSession(row.id);
   await audit(row.id, 'auth.login', 'user', row.id, { email: row.email });
   ctx.res.setHeader('Set-Cookie', sessionCookie(token, expires));
-  const user = {
-    id: row.id,
-    accountScope: usesSupabase ? `supabase:${row.supabase_auth_id}` : `local:${row.id}`,
-    email: row.email,
-    name: row.name,
-    role: row.role,
-    title: row.title,
-    phone: row.phone,
-    schoolId: row.school_id,
+  const payload = async () => {
+    const user = await getUserFromRequest({ headers: { cookie: `radar_session=${token}` } });
+    if (!user) {
+      await destroySession(token);
+      throw new HttpError(401, 'This account or school membership is no longer active.');
+    }
+    return {
+      user: publicUser(user),
+      school: await getSchool(user),
+      activeWorkspaceId: user.workspaceId ?? null,
+    };
   };
-  return json(ctx.res, 200, {
-    user: publicUser(user),
-    school: await getSchool(user),
-    activeWorkspaceId: user.workspaceId ?? null,
-  });
+  return json(ctx.res, 200, workspaceId ? await runInWorkspace(workspaceId, payload) : await payload());
 };
 
 handlers['POST /api/auth/logout'] = async (ctx) => {
@@ -781,6 +780,7 @@ handlers['POST /api/workspaces/select'] = async (ctx) => {
   await coreDb
     .prepare('UPDATE sessions SET workspace_id = ? WHERE token = ?')
     .run(id, user.sessionToken);
+  await rememberWorkspace(user.id, id);
   return json(ctx.res, 200, { activeWorkspaceId: id });
 };
 

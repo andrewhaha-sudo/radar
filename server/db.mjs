@@ -498,6 +498,12 @@ const sessionColumns = await coreDb.prepare('PRAGMA table_info(sessions)').all()
 if (!sessionColumns.some((c) => c.name === 'workspace_id'))
   await coreDb.exec('ALTER TABLE sessions ADD COLUMN workspace_id TEXT');
 
+const accountColumns = await coreDb.prepare('PRAGMA table_info(users)').all();
+if (!accountColumns.some((c) => c.name === 'last_workspace_id'))
+  await coreDb.exec('ALTER TABLE users ADD COLUMN last_workspace_id TEXT');
+if (!accountColumns.some((c) => c.name === 'workspace_selected'))
+  await coreDb.exec('ALTER TABLE users ADD COLUMN workspace_selected INTEGER NOT NULL DEFAULT 0');
+
 if (coreDb.dialect === 'postgres') await coreDb.protectTables();
 
 export function nowIso() {

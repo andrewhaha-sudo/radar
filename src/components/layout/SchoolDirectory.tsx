@@ -38,7 +38,7 @@ export function SchoolDirectoryProvider({ children }: { children: ReactNode }) {
       .get<{ workspaces: Array<{ beisId: string }> }>('/api/workspaces')
       .then((data) => setWorkspaces(data.workspaces.map((w) => w.beisId)))
       .catch((err) => setSwitchError(errorMessage(err)));
-  }, []);
+  }, [user?.accountScope, user?.id]);
   const storageKey = `radar:directory-school:${user?.accountScope ?? user?.id ?? 'guest'}`;
   const [selected, setSelected] = useState<DirectorySchool | null>(() => {
     try {
@@ -46,12 +46,22 @@ export function SchoolDirectoryProvider({ children }: { children: ReactNode }) {
         window.location.pathname === '/operations'
           ? new URLSearchParams(window.location.search).get('school')
           : null;
-      const id = qrSchool === 'original' ? null : (qrSchool ?? localStorage.getItem(storageKey));
+      const id =
+        qrSchool === 'original'
+          ? null
+          : (qrSchool ?? activeWorkspaceId ?? localStorage.getItem(storageKey));
       return entries.find((s) => s.id === id) ?? null;
     } catch {
       return null;
     }
   });
+  useEffect(() => {
+    const explicitSchool =
+      window.location.pathname === '/operations' &&
+      new URLSearchParams(window.location.search).has('school');
+    if (activeWorkspaceId && !explicitSchool)
+      setSelected(entries.find((s) => s.id === activeWorkspaceId) ?? null);
+  }, [activeWorkspaceId, user?.accountScope]);
   const [isOpen, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [municipality, setMunicipality] = useState('');
@@ -242,7 +252,7 @@ export function SchoolDirectoryProvider({ children }: { children: ReactNode }) {
             <footer>
               <button className="school-back" onClick={() => select(null)}>
                 {activeWorkspaceId
-                  ? 'Return to original workspace'
+                  ? 'Open original account workspace'
                   : 'Return to connected workspace'}
               </button>
               <p>
@@ -336,9 +346,17 @@ export function SchoolWorkspaceBoundary({ children }: { children: ReactNode }) {
     return <>{children}</>;
   return (
     <div className="stack-page school-directory-workspace">
-      <button className="school-back" onClick={() => select(null)}>
-        <ArrowLeft size={16} /> Back to{' '}
-        {activeWorkspaceId ? 'original workspace' : (school?.name ?? 'connected workspace')}
+      <button
+        className="school-back"
+        onClick={() =>
+          select(
+            activeWorkspaceId
+              ? (entries.find((entry) => entry.id === activeWorkspaceId) ?? null)
+              : null,
+          )
+        }
+      >
+        <ArrowLeft size={16} /> Back to {school?.name ?? 'connected workspace'}
       </button>
       <section className="command-panel">
         <div className="school-profile-heading">
@@ -414,7 +432,16 @@ export function SchoolWorkspaceBoundary({ children }: { children: ReactNode }) {
           <button className="command-action blue" onClick={open}>
             Choose another school
           </button>
-          <button className="school-back" onClick={() => select(null)}>
+          <button
+            className="school-back"
+            onClick={() =>
+              select(
+                activeWorkspaceId
+                  ? (entries.find((entry) => entry.id === activeWorkspaceId) ?? null)
+                  : null,
+              )
+            }
+          >
             Return to connected workspace
           </button>
         </div>

@@ -1615,6 +1615,34 @@ test('image route sketches remain school-scoped drafts, require meaningful geome
   );
   assert.equal((await api(admin, `/api/advanced/image-paths/${saved.id}`)).status, 404);
 });
+test('all six approved school roles return to the same configured dashboard after logout and login',async()=>{
+ const image='data:image/jpeg;base64,YWJj';
+ const survey=assertOK(await post(admin,'/api/advanced/video-surveys',{title:'Login persistence fixture',frames:[{time:0,image,kind:'photo'}],candidates:[],reviewed:true}),201);
+ assertOK(await post(admin,`/api/advanced/video-surveys/${survey.id}/dashboard`,{}));
+ const map=assertOK(await api(admin,'/api/map'));
+ for(const role of ['admin','inspector','teacher','responder','student','parent']){
+  const email=`login-${role}@example.test`,password='Fixture#2026';
+  assert.equal((await post(null,'/api/auth/signup',{name:`Login ${role}`,email,password})).status,201);
+  assertOK(await post(admin,'/api/members',{email,role}),201);
+  async function signIn(){const response=await fetch(BASE+'/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password})});assert.equal(response.status,200);const body=await response.json();const cookie=response.headers.getSetCookie().map(value=>value.split(';')[0]).join('; ');modes.set(cookie,body.activeWorkspaceId||'');assert.equal(body.activeWorkspaceId,SCHOOL);assert.equal(body.user.role,role);assert.equal(body.school.name,map.school.name);return cookie;}
+  let cookie=await signIn();assertOK(await post(cookie,'/api/auth/logout',{}));cookie=await signIn();
+  const restored=assertOK(await api(cookie,'/api/map'));assert.equal(restored.school.lat,map.school.lat);assert.equal(restored.buildings.length,map.buildings.length);
+  assertOK(await api(cookie,'/api/dashboard'));
+  assert.equal(assertOK(await api(cookie,'/api/campus-close-view')).survey.id,survey.id);
+  assert.equal((await api(cookie,'/api/admin/users')).status,role==='admin'?200:403);
+  assert.equal((await post(cookie,`/api/schools/${SCHOOL}/join`,{role})).status,409,'approved members must not request approval again');
+ }
+ assertOK(await api(admin,`/api/advanced/video-surveys/${survey.id}`,{method:'DELETE'}));
+});
+test('explicit original-workspace choices persist, while revoked schools are never restored on login',async()=>{
+ const email='restore-revocation@example.test',password='Fixture#2026';
+ assert.equal((await post(null,'/api/auth/signup',{name:'Restore fixture',email,password})).status,201);
+ assertOK(await post(admin,'/api/members',{email,role:'student'}),201);
+ async function signIn(){const response=await fetch(BASE+'/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password})});assert.equal(response.status,200);const body=await response.json();const cookie=response.headers.getSetCookie().map(v=>v.split(';')[0]).join('; ');modes.set(cookie,body.activeWorkspaceId||'');return {body,cookie};}
+ let session=await signIn();assert.equal(session.body.activeWorkspaceId,SCHOOL);await select(session.cookie,null);assertOK(await post(session.cookie,'/api/auth/logout',{}));session=await signIn();assert.equal(session.body.activeWorkspaceId,null);
+ await select(session.cookie,SCHOOL);assertOK(await post(session.cookie,'/api/auth/logout',{}));const member=assertOK(await api(admin,'/api/admin/users')).users.find(u=>u.email===email);assertOK(await api(admin,`/api/members/${member.id}`,{method:'DELETE'}));
+ session=await signIn();assert.equal(session.body.activeWorkspaceId,null);assert.equal((await post(session.cookie,'/api/workspaces/select',{beisId:SCHOOL})).status,403);
+});
 test('revoking school membership removes access while retaining historical attendance', async () => {
   const id = users.find((u) => u.role === 'student').id;
   assertOK(await api(admin, `/api/members/${id}`, { method: 'DELETE' }));

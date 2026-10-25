@@ -1,3 +1,4 @@
+import { GettingStartedTour } from './GettingStartedTour';
 import { MobileDock } from './MobileDock';
 'use client';
 
@@ -51,6 +52,7 @@ export function AppLayout() {
       <div className="relative flex min-h-svh w-full bg-background text-foreground">
         <div className="radar-ambient" aria-hidden="true" />
 
+        <GettingStartedTour/>
         <Sidebar isOpen={sidebarOpen} onClose={onCloseSidebar} />
 
         <div className="relative z-10 flex min-h-svh min-w-0 flex-1 flex-col">

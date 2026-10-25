@@ -1,3 +1,4 @@
+import { preferredWorkspace, rememberWorkspace } from './workspaces.mjs';
 import crypto from 'node:crypto';
 import { db, coreDb, currentDatabaseContext, nowIso } from './db.mjs';
 
@@ -35,10 +36,12 @@ export async function createSession(userId) {
   const token = crypto.randomBytes(32).toString('hex');
   const created = new Date();
   const expires = new Date(created.getTime() + SESSION_DAYS * 24 * 60 * 60 * 1000);
+  const workspaceId = await preferredWorkspace(userId);
   await coreDb
-    .prepare('INSERT INTO sessions (token, user_id, created_at, expires_at) VALUES (?, ?, ?, ?)')
-    .run(token, userId, created.toISOString(), expires.toISOString());
-  return { token, expires };
+    .prepare('INSERT INTO sessions (token,user_id,created_at,expires_at,workspace_id) VALUES (?,?,?,?,?)')
+    .run(token, userId, created.toISOString(), expires.toISOString(), workspaceId);
+  if (workspaceId) await rememberWorkspace(userId, workspaceId);
+  return { token, expires, workspaceId };
 }
 
 export async function destroySession(token) {
@@ -72,13 +75,13 @@ export async function getUserFromRequest(req) {
 
   let row = await coreDb
     .prepare(
-      `SELECT s.token, s.expires_at, s.workspace_id, u.id, u.email, u.name, u.role, u.title, u.phone, u.school_id, u.grade, u.supabase_auth_id
+      `SELECT s.token, s.expires_at, s.workspace_id, u.id, u.email, u.name, u.role, u.title, u.phone, u.school_id, u.grade, u.supabase_auth_id, u.active AS account_active
        FROM sessions s JOIN users u ON u.id = s.user_id
        WHERE s.token = ?`,
     )
     .get(token);
 
-  if (!row) return null;
+  if (!row || row.account_active === 0) return null;
   if (new Date(row.expires_at).getTime() < Date.now()) {
     await destroySession(token);
     return null;
@@ -89,7 +92,7 @@ export async function getUserFromRequest(req) {
   const context = currentDatabaseContext();
   if (context?.workspaceId) {
     const member = await db.prepare('SELECT * FROM users WHERE id = ?').get(row.id);
-    if (!member) return null;
+    if (!member || member.active === 0) return null;
     row = { ...row, ...member };
   }
   return {

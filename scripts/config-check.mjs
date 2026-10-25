@@ -1,3 +1,4 @@
+import { visionModel, visionFailure } from '../server/vision-provider.mjs';
 const groups = {
   Supabase: [
     'SUPABASE_URL',
@@ -12,7 +13,9 @@ const groups = {
   Scheduler: ['CRON_SECRET', 'RADAR_PUBLIC_URL'],
 };
 console.log('Configuration presence report (values are never printed).');
-for (const [group, names] of Object.entries(groups))
+for (const [group, names] of Object.entries(groups).filter(
+  ([name]) => !process.argv.includes('--vision') || name === 'Vision',
+))
   console.log(
     `${group}: ${names.filter((name) => !process.env[name]).length ? 'missing ' + names.filter((name) => !process.env[name]).join(', ') : 'settings present; live verification still required'}`,
   );
@@ -22,7 +25,7 @@ if (process.argv.includes('--live')) {
     [
       'Vision',
       'RADAR_VISION_API_KEY',
-      'https://api.openai.com/v1/models',
+      `https://api.openai.com/v1/models/${encodeURIComponent(visionModel())}`,
       () => ({ Authorization: `Bearer ${process.env.RADAR_VISION_API_KEY}` }),
     ],
     [
@@ -34,6 +37,7 @@ if (process.argv.includes('--live')) {
       }),
     ],
   ]) {
+    if (process.argv.includes('--vision') && name !== 'Vision') continue;
     if (!process.env[key]) {
       console.log(`${name}: live check BLOCKED (missing configuration)`);
       blocked = true;
@@ -48,7 +52,10 @@ if (process.argv.includes('--live')) {
       console.log(
         `${name}: read-only provider check HTTP ${response.status}; this is not message delivery or photo analysis.`,
       );
-      if (!response.ok) blocked = true;
+      if (!response.ok) {
+        if (name === 'Vision') console.log((await visionFailure(response)).message);
+        blocked = true;
+      }
     } catch {
       console.log(
         `${name}: live connection failed; no credentials or provider response body logged.`,

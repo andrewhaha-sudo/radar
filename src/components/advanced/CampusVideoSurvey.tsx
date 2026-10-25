@@ -65,14 +65,21 @@ export function CampusVideoSurvey({ buildings, rooms }: { buildings: Row[]; room
     const v = video.current;
     if (!v || !v.videoWidth) throw new Error('Load a playable video first.');
     const canvas = document.createElement('canvas');
-    canvas.width = Math.min(720, v.videoWidth);
-    canvas.height = Math.round((canvas.width * v.videoHeight) / v.videoWidth);
     const ctx = canvas.getContext('2d');
     if (!ctx) throw new Error('Canvas is unavailable.');
-    ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
-    let image = canvas.toDataURL('image/jpeg', 0.55);
-    if (image.length > 120000) image = canvas.toDataURL('image/jpeg', 0.25);
-    if (image.length > 120000) throw new Error('Frame is too detailed; use a smaller video.');
+    let longest = Math.min(1920, Math.max(v.videoWidth, v.videoHeight)),
+      image = '';
+    for (let attempt = 0; attempt < 8; attempt++) {
+      const scale = longest / Math.max(v.videoWidth, v.videoHeight);
+      canvas.width = Math.max(1, Math.round(v.videoWidth * scale));
+      canvas.height = Math.max(1, Math.round(v.videoHeight * scale));
+      ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
+      image = canvas.toDataURL('image/jpeg', 0.9);
+      if (image.length <= 300000) break;
+      longest = Math.floor(longest * 0.82);
+    }
+    if (image.length > 300000)
+      throw new Error('Frame exceeds the image limit. Capture a less detailed view.');
     return { time: v.currentTime, image };
   }
   async function sample() {
@@ -129,6 +136,11 @@ export function CampusVideoSurvey({ buildings, rooms }: { buildings: Row[]; room
           </p>
         </div>
       )}
+      <p>
+        New captures preserve JPEG quality at up to 1920 pixels on the longest edge. Re-capture
+        older saved frames to improve clarity. Zoom cannot recover detail missing from the original
+        video; pause at a steady, well-lit view before capturing.
+      </p>
       <label>
         Campus video
         <input

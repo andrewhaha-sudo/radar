@@ -1,9 +1,10 @@
+import { visionModel, visionFailure } from './vision-provider.mjs';
 export async function analyzeVisibleHazards(
   images,
   {
     apiKey = process.env.RADAR_VISION_API_KEY,
     request = fetch,
-    model = process.env.RADAR_VISION_MODEL ?? 'gpt-4.1-mini',
+    model = process.env.RADAR_VISION_MODEL,
     calibratedImageIndexes = [],
   } = {},
 ) {
@@ -18,7 +19,7 @@ export async function analyzeVisibleHazards(
     },
     signal: AbortSignal.timeout(60000),
     body: JSON.stringify({
-      model,
+      model: visionModel(model),
       input: [
         {
           role: 'user',
@@ -33,6 +34,7 @@ export async function analyzeVisibleHazards(
             ...images.map((image) => ({
               type: 'input_image',
               image_url: image,
+              detail: 'high',
             })),
           ],
         },
@@ -102,8 +104,7 @@ export async function analyzeVisibleHazards(
       },
     }),
   });
-  if (!response.ok)
-    throw new Error(`Vision provider returned HTTP ${response.status}. No findings were saved.`);
+  if (!response.ok) throw await visionFailure(response);
   const payload = await response.json();
   const text =
     payload.output

@@ -1,3 +1,4 @@
+import { visionModel } from '../server/vision-provider.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import { parseEnv } from 'node:util';
@@ -46,7 +47,11 @@ try {
   );
   const fields = [
     ['RADAR_VISION_API_KEY', 'Vision API key', true],
-    ['RADAR_VISION_MODEL', 'Vision model', false],
+    [
+      'RADAR_VISION_MODEL',
+      'Vision model (model ID; recommended gpt-4.1-mini, never a URL or API key)',
+      false,
+    ],
     ['RADAR_VAPID_PUBLIC_KEY', 'Push VAPID public key', true],
     ['RADAR_VAPID_PRIVATE_KEY', 'Push VAPID private key', true],
     ['RADAR_VAPID_SUBJECT', 'VAPID contact subject (mailto: or HTTPS)', false],
@@ -61,6 +66,7 @@ try {
     const answer = await ask(name, label, hidden);
     if (!answer) continue;
     const value = answer === 'CLEAR' ? '' : answer;
+    if (name === 'RADAR_VISION_MODEL' && value) visionModel(value);
     if (/[\r\n]/.test(value)) throw new Error('Settings must be single-line values.');
     if (name === 'RADAR_PUBLIC_URL' && value) {
       const parsed = new URL(value);

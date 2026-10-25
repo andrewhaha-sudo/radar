@@ -1,3 +1,4 @@
+import { Prerequisite } from '@/components/workspace/Prerequisite';
 import { useEffect, useState } from 'react';
 import { api, errorMessage } from '@/lib/api';
 import { downloadText, type Row } from './tools';
@@ -7,12 +8,14 @@ export function RosterImport() {
     [csv, setCsv] = useState(''),
     [preview, setPreview] = useState<Row | null>(null),
     [error, setError] = useState(''),
-    [busy, setBusy] = useState(false);
+    [busy, setBusy] = useState(false),
+    [loaded, setLoaded] = useState(false);
   useEffect(() => {
     api
       .get<{ classes: Row[] }>('/api/rollcall')
       .then((d) => setClasses(d.classes))
-      .catch((err) => setError(errorMessage(err)));
+      .catch((err) => setError(errorMessage(err)))
+      .finally(() => setLoaded(true));
   }, []);
   async function run(commit: boolean) {
     setBusy(true);
@@ -30,6 +33,21 @@ export function RosterImport() {
       setBusy(false);
     }
   }
+  if (!loaded && !error)
+    return (
+      <p role="status" className="studio-caption">
+        Loading assigned classes…
+      </p>
+    );
+  if (loaded && !error && !classes.length)
+    return (
+      <Prerequisite
+        title="Create a class before adding its people."
+        description="There are no assigned classes available for import. A school administrator can register a class and assign its teacher, then you can preview a roster here."
+        to="/operations?tab=rollcall"
+        action="Open class roll call"
+      />
+    );
   return (
     <section className="ops-card">
       <h2>Import a class roster</h2>

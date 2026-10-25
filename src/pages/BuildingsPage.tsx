@@ -35,7 +35,8 @@ interface BuildingsPayload {
 }
 
 export function BuildingsPage() {
-  const { can } = useAuth();
+  const { can, school } = useAuth();
+  const [locationOpen,setLocationOpen]=useState(false);
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const qParam = params.get('q') ?? '';
@@ -195,7 +196,7 @@ export function BuildingsPage() {
         </div>
       </div>
 
-      {can('admin:users') && <SchoolLocation/>}
+      {can('admin:users') && <details className="location-disclosure" onToggle={event=>setLocationOpen(event.currentTarget.open)}><summary><span>School map location</span><small>{school?.locationVerified?'Recorded · edit location':'Add or review location'}</small></summary>{locationOpen&&<SchoolLocation/>}</details>}
       {can('admin:users') && <CampusSetup buildings={data?.buildings ?? []} floors={data?.floors ?? []} onSaved={load} />}
 
       {error ? (
@@ -235,14 +236,10 @@ export function BuildingsPage() {
                     <span className="grid h-9 w-9 place-items-center rounded-lg bg-accent font-mono text-[11px] font-bold text-accent-foreground">
                       {building.code}
                     </span>
-                    <Badge variant="outline" className="text-[10px]">
-                      Built {building.yearBuilt ?? '—'}
-                    </Badge>
+                    {building.yearBuilt&&<Badge variant="outline" className="text-[10px]">Built {building.yearBuilt}</Badge>}
                   </div>
                   <h3 className="mt-2 text-sm font-semibold leading-tight">{building.name}</h3>
-                  <p className="mt-1 line-clamp-2 text-[11px] text-muted-foreground">
-                    {building.description || 'No description recorded.'}
-                  </p>
+                  {building.description&&<p className="mt-1 line-clamp-2 text-[11px] text-muted-foreground">{building.description}</p>}
                   <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
                     <span className="inline-flex items-center gap-1">
                       <Layers className="h-3 w-3" /> {building.floorCount} floors

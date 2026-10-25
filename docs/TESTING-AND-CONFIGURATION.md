@@ -143,3 +143,9 @@ Run `npm run list:vision-models` to list model IDs that your Google key can acce
 Campus video analysis now defaults to **Current view**, sending just that keyframe and mapping returned labels to its original view. Other views retain their draft labels. **All captured views** remains an explicit option and may take longer. A timeout leaves the frames/labels unchanged and never automatically resends images. Try one steady view first; provider load and quota can still prevent completion.
 
 The provider deadline defaults to 120 seconds. `RADAR_VISION_TIMEOUT_MS` can be set from 5000 to 240000 milliseconds; restart/redeploy after changes. Hosting/proxy limits may impose an earlier cutoff. Provider and response-body timeouts return an actionable message and HTTP 504 for analysis routes. This does not guarantee provider completion or confirm whether a timed-out request consumed quota.
+
+## Updated navigation and photo routes
+
+The sidebar now calls **Campus operations** **Tools & setup**. Its old tab/deep-link URLs still work; tasks are grouped/searchable and specialist tools appear under **Campus views & more**. See [the interface refresh guide](INTERFACE-REFRESH.md) for the compact campus viewer, phone layouts and Photo Route Studio. The campus survey now accepts static photos as well as video, recording the source kind alongside selected JPEGs. Existing video surveys remain compatible.
+
+Route sketches store normalized image points in a separate school-scoped table. No image paths or checklist checks are copied into the verified evacuation routing graph. Inspectors/route planners can write sketches; only their author or an administrator can update/delete them. AI path proposals require consent and the selected provider; manual drawing/export remain available without AI.

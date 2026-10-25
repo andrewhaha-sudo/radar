@@ -1,3 +1,4 @@
+import { MobileDock } from './MobileDock';
 'use client';
 
 import { Suspense, useState, useCallback, useEffect } from 'react';
@@ -81,6 +82,7 @@ export function AppLayout() {
               <SchoolWorkspaceBoundary><Outlet /></SchoolWorkspaceBoundary>
             </Suspense>
           </main>
+          <MobileDock/>
         </div>
       </div>
     </SchoolDirectoryProvider>

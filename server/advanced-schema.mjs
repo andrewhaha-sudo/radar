@@ -1,4 +1,5 @@
 export const ADVANCED_TABLES = [
+  'imagery_route_drafts',
   'campus_video_surveys',
   'geo_layers',
   'room_counts',
@@ -11,6 +12,7 @@ export const ADVANCED_TABLES = [
   'emergency_sms_jobs',
 ];
 export const ADVANCED_SCHEMA = `
+CREATE TABLE IF NOT EXISTS imagery_route_drafts(id INTEGER PRIMARY KEY AUTOINCREMENT,title TEXT NOT NULL,source TEXT NOT NULL,image TEXT NOT NULL,paths TEXT NOT NULL,checks TEXT NOT NULL,notes TEXT NOT NULL,uncertainties TEXT NOT NULL,created_by INTEGER REFERENCES users(id),created_at TEXT NOT NULL,updated_at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS campus_video_surveys(id INTEGER PRIMARY KEY AUTOINCREMENT,title TEXT NOT NULL,payload TEXT NOT NULL,created_by INTEGER REFERENCES users(id),created_at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS room_counts(id INTEGER PRIMARY KEY AUTOINCREMENT,room_id INTEGER NOT NULL REFERENCES rooms(id),count INTEGER NOT NULL,source TEXT NOT NULL,observed_at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS geo_layers(id INTEGER PRIMARY KEY AUTOINCREMENT,kind TEXT NOT NULL,title TEXT NOT NULL,agency TEXT NOT NULL,source_url TEXT NOT NULL,geojson TEXT NOT NULL,published_at TEXT NOT NULL,expires_at TEXT,verified INTEGER NOT NULL DEFAULT 0,created_by INTEGER REFERENCES users(id),created_at TEXT NOT NULL);

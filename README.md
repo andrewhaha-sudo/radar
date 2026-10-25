@@ -177,3 +177,7 @@ RADAR can use Supabase Auth, PostgreSQL and private Storage instead of local SQL
 Open **Campus operations → Advanced tools & testing** for campus video survey, roster imports, custom reports, official datasets, measured footprint models, calibrated pins, aggregate count devices, foreground GPS and peer relay. See [Testing and configuration](docs/TESTING-AND-CONFIGURATION.md) for prerequisites and honest integration limits.
 
 Run `npm run build` then `npm run test:lab` for disposable local practice on port 8799. Use `npm run setup:integrations` to configure private optional providers locally and `npm run config:check` for presence diagnostics. No live deployment or private provider activation is implied.
+
+## Interface refresh
+
+The dashboard now uses one bounded campus panel, and **Tools & setup** provides searchable tasks and pinned shortcuts. The new Photo Route Studio supports manual image sketches, optional AI proposals, field notes and school-scoped saving. [See the interface preview and workflow guide](docs/INTERFACE-REFRESH.md). Image sketches remain separate from verified evacuation routes.

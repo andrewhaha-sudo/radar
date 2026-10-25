@@ -1,3 +1,4 @@
+import { Prerequisite } from '@/components/workspace/Prerequisite';
 import { useEffect, useState } from 'react';
 import { api, errorMessage } from '@/lib/api';
 import { ToolForm, type Row } from './tools';
@@ -8,12 +9,14 @@ export function CalibrationPanel() {
     [photo, setPhoto] = useState(''),
     [observation, setObservation] = useState(''),
     [notice, setNotice] = useState(''),
-    [error, setError] = useState('');
+    [error, setError] = useState(''),
+    [loaded, setLoaded] = useState(false);
   useEffect(() => {
     api
       .get<{ scans: Row[] }>('/api/scans')
       .then((result) => setScans(result.scans.filter((row) => row.status === 'draft')))
-      .catch((err) => setError(errorMessage(err)));
+      .catch((err) => setError(errorMessage(err)))
+      .finally(() => setLoaded(true));
   }, []);
   useEffect(() => {
     if (scanId)
@@ -41,6 +44,21 @@ export function CalibrationPanel() {
       setError(errorMessage(err));
     }
   }
+  if (!loaded && !error)
+    return (
+      <p role="status" className="studio-caption">
+        Loading draft inspections…
+      </p>
+    );
+  if (loaded && !error && !scans.length)
+    return (
+      <Prerequisite
+        title="Start with a room photo."
+        description="This tool places a finding onto a room plan using measured photo anchors. First create a draft inspection and attach evidence."
+        to="/scan"
+        action="Start a room inspection"
+      />
+    );
   return (
     <>
       <section className="ops-card">

@@ -1,3 +1,4 @@
+import { captureCampusImage } from '@/lib/campus-images';
 import { MapContainer, TileLayer, Polyline } from 'react-leaflet';
 import type { LatLngTuple } from 'leaflet';
 import { useEffect, useRef, useState } from 'react';
@@ -5,7 +6,7 @@ import { Link } from 'react-router-dom';
 import { api, errorMessage } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import type { Row } from './tools';
-type Frame = { time: number; image: string };
+type Frame = { time: number; image: string; kind?: 'photo' | 'video-frame' };
 type Candidate = {
   frameIndex: number;
   x: number;
@@ -73,23 +74,11 @@ export function CampusVideoSurvey({ buildings, rooms }: { buildings: Row[]; room
   function capture() {
     const v = video.current;
     if (!v || !v.videoWidth) throw new Error('Load a playable video first.');
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    if (!ctx) throw new Error('Canvas is unavailable.');
-    let longest = Math.min(1920, Math.max(v.videoWidth, v.videoHeight)),
-      image = '';
-    for (let attempt = 0; attempt < 8; attempt++) {
-      const scale = longest / Math.max(v.videoWidth, v.videoHeight);
-      canvas.width = Math.max(1, Math.round(v.videoWidth * scale));
-      canvas.height = Math.max(1, Math.round(v.videoHeight * scale));
-      ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
-      image = canvas.toDataURL('image/jpeg', 0.9);
-      if (image.length <= 300000) break;
-      longest = Math.floor(longest * 0.82);
-    }
-    if (image.length > 300000)
-      throw new Error('Frame exceeds the image limit. Capture a less detailed view.');
-    return { time: v.currentTime, image };
+    return {
+      time: v.currentTime,
+      image: captureCampusImage(v, v.videoWidth, v.videoHeight),
+      kind: 'video-frame' as const,
+    };
   }
   async function sample() {
     const v = video.current;
@@ -120,62 +109,56 @@ export function CampusVideoSurvey({ buildings, rooms }: { buildings: Row[]; room
   }
   return (
     <section className="ops-card campus-video-survey">
-      <h2>Campus video survey</h2>
+      <h2>Put familiar places in the picture.</h2>
       <p>
-        Choose a walking or drone video. The full video stays on this device. Up to six selected
-        JPEG frames can be sent to AI with your permission and saved to this school. Review for
-        faces, student details and other private information before sharing.
+        Choose a campus photo or a walking or drone video. The full video stays on this device. Up
+        to six selected JPEG frames can be sent to AI with your permission and saved to this school.
+        Review for faces, student details and other private information before sharing.
       </p>
-      {provider && (
-        <p>
-          Selected vision provider:{' '}
-          <strong>{provider.provider === 'gemini' ? 'Google Gemini' : 'OpenAI'}</strong> · running
-          server model: <strong>{provider.model}</strong>.{' '}
-          {provider.provider === 'gemini' &&
-            'Free-tier eligibility, quotas and data-use terms are set by Google. Avoid sharing student faces or private records.'}
-        </p>
-      )}
-      {provider && (!provider.configured || provider.training) && (
-        <div role="status" className="ops-card">
-          <h3>
-            {provider.training
-              ? 'Training mode: AI calls are disabled'
-              : 'AI building detection needs configuration'}
-          </h3>
-          <p>
-            For local Node.js, run <code>npm run setup:integrations</code> in your project terminal,
-            select openai or gemini at “Vision provider”, enter its corresponding API key, then
-            restart <code>npm run dev</code>. On Vercel, set <code>RADAR_VISION_PROVIDER</code> and
-            the matching server API key, then redeploy. Your Supabase key cannot enable vision. Keep
-            the private key out of chat.
-          </p>
-          <p>
-            You can number buildings now: capture a frame, click each building in the image, then
-            choose “Number marked buildings”.
-          </p>
-        </div>
-      )}
+      {provider&&<details className="survey-ai-help"><summary>About optional AI suggestions</summary><p>Selected provider: <strong>{provider.provider==='gemini'?'Google Gemini':'OpenAI'}</strong> · running server model: <strong>{provider.model}</strong>. Review provider data-use terms before sharing school images.</p>{(!provider.configured||provider.training)&&<><h3>{provider.training?'AI is disabled in training mode':'AI suggestions are not connected'}</h3><p>You can label buildings manually. Optional provider settings are available through <code>npm run setup:integrations</code> in your local terminal. Restart the server after configuration changes.</p></>}</details>}
       <p>
-        New captures preserve JPEG quality at up to 1920 pixels on the longest edge. Re-capture
-        older saved frames to improve clarity. Zoom cannot recover detail missing from the original
-        video; pause at a steady, well-lit view before capturing.
+        Use a clear, well-lit view. For video, pause where the camera is steady before capturing. Re-capture older compressed views if you need more detail.
       </p>
       <label>
-        Campus video
+        Campus photo or video
         <input
           disabled={busy}
           type="file"
-          accept="video/*"
+          accept="image/jpeg,image/png,image/webp,video/*"
           onChange={(e) => {
             const f = e.target.files?.[0];
             if (!f) return;
-            if (objectUrl.current) URL.revokeObjectURL(objectUrl.current);
-            objectUrl.current = URL.createObjectURL(f);
-            setSource(objectUrl.current);
-            setFrames([]);
-            setCandidates([]);
-            setReviewed(false);
-            setRoute(null);
+            void action(async () => {
+              if (
+                !f.type.startsWith('video/') &&
+                !['image/jpeg', 'image/png', 'image/webp'].includes(f.type)
+              )
+                throw new Error('Choose a JPEG, PNG, WebP or supported video.');
+              if (objectUrl.current) URL.revokeObjectURL(objectUrl.current);
+              objectUrl.current = URL.createObjectURL(f);
+              setFrames([]);
+              setCandidates([]);
+              setSelected(0);
+              setReviewed(false);
+              setRoute(null);
+              if (f.type.startsWith('video/')) setSource(objectUrl.current);
+              else {
+                setSource('');
+                const photo = new Image();
+                await new Promise<void>((resolve, reject) => {
+                  photo.onload = () => resolve();
+                  photo.onerror = () => reject(new Error('This photo could not be opened.'));
+                  photo.src = objectUrl.current;
+                });
+                setFrames([
+                  {
+                    time: 0,
+                    image: captureCampusImage(photo, photo.naturalWidth, photo.naturalHeight),
+                    kind: 'photo',
+                  },
+                ]);
+              }
+            });
           }}
         />
       </label>
@@ -232,37 +215,40 @@ export function CampusVideoSurvey({ buildings, rooms }: { buildings: Row[]; room
                 className={selected === i ? 'active' : ''}
                 onClick={() => setSelected(i)}
               >
-                View {i + 1} · {f.time.toFixed(1)}s
+                View {i + 1}
+                {f.kind === 'photo' ? ' · Photo' : ` · ${f.time.toFixed(1)}s`}
               </button>
             ))}
           </div>
-          <div
-            className="campus-video-frame"
-            onClick={(e) => {
-              if (!can('admin:users') || candidates.length >= 30) return;
-              const r = e.currentTarget.getBoundingClientRect();
-              setCandidates([
-                ...candidates,
-                {
-                  frameIndex: selected,
-                  x: (e.clientX - r.left) / r.width,
-                  y: (e.clientY - r.top) / r.height,
-                  label: `Building ${candidates.length + 1} (draft)`,
-                  description: 'Manual video label',
-                  buildingId: null,
-                },
-              ]);
-              setReviewed(false);
-            }}
-          >
-            <img src={frames[selected]?.image} alt={`Campus video keyframe ${selected + 1}`} />
-            {candidates.map((c, i) =>
-              c.frameIndex === selected ? (
-                <span key={i} style={{ left: `${c.x * 100}%`, top: `${c.y * 100}%` }}>
-                  {i + 1}
-                </span>
-              ) : null,
-            )}
+          <div className="campus-video-stage">
+            <div
+              className="campus-video-frame"
+              onClick={(e) => {
+                if (!can('admin:users') || candidates.length >= 30) return;
+                const r = e.currentTarget.getBoundingClientRect();
+                setCandidates([
+                  ...candidates,
+                  {
+                    frameIndex: selected,
+                    x: (e.clientX - r.left) / r.width,
+                    y: (e.clientY - r.top) / r.height,
+                    label: `Building ${candidates.length + 1} (draft)`,
+                    description: 'Manual video label',
+                    buildingId: null,
+                  },
+                ]);
+                setReviewed(false);
+              }}
+            >
+              <img src={frames[selected]?.image} alt={`Campus video keyframe ${selected + 1}`} />
+              {candidates.map((c, i) =>
+                c.frameIndex === selected ? (
+                  <span key={i} style={{ left: `${c.x * 100}%`, top: `${c.y * 100}%` }}>
+                    {i + 1}
+                  </span>
+                ) : null,
+              )}
+            </div>
           </div>
           <p>
             Click a building in the image to add a draft numbered label. Repeated views may show the
@@ -424,7 +410,7 @@ export function CampusVideoSurvey({ buildings, rooms }: { buildings: Row[]; room
                       })
                     }
                   >
-                    Find a candidate route on verified walkways
+                    Check registered evacuation routes
                   </button>
                 </>
               )}
@@ -490,7 +476,7 @@ export function CampusVideoSurvey({ buildings, rooms }: { buildings: Row[]; room
       )}
       <h3>Saved school surveys</h3>
       {surveys.map((s) => (
-        <div key={s.id}>
+        <div className="survey-saved-row" key={s.id}>
           <button
             disabled={busy}
             onClick={() =>
@@ -507,6 +493,11 @@ export function CampusVideoSurvey({ buildings, rooms }: { buildings: Row[]; room
           >
             {s.title}
           </button>
+          {(can('scan:write') || can('evacuation:write')) && (
+            <Link className="desk-link" to={`/operations?tab=advanced&tool=paths&surveyId=${s.id}`}>
+              Sketch paths from this view →
+            </Link>
+          )}
           {can('admin:users') && (
             <button
               disabled={busy}

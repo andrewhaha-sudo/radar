@@ -63,8 +63,8 @@ For Supabase: enable and verify project backups/PITR according to the project's 
 
 ## Validation evidence
 
-- `npm test`: 73 passing tests covering authentication, school isolation, API boundaries, memberships/roles, rosters/teacher ownership, scans/evidence/schedules, location/SOS privacy, assistance/guardians, targeted alerts, resources, routing, mock vision, feed parsing, signed callbacks and mocked Supabase Auth/Storage.
-- `RADAR_FEATURE_PG=1 node --test tests/features.test.mjs`: the 31 feature tests also pass against isolated embedded PostgreSQL, not the user's live Supabase database.
+- `npm test`: 76 passing tests covering authentication, school isolation, API boundaries, memberships/roles, rosters/teacher ownership, scans/evidence/schedules, location/SOS privacy, assistance/guardians, targeted alerts, resources, routing, mock vision, feed parsing, signed callbacks and mocked Supabase Auth/Storage.
+- `RADAR_FEATURE_PG=1 node --test tests/features.test.mjs`: the 32 feature tests also pass against isolated embedded PostgreSQL, not the user's live Supabase database.
 - Production browser checks: operations tabs, room QR, 390px layout, offline reopening, saved photo persistence across reload, no automatic reconnect sends, explicit outbox sync with one evidence link, and the SOS hold. No JavaScript page errors in that scenario. Additional checks cover Gmail sign-up/sign-in, school location persistence, membership approval/role isolation, launch readiness, and rendering a test GLB with actual mapped floor selection.
 - New browser checks cover disposable training isolation, roster preview/commit, custom reports, measured GLB generation/render, local MP4 keyframe sampling, reviewed video labels, room-scan links, candidate route rendering, accessible filtering, missing-route handling, relay file exchange and 390px layout. Direct WebRTC transport is blocked by this runtime (zero usable ICE candidates); physical peer/TURN tests remain pending. Basemap tile fetching is network-dependent; school route geometry renders independently.
 - Local backup command verified against a disposable database; live provider sends, school-specific 3D assets and physical phone cameras were not tested.
@@ -78,3 +78,7 @@ See [SUPABASE.md](SUPABASE.md) for private database setup and [the directory sou
 See [Testing and configuration](TESTING-AND-CONFIGURATION.md) for the new campus-video survey, imports, report builder, official dataset adapter, measured footprints, calibrated pins, sensor protocol, foreground location, peer relay, delivery policies and disposable training launcher. Video keyframes and AI labels need review; full-video reconstruction and verified drone mapping are not implemented. External providers require private settings and real acceptance tests.
 
 Google Gemini is now an alternative to OpenAI for both campus and room suggestions, with separate server credentials and no automatic provider fallback. Eligible accounts may offer a limited free API tier; check Google’s current quotas and data-use terms. See the [Gemini configuration steps](TESTING-AND-CONFIGURATION.md#google-gemini-alternative). Live Gemini connectivity was not verified.
+
+## Interface and field-planning refresh
+
+[The interface refresh guide](INTERFACE-REFRESH.md) includes screenshots, the searchable task workspace, compact responsive campus views, prerequisite-aware empty states, and the new photo/video-frame route sketchbook. Optional AI proposes visible image segments only; saving a sketch/checklist does not activate an evacuation route. Existing verified route planning remains separate.

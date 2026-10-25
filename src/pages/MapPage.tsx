@@ -286,7 +286,7 @@ export function MapPage() {
   return (
     <div
       className={cn(
-        'flex flex-col bg-background',
+        'campus-map-workspace flex flex-col bg-background',
         fullscreen ? 'fixed inset-0 z-[60]' : 'h-[calc(100svh-4rem)] min-h-[520px]',
       )}
     >
@@ -294,13 +294,13 @@ export function MapPage() {
       <div className="map-all-search"><CampusSearch onSelect={result=>{if(result.lat!=null&&result.lng!=null)setFlyTarget([result.lat,result.lng]);if(result.kind==='room'){if(can('buildings:read')){setFocusedRoomId(result.id);setSelectedBuildingId(result.buildingId??null);}else navigate(`/operations?tab=reports&roomId=${result.id}`);}else if(result.kind==='building'&&can('buildings:read')){setFocusedRoomId(null);setSelectedBuildingId(result.id);}}}/></div>
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-2 border-b border-border bg-card px-3 py-2 md:px-4">
-        <div className="relative min-w-[180px] flex-1 md:max-w-sm">
+        <details className="map-filter-disclosure"><summary>Filter markers</summary>        <div className="relative min-w-[180px] flex-1 md:max-w-sm">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Find a building, room, hazard or reference…"
-            aria-label="Search the campus map"
+            placeholder="Filter visible markers…"
+            aria-label="Filter visible map markers"
             className="h-9 pl-9"
           />
           {query && (
@@ -314,6 +314,7 @@ export function MapPage() {
           )}
         </div>
 
+</details>
         <div className="ml-auto flex items-center gap-1.5">
           <span className="hidden items-center gap-1.5 rounded-full border border-border px-2.5 py-1 text-[11px] text-muted-foreground sm:inline-flex">
             <ShieldAlert className="h-3.5 w-3.5" />
@@ -367,7 +368,7 @@ export function MapPage() {
         <MapContainer
           center={center}
           zoom={data?.school.lat == null ? 10 : 17}
-          minZoom={14}
+          minZoom={data?.school.lat == null ? 5 : 14}
           maxZoom={20}
           scrollWheelZoom
           className="h-full w-full"

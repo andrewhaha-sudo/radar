@@ -1,3 +1,4 @@
+import { OperationsNavigator } from '@/components/workspace/OperationsNavigator';
 import {lazy,Suspense} from 'react';
 const AdvancedWorkspace=lazy(()=>import('@/components/advanced/AdvancedWorkspace').then(m=>({default:m.AdvancedWorkspace})));
 import { MembershipRequests } from '@/components/forms/MembershipRequests';
@@ -84,8 +85,8 @@ function ActionForm({
     }
   }
   return (
-    <section className="ops-card">
-      <h3>{title}</h3>
+    <details className="ops-card action-disclosure" open={/^(Report|Request|Submit)/.test(title)}>
+      <summary><span>{title}</span><small>Open form</small></summary>
       <form onSubmit={submit}>
         <fieldset disabled={busy} className="ops-form-grid">
           {fields.map((f) => (
@@ -131,7 +132,7 @@ function ActionForm({
           {message}
         </p>
       )}
-    </section>
+    </details>
   );
 }
 export function OperationsPage() {
@@ -187,7 +188,7 @@ function OperationsContent() {
   const navigate = useNavigate();
   const tab =
     params.get('tab') ??
-    (can('admin:users') ? 'readiness' : can('buildings:read') ? 'rooms' : 'response');
+    'home';
   const [data, setData] = useState<Row | null>(null),
     [error, setError] = useState(''),
     [busy, setBusy] = useState(false);
@@ -314,20 +315,20 @@ function OperationsContent() {
     { id: 'members', name: 'School members', show: can('admin:users') },
     { id: 'guardians', name: 'Guardian updates', show: user?.role === 'parent' },
     { id: 'settings', name: 'Emergency settings', show: can('admin:users') },
-    {id:'advanced',name:'Advanced tools & testing',show:true},
+    {id:'advanced',name:'Campus views & more',show:true},
     { id: 'readiness', name: 'Setup & launch', show: can('admin:users') },
     { id: 'review', name: 'Review patterns', show: can('hazards:read') },
   ].filter((t) => t.show);
   return (
     <div className="stack-page operations-page">
-      <header className="ops-heading">
+      <header className={`ops-heading ${tab!=='home'?'ops-heading-compact':''}`}>
         <span className="command-feature-icon">
           <ShieldCheck size={30} />
         </span>
         <div>
-          <p className="command-eyebrow">RADAR 2.0 · CAMPUS OPERATIONS</p>
-          <h1>Inspection &amp; response workspace</h1>
-          <p>School records, accountable actions, and verified campus information.</p>
+          <p className="command-eyebrow">RADAR / WORKSPACE</p>
+          <h1>Your campus, cared for.</h1>
+          <p>Useful tools for the people who keep school moving.</p>
         </div>
         <button
           className="command-icon-button"
@@ -338,17 +339,7 @@ function OperationsContent() {
           <RefreshCw size={17} />
         </button>
       </header>
-      <nav className="ops-tabs" aria-label="Operations sections">
-        {tabs.map((t) => (
-          <button
-            key={t.id}
-            className={tab === t.id ? 'active' : ''}
-            onClick={() => setParams({ tab: t.id })}
-          >
-            {t.name}
-          </button>
-        ))}
-      </nav>
+      <OperationsNavigator tabs={tabs} tab={tab} onSelect={id=>setParams(id==='home'?{}:id.startsWith('advanced:')?{tab:'advanced',tool:id.split(':')[1]}:{tab:id})}/>
       {error && (
         <p role="alert" className="command-error">
           {error}

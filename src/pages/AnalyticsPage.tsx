@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 'use client';
 
 import { workspaceUrl } from '@/lib/workspace';
@@ -105,12 +106,14 @@ export function AnalyticsPage() {
     ? SEVERITIES.reduce((sum, severity) => sum + data.hazards.severity[severity], 0)
     : 0;
 
+  const hasActivity=Boolean(data&&[data.hazards.total,data.inspections.scannedRooms,data.inspections.scansInRange,data.rollcall.classes,data.resources.total,data.alerts.publishedInRange,data.incidents.active,data.incidents.monitoring,data.incidents.closed,...Object.values(data.recovery.tasks),...Object.values(data.recovery.clearance)].some(value=>value>0));
+
   return (
     <div className="stack-page space-y-5">
       <PageHeader
         eyebrow="Analytics & exports"
-        title="Evidence for the next safety decision"
-        description="Aggregates are computed from records in this installation's database. Every figure links back to hazards, inspections, roll call, alerts, resources, recovery and incidents — nothing is simulated."
+        title="A little evidence. A better decision."
+        description="Look for patterns in your school’s actual records. Change the time window, compare progress, or export the details."
         icon={BarChart3}
         actions={
           <>
@@ -173,6 +176,8 @@ export function AnalyticsPage() {
           <Skeleton className="h-72 w-full" />
           <Skeleton className="h-72 w-full" />
         </div>
+      ) : data && !hasActivity ? (
+        <section className="desk-empty analytics-start"><BarChart3 size={36} strokeWidth={1.3}/><h2>Good insight starts with a few observations.</h2><p>There isn’t enough activity in this view for meaningful trends. Try a wider time window, record an inspection, or add the equipment your school relies on.</p><div><Link className="desk-button primary" to={can('scan:read')?'/scan':'/operations'}>{can('scan:read')?'Start an inspection':'Open your workspace'}</Link><Link className="desk-link" to="/operations?tab=advanced&tool=reports">Build a focused report</Link></div></section>
       ) : data ? (
         <>
           <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">

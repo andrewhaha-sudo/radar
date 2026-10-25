@@ -1525,6 +1525,96 @@ test('campus video surveys require reviewed school-scoped labels and never fabri
     200,
   );
 });
+test('image route sketches remain school-scoped drafts, require meaningful geometry and never activate evacuation routes', async () => {
+  const image = 'data:image/jpeg;base64,YWJj';
+  const payload = {
+    title: 'Field-walk fixture',
+    source: 'photo',
+    image,
+    paths: [
+      {
+        name: 'Visible walkway',
+        description: 'Needs field walk',
+        points: [
+          [0.1, 0.2],
+          [0.4, 0.5],
+          [0.8, 0.6],
+        ],
+      },
+    ],
+    checks: {},
+    notes: '',
+    uncertainties: ['Check the gate'],
+  };
+  assert.equal((await post(student, '/api/advanced/image-paths', payload)).status, 403);
+  assert.equal((await post(teacher, '/api/advanced/image-paths', payload)).status, 403);
+  assert.equal(
+    (
+      await post(admin, '/api/advanced/image-paths', {
+        ...payload,
+        paths: [
+          {
+            name: 'Invalid GPS',
+            points: [
+              [14, 122],
+              [15, 123],
+            ],
+          },
+        ],
+      })
+    ).status,
+    400,
+  );
+  assert.equal(
+    (await post(admin, '/api/advanced/image-paths', { ...payload, checks: { surface: true } }))
+      .status,
+    400,
+  );
+  const before = assertOK(await api(admin, '/api/evacuation')).routes.length;
+  const saved = assertOK(await post(admin, '/api/advanced/image-paths', payload), 201);
+  const read = assertOK(await api(admin, `/api/advanced/image-paths/${saved.id}`));
+  assert.equal(read.paths[0].points.length, 3);
+  assert.equal(read.checks.surface, false);
+  assert.equal(
+    (await post(responder, '/api/advanced/image-paths', { ...payload, id: saved.id })).status,
+    403,
+  );
+  const copy = assertOK(
+    await post(responder, '/api/advanced/image-paths', { ...payload, title: 'Responder copy' }),
+    201,
+  );
+  assert.equal(
+    (await api(responder, `/api/advanced/image-paths/${saved.id}`, { method: 'DELETE' })).status,
+    403,
+  );
+  assert.equal(
+    (await api(responder, `/api/advanced/image-paths/${copy.id}`, { method: 'DELETE' })).status,
+    200,
+  );
+  assert.equal(
+    (await api(admin, `/api/advanced/image-paths/${saved.id}`, { scope: '' })).status,
+    409,
+  );
+  assertOK(
+    await post(admin, '/api/advanced/image-paths', {
+      ...payload,
+      id: saved.id,
+      checks: { surface: true, access: true, obstructions: true, destination: true },
+      notes: 'Synthetic field-check fixture only',
+    }),
+    201,
+  );
+  assert.equal(assertOK(await api(admin, '/api/evacuation')).routes.length, before);
+  assert.equal(
+    (await post(admin, '/api/advanced/image-paths/suggest', { image, consent: false })).status,
+    400,
+  );
+  assert.equal(
+    (await api(admin, `/api/advanced/image-paths/${saved.id}`, { method: 'DELETE' })).status,
+    200,
+  );
+  assert.equal((await api(admin, `/api/advanced/image-paths/${saved.id}`)).status, 404);
+});
 test('revoking school membership removes access while retaining historical attendance', async () => {
   const id = users.find((u) => u.role === 'student').id;
   assertOK(await api(admin, `/api/members/${id}`, { method: 'DELETE' }));

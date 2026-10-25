@@ -4,6 +4,8 @@ import { validateVideoFrames, suggestCampusBuildings } from '../server/campus-vi
 const frames = [{ time: 2, image: 'data:image/jpeg;base64,YWJj' }];
 test('video frames are bounded and AI building candidates have valid image positions, without claimed identities', async () => {
   assert.throws(() => validateVideoFrames(Array(7).fill(frames[0])));
+  assert.equal(validateVideoFrames([{ ...frames[0], kind: 'photo' }])[0].kind, 'photo');
+  assert.equal(validateVideoFrames(frames)[0].kind, 'video-frame');
   assert.throws(() => validateVideoFrames([{ time: 2, image: 'https://private.example/image' }]));
   assert.throws(() => validateVideoFrames([{ ...frames[0], time: NaN }]));
   const request = async () =>

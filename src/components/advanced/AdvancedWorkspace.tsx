@@ -1,3 +1,8 @@
+import { Prerequisite } from '@/components/workspace/Prerequisite';
+import { PhotoRouteStudio } from './PhotoRouteStudio';
+import { TaskLibrary } from '@/components/workspace/TaskLibrary';
+import { ArrowLeft } from 'lucide-react';
+import { specialistTasks } from '@/components/workspace/task-catalog';
 import { useSearchParams } from 'react-router-dom';
 import 'leaflet/dist/leaflet.css';
 import { CampusVideoSurvey } from './CampusVideoSurvey';
@@ -17,58 +22,69 @@ import { TestingPanel } from './TestingPanel';
 import { ToolForm, type Row } from './tools';
 export function AdvancedWorkspace() {
   const { can } = useAuth();
-  const [params] = useSearchParams();
-  const [tab, setTab] = useState(params.get('tool') === 'video' ? 'video' : 'relay'),
-    [data, setData] = useState<Row | null>(null),
+  const [params, setParams] = useSearchParams();
+  const tab = params.get('tool') || 'library';
+  function setTab(id: string) {
+    const next = new URLSearchParams(params);
+    next.set('tab', 'advanced');
+    if (id !== 'paths') {
+      next.delete('surveyId');
+      next.delete('frame');
+    }
+    if (id === 'library') next.delete('tool');
+    else next.set('tool', id);
+    setParams(next);
+  }
+  const [data, setData] = useState<Row | null>(null),
     [buildings, setBuildings] = useState<Row[]>([]),
     [policy, setPolicy] = useState<Row | null>(null),
-    [error, setError] = useState('');
+    [error, setError] = useState(''),
+    [loaded, setLoaded] = useState(false);
   async function load() {
+    setError('');
     try {
       setData(await api.get('/api/operations'));
       if (can('buildings:read')) setBuildings((await api.get<Row>('/api/map')).buildings);
       if (can('alerts:publish')) setPolicy(await api.get('/api/advanced/delivery-policy'));
     } catch (err) {
       setError(errorMessage(err));
+    } finally {
+      setLoaded(true);
     }
   }
   useEffect(() => {
-    void load();
-  }, [can]);
-  const tabs = [
-    ['video', 'Campus video survey', can('buildings:read')],
-    ['testing', 'Test notebook', can('admin:users')],
-    ['imports', 'Roster import', can('rollcall:write')],
-    ['reports', 'Custom reports', can('hazards:read')],
-    ['layers', 'Official datasets', can('map:read')],
-    ['models', 'Measured model builder', can('buildings:read')],
-    ['calibration', 'Calibrated pins', can('scan:write')],
-    ['occupancy', 'Occupancy readings', can('evacuation:read')],
-    ['devices', 'Count devices', can('admin:users')],
-    ['location', 'Foreground GPS', true],
-    ['relay', 'Peer relay', true],
-    ['delivery', 'Delivery policy', can('alerts:publish')],
-  ];
+    if (tab !== 'library') void load();
+  }, [can, tab]);
+  const tasks = specialistTasks(can);
+  const current = tasks.find((task) => task.id === tab);
+  if (!current)
+    return (
+      <TaskLibrary
+        tasks={tasks}
+        onSelect={setTab}
+        storageKey="specialist"
+        title="Make more of your campus."
+        description="Explore imagery, plan improvements, or connect the services you actually need."
+      />
+    );
   return (
     <div className="advanced-workspace">
-      <nav className="advanced-tabs" aria-label="Advanced tools">
-        {tabs
-          .filter((row) => row[2])
-          .map((row) => (
-            <button
-              key={String(row[0])}
-              className={tab === row[0] ? 'active' : ''}
-              onClick={() => setTab(String(row[0]))}
-            >
-              {row[1]}
-            </button>
-          ))}
-      </nav>
+      <div className="workspace-context specialist-context">
+        <button className="desk-back" onClick={() => setTab('library')}>
+          <ArrowLeft size={16} /> Explore tools
+        </button>
+        <div>
+          <span>{current.group}</span>
+          <h2>{current.title}</h2>
+          <p>{current.description}</p>
+        </div>
+      </div>
       {error && (
         <p role="alert" className="text-danger">
           {error}
         </p>
       )}
+      {tab === 'paths' && can('evacuation:read') && <PhotoRouteStudio />}
       {tab === 'video' && can('buildings:read') && (
         <CampusVideoSurvey buildings={buildings} rooms={data?.rooms ?? []} />
       )}
@@ -76,14 +92,36 @@ export function AdvancedWorkspace() {
       {tab === 'imports' && can('rollcall:write') && <RosterImport />}
       {tab === 'reports' && can('hazards:read') && <ReportBuilder />}
       {tab === 'layers' && can('map:read') && <OfficialLayers />}
-      {tab === 'models' && can('buildings:read') && (
-        <MeasuredModelBuilder buildings={buildings} />
-      )}{' '}
+      {tab === 'models' &&
+        can('buildings:read') &&
+        (!loaded && !error ? (
+          <p role="status">Loading campus spaces…</p>
+        ) : loaded && !error && !buildings.length ? (
+          <Prerequisite
+            title="Start with real spaces."
+            description="A measured campus view needs registered buildings, rooms and surveyed floor plans. Add those first, then build a footprint model here."
+            to="/buildings"
+            action="Open building directory"
+          />
+        ) : (
+          <MeasuredModelBuilder buildings={buildings} />
+        ))}{' '}
       {tab === 'calibration' && can('scan:write') && <CalibrationPanel />}
       {tab === 'occupancy' && can('evacuation:read') && <OccupancyReadings />}
-      {tab === 'devices' && can('admin:users') && (
-        <DevicePanel points={data?.assembly ?? []} rooms={data?.rooms ?? []} />
-      )}{' '}
+      {tab === 'devices' &&
+        can('admin:users') &&
+        (!loaded && !error ? (
+          <p role="status">Loading campus spaces…</p>
+        ) : loaded && !error && !data?.assembly?.length && !data?.rooms?.length ? (
+          <Prerequisite
+            title="Give the reading a place to belong."
+            description="Register a room or assembly area before connecting a count device. Every reading needs a real target."
+            to="/buildings"
+            action="Set up campus spaces"
+          />
+        ) : (
+          <DevicePanel points={data?.assembly ?? []} rooms={data?.rooms ?? []} />
+        ))}{' '}
       {tab === 'location' && <ForegroundLocation incidents={data?.sos ?? []} />}{' '}
       {tab === 'relay' && <PeerRelay />}
       {tab === 'delivery' && can('alerts:publish') && (

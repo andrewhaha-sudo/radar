@@ -1,3 +1,4 @@
+import { Prerequisite } from '@/components/workspace/Prerequisite';
 import { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet';
 import { api, errorMessage } from '@/lib/api';
@@ -10,6 +11,7 @@ export function OccupancyReadings() {
   async function load() {
     try {
       setData(await api.get('/api/advanced/occupancy'));
+      setError('');
     } catch (err) {
       setError(errorMessage(err));
     }
@@ -26,6 +28,21 @@ export function OccupancyReadings() {
       target: 'room at building pin',
     })),
   ];
+  if (!data && !error)
+    return (
+      <p role="status" className="studio-caption">
+        Checking recent counts…
+      </p>
+    );
+  if (data && !error && !rows.length)
+    return (
+      <Prerequisite
+        title="Counts need a source."
+        description="No aggregate readings have reached this school. Staff can record assembly headcounts or connect a count device. A map of empty markers would not be a population estimate."
+        to="/operations?tab=assembly"
+        action="Open assembly areas"
+      />
+    );
   return (
     <section className="ops-card">
       <h2>Recorded occupancy and capacity</h2>

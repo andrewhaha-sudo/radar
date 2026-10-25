@@ -1,0 +1,25 @@
+{
+  "name": "RADAR — Campus Safety",
+  "short_name": "RADAR",
+  "description": "Campus safety, hazard tracking, room scanning, alerts, evacuation, recovery and analytics for schools.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#070C16",
+  "theme_color": "#12233F",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}

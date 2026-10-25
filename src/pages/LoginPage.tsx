@@ -1,0 +1,267 @@
+'use client';
+
+import { useState } from 'react';
+import { Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { useAuth } from '@/context/AuthContext';
+import { errorMessage } from '@/lib/api';
+import {
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  ShieldCheck,
+  MapPinned,
+  ScanEye,
+  AlertTriangle,
+  ChevronDown,
+} from 'lucide-react';
+
+const SEEDED_ACCOUNTS = [
+  { role: 'Administrator', email: 'admin@northridge.edu', password: 'Admin#2026' },
+  { role: 'Inspector', email: 'inspector@northridge.edu', password: 'Inspect#2026' },
+  { role: 'Teacher', email: 'teacher@northridge.edu', password: 'Teach#2026' },
+  { role: 'Responder', email: 'responder@northridge.edu', password: 'Respond#2026' },
+  { role: 'Student', email: 'student@northridge.edu', password: 'Student#2026' },
+  { role: 'Parent', email: 'parent@northridge.edu', password: 'Parent#2026' },
+];
+
+export function LoginPage() {
+  const { user, loading: authLoading, login } = useAuth();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [showAccounts, setShowAccounts] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const from = (location.state as { from?: string } | null)?.from ?? '/dashboard';
+
+  if (!authLoading && user) {
+    return <Navigate to={from} replace />;
+  }
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setError(null);
+    if (!email.trim() || !password) {
+      setError('Enter your email address and password.');
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await login(email.trim(), password);
+      navigate(from, { replace: true });
+    } catch (err) {
+      setError(errorMessage(err));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const applyAccount = (account: (typeof SEEDED_ACCOUNTS)[number]) => {
+    setEmail(account.email);
+    setPassword(account.password);
+    setError(null);
+    setShowAccounts(false);
+  };
+
+  return (
+    <div className="grid min-h-svh bg-background lg:grid-cols-2">
+      {/* Brand panel */}
+      <div className="relative hidden flex-col justify-between overflow-hidden bg-sidebar p-12 lg:flex">
+        <div
+          className="pointer-events-none absolute -left-24 -top-24 h-96 w-96 rounded-full opacity-20 blur-3xl"
+          style={{ background: 'var(--primary)' }}
+        />
+        <div
+          className="pointer-events-none absolute -bottom-32 right-0 h-96 w-96 rounded-full opacity-10 blur-3xl"
+          style={{ background: 'var(--accent-solid)' }}
+        />
+
+        <div className="relative flex items-center gap-3">
+          <span className="radar-mark radar-mark--lg" aria-hidden="true">
+            <span className="radar-mark__sweep" />
+            <span className="radar-mark__ring radar-mark__ring--1" />
+            <span className="radar-mark__ring radar-mark__ring--2" />
+            <span className="radar-mark__core">R</span>
+          </span>
+          <div>
+            <p className="text-sm font-semibold tracking-[0.16em]">RADAR</p>
+            <p className="text-xs text-muted-foreground">Campus safety & disaster response</p>
+          </div>
+        </div>
+
+        <div className="relative max-w-md space-y-6">
+          <h1 className="text-balance text-4xl font-semibold leading-tight text-foreground">
+            One operational picture for a safer campus.
+          </h1>
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            Map every building and room, run guided inspections, and keep hazard findings, evidence and
+            corrective actions in a single auditable record.
+          </p>
+
+          <ul className="space-y-4">
+            {[
+              { icon: MapPinned, title: 'Live campus map', body: 'Buildings, rooms, equipment and evacuation routes.' },
+              { icon: ScanEye, title: 'Guided room scans', body: 'Capture evidence and track findings to verification.' },
+              { icon: AlertTriangle, title: 'Hazard workspace', body: 'Severity, ownership, timelines and corrective actions.' },
+              { icon: ShieldCheck, title: 'Role-based access', body: 'Server-enforced permissions and an audit trail.' },
+            ].map((feature) => {
+              const Icon = feature.icon;
+              return (
+                <li key={feature.title} className="flex items-start gap-3">
+                  <span className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-accent text-accent-foreground">
+                    <Icon className="h-4 w-4" />
+                  </span>
+                  <span>
+                    <span className="block text-sm font-medium text-foreground">{feature.title}</span>
+                    <span className="block text-xs text-muted-foreground">{feature.body}</span>
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+
+        <p className="relative text-xs text-muted-foreground">
+          RADAR does not contact emergency services automatically. Always call your local emergency
+          number when there is immediate danger.
+        </p>
+      </div>
+
+      {/* Form panel */}
+      <div className="flex items-center justify-center px-4 py-10 sm:px-8">
+        <div className="w-full max-w-md">
+          <div className="mb-6 flex items-center gap-3 lg:hidden">
+            <span className="radar-mark" aria-hidden="true">
+              <span className="radar-mark__sweep" />
+              <span className="radar-mark__ring radar-mark__ring--1" />
+              <span className="radar-mark__ring radar-mark__ring--2" />
+              <span className="radar-mark__core">R</span>
+            </span>
+            <div>
+              <p className="text-sm font-semibold tracking-[0.16em]">RADAR</p>
+              <p className="text-xs text-muted-foreground">Campus safety</p>
+            </div>
+          </div>
+
+          <Card hover={false} className="shadow-xl">
+            <CardHeader>
+              <CardTitle>Sign in</CardTitle>
+              <CardDescription>Use your school account to continue.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+                <div className="relative">
+                  <Mail className="pointer-events-none absolute left-3 top-[38px] h-4 w-4 text-muted-foreground" />
+                  <Input
+                    label="Email address"
+                    type="email"
+                    autoComplete="username"
+                    placeholder="name@school.edu"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="pl-9"
+                    disabled={submitting}
+                  />
+                </div>
+
+                <div className="relative">
+                  <Lock className="pointer-events-none absolute left-3 top-[38px] h-4 w-4 text-muted-foreground" />
+                  <Input
+                    label="Password"
+                    type={showPassword ? 'text' : 'password'}
+                    autoComplete="current-password"
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="pl-9 pr-10"
+                    disabled={submitting}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((p) => !p)}
+                    className="absolute right-2 top-[32px] grid h-8 w-8 place-items-center rounded-md text-muted-foreground hover:bg-accent"
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+
+                {error && (
+                  <div
+                    role="alert"
+                    className="rounded-lg border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger"
+                  >
+                    {error}
+                  </div>
+                )}
+
+                <Button type="submit" className="w-full" loading={submitting}>
+                  {submitting ? 'Signing in…' : 'Sign in'}
+                </Button>
+              </form>
+
+              <p className="text-center text-[11px] text-muted-foreground">
+                Sessions are stored in an HttpOnly cookie. Access is enforced on the server.
+              </p>
+
+              {/* Development convenience only: seeded credentials must never be
+                  printed on a production login screen. */}
+              {import.meta.env.DEV && (
+                <div className="rounded-lg border border-dashed border-border bg-muted/40">
+                  <button
+                    type="button"
+                    onClick={() => setShowAccounts((p) => !p)}
+                    className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-xs font-medium text-muted-foreground"
+                    aria-expanded={showAccounts}
+                  >
+                    <span className="flex items-center gap-2">
+                      <Badge variant="outline">Dev</Badge>
+                      Seeded accounts for this installation
+                    </span>
+                    <ChevronDown
+                      className={`h-4 w-4 transition-transform ${showAccounts ? 'rotate-180' : ''}`}
+                    />
+                  </button>
+                  {showAccounts && (
+                    <div className="border-t border-border p-2">
+                      <p className="px-1 pb-2 text-[11px] text-muted-foreground">
+                        Development build only. These accounts exist in the local database — replace them
+                        before any real deployment.
+                      </p>
+                      <ul className="space-y-1">
+                        {SEEDED_ACCOUNTS.map((account) => (
+                          <li key={account.email}>
+                            <button
+                              type="button"
+                              onClick={() => applyAccount(account)}
+                              className="flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left text-xs transition-colors hover:bg-accent"
+                            >
+                              <span className="min-w-0">
+                                <span className="block font-medium text-foreground">{account.role}</span>
+                                <span className="block truncate font-mono text-[11px] text-muted-foreground">
+                                  {account.email}
+                                </span>
+                              </span>
+                              <span className="shrink-0 text-[11px] font-medium text-accent-foreground">Use</span>
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}

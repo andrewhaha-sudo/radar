@@ -1,3 +1,4 @@
+import { useSearchParams } from 'react-router-dom';
 import 'leaflet/dist/leaflet.css';
 import { CampusVideoSurvey } from './CampusVideoSurvey';
 import { OccupancyReadings } from './OccupancyReadings';
@@ -16,7 +17,8 @@ import { TestingPanel } from './TestingPanel';
 import { ToolForm, type Row } from './tools';
 export function AdvancedWorkspace() {
   const { can } = useAuth();
-  const [tab, setTab] = useState('relay'),
+  const [params] = useSearchParams();
+  const [tab, setTab] = useState(params.get('tool') === 'video' ? 'video' : 'relay'),
     [data, setData] = useState<Row | null>(null),
     [buildings, setBuildings] = useState<Row[]>([]),
     [policy, setPolicy] = useState<Row | null>(null),

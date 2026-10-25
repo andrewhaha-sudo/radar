@@ -36,9 +36,11 @@ Open **Campus operations → Advanced tools & testing → Campus video survey**.
 1. Choose a local walking/drone video. The full video remains on the device; select up to six overview keyframes automatically or capture views manually with the player. Browser format/codec support applies; the video must have a seekable duration of up to four hours.
 2. Inspect frames for private student information. With permission, explicitly send selected JPEGs to the configured vision provider. Without a provider, click buildings to add manual numbered labels.
 3. Review every suggested building and duplicate view. Match labels to real registered buildings; candidate numbers are draft labels, not official building IDs. No coordinates, room counts or verified hazards are invented.
-4. Open the building directory to register its actual floors/rooms. Follow each linked room to the existing inspection workflow. AI findings and approximate pins still need human review.
-5. Review and save the survey. Saved keyframes/labels belong to that school's private workspace and can be deleted by an administrator. The full video is not archived or uploaded by this workflow.
-6. Request a candidate route for a linked building. This calls the existing verified-walkway planner, accounting for registered closures/capacity/accessibility data. If connected verified paths are absent, it returns unavailable. Video-visible pavement is not proof of a safe route.
+4. Without AI, click each visible building in a frame, match repeated views to the same registered building, then choose **Number marked buildings**. This numbers marked buildings only; it does not detect unmarked buildings.
+5. Open the building directory to register its actual floors/rooms. Follow each linked room to the existing inspection workflow. AI findings and approximate pins still need human review.
+6. Review and save the survey. Saved keyframes/labels belong to that school's private workspace and can be deleted by an administrator. The full video is not archived or uploaded by this workflow.
+7. Under **Saved school surveys**, choose **Show on dashboard** for the reviewed survey. Return to Dashboard for frame selection, 1–4× zoom, scroll-to-pan and clickable building labels. Changing this selection affects only the selected school. Deleting the selected survey removes its dashboard view.
+8. Request a candidate route for a linked building. This calls the existing verified-walkway planner, accounting for registered closures/capacity/accessibility data. If connected verified paths are absent, it returns unavailable. Video-visible pavement is not proof of a safe route.
 
 Aerial footage supplies an aerial *view*, not a georeferenced orthomosaic or reconstructed 3D campus. A walking video cannot automatically become Google Street View or an accurate drone map. Those require calibrated imagery, surveying and reconstruction tooling. Use actual panoramas/GLB assets and verified school coordinates for those existing map modes. Six sampled frames can miss buildings and hazards; this is assisted review, not exhaustive whole-video analysis.
 
@@ -99,3 +101,7 @@ npm run backup:verify -- .backups/<snapshot-directory>
 ```
 
 Stop writes for a consistent application snapshot. Integrity/foreign-key checks do not prove a full restore; restore into an isolated installation and inspect records/uploads. Hosted PostgreSQL and Storage backups need separate off-host retention and a rehearsed project restore. `.env` is not included in backups.
+
+### Vision unavailable
+
+“Configure the vision provider” means the running server has no `RADAR_VISION_API_KEY`. Obtain your own OpenAI API key from https://platform.openai.com/api-keys, run `npm run setup:integrations` in the project terminal, enter it at **Vision API key**, then stop/restart `npm run dev`. On Vercel add that server environment variable and redeploy. Do not use a Supabase key, expose the key with a `VITE_` prefix or send it in chat. Training mode deliberately disables AI even if a key exists; use normal development/hosting for actual analysis. The interface now reports this status and disables unavailable AI actions. Manual marking/numbering, saving and dashboard display remain available without AI.

@@ -30,7 +30,8 @@ export function CampusVideoSurvey({ buildings, rooms }: { buildings: Row[]; room
     [notice, setNotice] = useState(''),
     [surveys, setSurveys] = useState<Row[]>([]),
     [route, setRoute] = useState<Row | null>(null),
-    [accessible, setAccessible] = useState(false);
+    [accessible, setAccessible] = useState(false),
+    [provider, setProvider] = useState<{ configured: boolean; training: boolean } | null>(null);
   async function load() {
     try {
       setSurveys((await api.get<Row>('/api/advanced/video-surveys')).surveys);
@@ -40,6 +41,10 @@ export function CampusVideoSurvey({ buildings, rooms }: { buildings: Row[]; room
   }
   useEffect(() => {
     void load();
+    api
+      .get<{ configured: boolean; training: boolean }>('/api/advanced/video-provider')
+      .then(setProvider)
+      .catch(() => {});
     return () => {
       if (objectUrl.current) URL.revokeObjectURL(objectUrl.current);
     };
@@ -105,6 +110,25 @@ export function CampusVideoSurvey({ buildings, rooms }: { buildings: Row[]; room
         JPEG frames can be sent to AI with your permission and saved to this school. Review for
         faces, student details and other private information before sharing.
       </p>
+      {provider && (!provider.configured || provider.training) && (
+        <div role="status" className="ops-card">
+          <h3>
+            {provider.training
+              ? 'Training mode: AI calls are disabled'
+              : 'AI building detection needs configuration'}
+          </h3>
+          <p>
+            For local Node.js, run <code>npm run setup:integrations</code> in your project terminal,
+            enter your OpenAI API key at “Vision API key”, then restart <code>npm run dev</code>. On
+            Vercel, set the server variable <code>RADAR_VISION_API_KEY</code> and redeploy. Your
+            Supabase key cannot enable vision. Keep the private key out of chat.
+          </p>
+          <p>
+            You can number buildings now: capture a frame, click each building in the image, then
+            choose “Number marked buildings”.
+          </p>
+        </div>
+      )}
       <label>
         Campus video
         <input
@@ -222,7 +246,9 @@ export function CampusVideoSurvey({ buildings, rooms }: { buildings: Row[]; room
             I have permission to send these selected frames to the configured AI provider.
           </label>
           <button
-            disabled={busy || !consent || !can('scan:write')}
+            disabled={
+              busy || !consent || !can('scan:write') || !provider?.configured || provider?.training
+            }
             onClick={() =>
               void action(async () => {
                 const r = await api.post<Row>('/api/advanced/video-surveys/analyze', {
@@ -236,6 +262,25 @@ export function CampusVideoSurvey({ buildings, rooms }: { buildings: Row[]; room
             }
           >
             Suggest building labels with AI
+          </button>
+          <button
+            disabled={busy || !candidates.length || !can('admin:users')}
+            onClick={() => {
+              const numbers = new Map<string, number>();
+              setCandidates(
+                candidates.map((c, i) => {
+                  const key = c.buildingId ? `building-${c.buildingId}` : `label-${i}`;
+                  if (!numbers.has(key)) numbers.set(key, numbers.size + 1);
+                  return { ...c, label: `Building ${numbers.get(key)}` };
+                }),
+              );
+              setReviewed(false);
+              setNotice(
+                'Marked buildings numbered. Matching building links reuse the same number. Review and save.',
+              );
+            }}
+          >
+            Number marked buildings
           </button>
           {candidates.map((c, i) => (
             <div key={i} className="ops-card">
@@ -393,6 +438,22 @@ export function CampusVideoSurvey({ buildings, rooms }: { buildings: Row[]; room
           >
             {s.title}
           </button>
+          {can('admin:users') && (
+            <button
+              disabled={busy}
+              onClick={() =>
+                void action(async () => {
+                  const result = await api.post<Row>(
+                    `/api/advanced/video-surveys/${s.id}/dashboard`,
+                    {},
+                  );
+                  setNotice(result.note);
+                })
+              }
+            >
+              Show on dashboard
+            </button>
+          )}
           {can('admin:users') && (
             <button
               disabled={busy}

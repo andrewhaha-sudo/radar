@@ -110,6 +110,51 @@ export async function suggestCampusBuildings(
 export function campusVideoHandlers(h) {
   const { requireUser, requirePermission, readJson, json, HttpError } = h;
   return {
+    'GET /api/advanced/video-provider': async (ctx) => {
+      const user = await requireUser(ctx.req);
+      requirePermission(user, 'buildings:read');
+      return json(ctx.res, 200, {
+        configured: Boolean(process.env.RADAR_VISION_API_KEY),
+        training: process.env.RADAR_TEST_LAB === '1',
+      });
+    },
+    'GET /api/campus-close-view': async (ctx) => {
+      const user = await requireUser(ctx.req);
+      requirePermission(user, 'map:read');
+      const setting = await db
+        .prepare("SELECT value FROM school_settings WHERE key='campus_video_dashboard'")
+        .get();
+      const row = setting
+        ? await db
+            .prepare('SELECT id,title,payload FROM campus_video_surveys WHERE id=?')
+            .get(Number(JSON.parse(setting.value).surveyId))
+        : null;
+      if (!row) return json(ctx.res, 200, { survey: null });
+      const payload = JSON.parse(row.payload);
+      for (const candidate of payload.candidates) {
+        if (candidate.buildingId)
+          candidate.buildingName =
+            (await db.prepare('SELECT name FROM buildings WHERE id=?').get(candidate.buildingId))
+              ?.name ?? '';
+      }
+      return json(ctx.res, 200, { survey: { ...row, payload } });
+    },
+    'POST /api/advanced/video-surveys/:id/dashboard': async (ctx) => {
+      const user = await requireUser(ctx.req);
+      requirePermission(user, 'admin:users');
+      const id = Number(ctx.params.id);
+      if (!(await db.prepare('SELECT id FROM campus_video_surveys WHERE id=?').get(id)))
+        throw new HttpError(404, 'Save the survey first.');
+      await db
+        .prepare(
+          "INSERT INTO school_settings(key,value,updated_at) VALUES ('campus_video_dashboard',?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=excluded.updated_at",
+        )
+        .run(JSON.stringify({ surveyId: id }), nowIso());
+      await audit(user.id, 'video_survey.dashboard', 'campus_video_survey', id, {});
+      return json(ctx.res, 200, {
+        note: 'Campus view is now available on this school’s dashboard.',
+      });
+    },
     'GET /api/advanced/video-surveys': async (ctx) => {
       const user = await requireUser(ctx.req);
       requirePermission(user, 'buildings:read');

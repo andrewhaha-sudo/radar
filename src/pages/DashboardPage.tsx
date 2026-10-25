@@ -1,3 +1,4 @@
+import { CampusCloseView } from '@/components/advanced/CampusCloseView';
 import { useCallback, useEffect, useState, type ElementType } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet';
@@ -57,6 +58,7 @@ export function DashboardPage() {
       {can('hazards:read') && <Metric icon={ClipboardCheck} title="Pending Review" value={k?.pendingReview} hint="Awaiting verification" tone="amber" onClick={() => navigate('/hazards?status=pending_review')}/>}
       {can('alerts:read') && <Metric icon={Bell} title="Active Alerts" value={k?.activeAlertCount} hint={k?.alertLevel ? `${k.alertLevel} alert level` : 'No active alerts'} tone="pink" onClick={() => navigate('/alerts')}/>}
     </div>
+    <CampusCloseView revision={data?.generatedAt}/>
     <div className="command-main-grid">
       <section className="command-panel command-map-panel"><PanelTitle title="Campus Map" action="Full map" onClick={() => navigate('/map')}/>
         <div className="command-map">

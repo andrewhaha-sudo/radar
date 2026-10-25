@@ -1485,6 +1485,29 @@ test('campus video surveys require reviewed school-scoped labels and never fabri
   assert.equal(saved.status, 201);
   const read = await api(admin, `/api/advanced/video-surveys/${saved.body.id}`);
   assert.equal(read.body.payload.candidates[0].buildingId, null);
+  assert.equal((await api(admin, '/api/advanced/video-provider')).body.configured, false);
+  assert.equal(
+    (
+      await api(student, `/api/advanced/video-surveys/${saved.body.id}/dashboard`, {
+        method: 'POST',
+        body: {},
+      })
+    ).status,
+    403,
+  );
+  assert.equal(
+    (
+      await api(admin, `/api/advanced/video-surveys/${saved.body.id}/dashboard`, {
+        method: 'POST',
+        body: {},
+      })
+    ).status,
+    200,
+  );
+  const closeView = await api(admin, '/api/campus-close-view');
+  assert.equal(closeView.body.survey.id, saved.body.id);
+  assert.equal(closeView.body.survey.payload.frames.length, 1);
+
   assert.equal(
     (
       await api(admin, `/api/advanced/video-surveys/${saved.body.id}`, {

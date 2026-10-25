@@ -50,9 +50,9 @@ const NAV_SECTIONS: Array<{ label: string; items: NavItem[] }> = [
     label: 'Operate',
     items: [
       { title: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-      { title: 'Campus map', href: '/map', icon: MapIcon },
+      { title: 'Interactive Map', href: '/map', icon: MapIcon },
       { title: 'Room scanning', href: '/scan', icon: ScanEye, permission: 'scan:read' },
-      { title: 'Hazards', href: '/hazards', icon: AlertTriangle, permission: 'hazards:read', badge: 'hazards' },
+      { title: 'Hazard Reports', href: '/hazards', icon: AlertTriangle, permission: 'hazards:read', badge: 'hazards' },
       { title: 'Roll call', href: '/rollcall', icon: Activity, permission: 'rollcall:read' },
       { title: 'Incidents', href: '/incidents', icon: ShieldAlert, permission: 'incidents:read', badge: 'incidents' },
     ],
@@ -92,7 +92,7 @@ const NAV_SECTIONS: Array<{ label: string; items: NavItem[] }> = [
 ];
 
 function SidebarBody({ onNavigate }: { onNavigate?: () => void }) {
-  const { user, school, can, logout } = useAuth();
+  const { user, can, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [unread, setUnread] = useState(0);
@@ -155,11 +155,11 @@ function SidebarBody({ onNavigate }: { onNavigate?: () => void }) {
             <span className="radar-mark__core">R</span>
           </span>
           <span className="min-w-0">
-            <span className="block truncate text-sm font-semibold tracking-[0.14em] text-foreground">
+            <span className="block truncate text-2xl font-extrabold tracking-[0.1em] text-foreground">
               RADAR
             </span>
             <span className="block truncate text-[11px] text-muted-foreground">
-              {school?.name ?? 'School safety'}
+              Safer Schools. Stronger Communities.
             </span>
           </span>
         </button>
@@ -177,8 +177,8 @@ function SidebarBody({ onNavigate }: { onNavigate?: () => void }) {
           const items = section.items.filter((item) => !item.permission || can(item.permission));
           if (items.length === 0) return null;
           return (
-            <div key={section.label} className="mb-5">
-              <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+            <div key={section.label} className="mb-2">
+              <p className="sr-only px-3 pb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                 {section.label}
               </p>
               <div className="space-y-1">
@@ -200,7 +200,7 @@ function SidebarBody({ onNavigate }: { onNavigate?: () => void }) {
                       key={item.href}
                       onClick={() => go(item.href)}
                       className={cn(
-                        'group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
+                        'group flex w-full items-center gap-3 rounded-lg px-3 py-2 text-xs font-medium transition-colors',
                         active
                           ? 'bg-primary text-primary-foreground shadow-sm'
                           : 'text-muted-foreground hover:bg-accent hover:text-foreground',
@@ -266,7 +266,7 @@ function SidebarBody({ onNavigate }: { onNavigate?: () => void }) {
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   return (
     <>
-      <aside className="sticky top-0 hidden h-svh w-72 shrink-0 flex-col border-r border-border bg-sidebar lg:flex">
+      <aside className="sticky top-0 hidden h-svh w-60 shrink-0 flex-col border-r border-border bg-sidebar lg:flex">
         <SidebarBody />
       </aside>
 

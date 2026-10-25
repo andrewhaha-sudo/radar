@@ -2,7 +2,8 @@
 
 import { WelcomeIntro, LoginShowcase } from '@/components/layout/PreparednessCarousel';
 
-import { useEffect, useState } from 'react';
+import { BrandLaunch } from '@/components/layout/BrandLaunch';
+import { useCallback, useEffect, useState } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -39,6 +40,23 @@ const SEEDED_ACCOUNTS = [
 
 export function LoginPage() {
   const { user, loading: authLoading, login } = useAuth();
+  const [launchSeen, setLaunchSeen] = useState(() => {
+    try {
+      return sessionStorage.getItem('radar:launch:v1') === '1';
+    } catch {
+      return false;
+    }
+  });
+  const finishLaunch = useCallback(() => {
+    try {
+      sessionStorage.setItem('radar:launch:v1', '1');
+    } catch {}
+    setLaunchSeen(true);
+  }, []);
+  function replayOpening() {
+    setWelcomeSeen(false);
+    setLaunchSeen(false);
+  }
   const [welcomeSeen, setWelcomeSeen] = useState(() => {
     try {
       return sessionStorage.getItem('radar:welcome:v1') === '1';
@@ -128,7 +146,9 @@ export function LoginPage() {
     setShowAccounts(false);
   };
 
-  if (!welcomeSeen) return <WelcomeIntro onContinue={continueToLogin} />;
+  if (!launchSeen) return <BrandLaunch onComplete={finishLaunch} />;
+  if (!welcomeSeen)
+    return <WelcomeIntro onContinue={continueToLogin} onReplayLogo={replayOpening} />;
   return (
     <div className="login-experience grid min-h-svh bg-background lg:grid-cols-2">
       <LoginShowcase />
@@ -148,8 +168,8 @@ export function LoginPage() {
             </div>
           </div>
 
-          <button className="login-welcome-replay" onClick={() => setWelcomeSeen(false)}>
-            Replay welcome
+          <button className="login-welcome-replay" onClick={replayOpening}>
+            Replay opening animation
           </button>
           <Card hover={false} className="shadow-xl">
             <CardHeader>

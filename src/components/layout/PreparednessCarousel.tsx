@@ -94,7 +94,13 @@ export function PreparednessCarousel({ compact = false }: { compact?: boolean })
     </section>
   );
 }
-export function WelcomeIntro({ onContinue }: { onContinue: () => void }) {
+export function WelcomeIntro({
+  onContinue,
+  onReplayLogo,
+}: {
+  onContinue: () => void;
+  onReplayLogo?: () => void;
+}) {
   const [signal, setSignal] = useState(false);
   return (
     <main className="welcome-screen">
@@ -146,6 +152,11 @@ export function WelcomeIntro({ onContinue }: { onContinue: () => void }) {
       </div>
       <footer>
         <span>Notice early. Record clearly. Act together.</span>
+        {onReplayLogo && (
+          <button className="desk-link" onClick={onReplayLogo}>
+            Replay logo animation
+          </button>
+        )}
         <span>Not an emergency dispatch service. Follow local response procedures.</span>
       </footer>
     </main>

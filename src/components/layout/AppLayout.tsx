@@ -1,8 +1,10 @@
-import { GettingStartedTour } from './GettingStartedTour';
-import { MobileDock } from './MobileDock';
 'use client';
 
-import { Suspense, useState, useCallback, useEffect } from 'react';
+import { GettingStartedTour } from './GettingStartedTour';
+import { MobileDock } from './MobileDock';
+
+import { usePanelMotion } from '@/hooks/usePanelMotion';
+import { Suspense, useState, useCallback, useEffect, useRef } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { WifiOff, Send } from 'lucide-react';
 import { SchoolDirectoryProvider, SchoolWorkspaceBoundary } from '@/components/layout/SchoolDirectory';
@@ -31,6 +33,8 @@ export function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const mainRef = useRef<HTMLElement>(null);
+  usePanelMotion(mainRef, location.pathname + location.search);
   const { online, pendingCount } = useOffline();
 
   const onCloseSidebar = useCallback(() => setSidebarOpen(false), []);
@@ -79,7 +83,7 @@ export function AppLayout() {
             </div>
           )}
 
-          <main id="main-content" className="page-enter flex-1" role="main" key={location.pathname}>
+          <main ref={mainRef} id="main-content" className="page-enter flex-1" role="main" key={location.pathname}>
             <Suspense fallback={<RouteFallback />}>
               <SchoolWorkspaceBoundary><Outlet /></SchoolWorkspaceBoundary>
             </Suspense>

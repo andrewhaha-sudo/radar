@@ -9,9 +9,9 @@ import {
   PhoneCall,
   Settings as SettingsIcon,
   LogOut as LogOutIcon,
-  Building2,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { SchoolSelector } from '@/components/layout/SchoolDirectory';
 import { ThemeSwitcher } from '@/components/ThemeSwitcher';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,7 +23,7 @@ interface TopNavProps {
 }
 
 export function TopNav({ onMenuToggle }: TopNavProps) {
-  const { user, school, can, logout } = useAuth();
+  const { user, can, logout } = useAuth();
   const [query, setQuery] = useState('');
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
@@ -82,10 +82,7 @@ export function TopNav({ onMenuToggle }: TopNavProps) {
         </span>
       </button>
 
-      <div className="hidden min-w-0 items-center gap-2 lg:flex">
-        <Building2 className="h-4 w-4 shrink-0 text-muted-foreground" />
-        <span className="truncate text-sm text-muted-foreground">{school?.name ?? 'Campus'}</span>
-      </div>
+      <SchoolSelector />
 
       <form onSubmit={handleSearch} className="ml-auto hidden w-full max-w-md md:block" role="search">
         <div className="relative">

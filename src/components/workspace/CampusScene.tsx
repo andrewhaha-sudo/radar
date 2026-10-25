@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion';
 import type { Row } from '@/components/advanced/tools';
 import { api } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
@@ -54,18 +55,58 @@ export function CampusScene({ map, revision }: { map?: MapPayload; revision?: st
           <button
             role="tab"
             aria-selected={view === v.id}
+            id={`campus-tab-${v.id}`}
+            aria-controls="campus-view-content"
+            tabIndex={view === v.id ? 0 : -1}
+            onKeyDown={(event) => {
+              const tabs = Array.from(
+                event.currentTarget.parentElement!.querySelectorAll<HTMLButtonElement>(
+                  '[role="tab"]',
+                ),
+              );
+              const index = tabs.indexOf(event.currentTarget);
+              const next =
+                event.key === 'ArrowRight'
+                  ? (index + 1) % tabs.length
+                  : event.key === 'ArrowLeft'
+                    ? (index + tabs.length - 1) % tabs.length
+                    : event.key === 'Home'
+                      ? 0
+                      : event.key === 'End'
+                        ? tabs.length - 1
+                        : -1;
+              if (next < 0) return;
+              event.preventDefault();
+              tabs[next].focus();
+              tabs[next].click();
+            }}
             key={v.id}
             onClick={() => {
               choseView.current = true;
               setView(v.id);
             }}
           >
+            {view === v.id && (
+              <motion.span
+                className="campus-tab-indicator"
+                layoutId="campus-tab-indicator"
+                aria-hidden="true"
+                transition={{ type: 'spring', stiffness: 440, damping: 36 }}
+              />
+            )}
             <v.icon size={16} />
             {v.name}
           </button>
         ))}
       </div>
-      <div className="desk-campus-content" role="tabpanel" aria-label={`${view} campus view`}>
+      <div
+        key={view}
+        id="campus-view-content"
+        className="desk-campus-content campus-view-enter"
+        role="tabpanel"
+        aria-labelledby={`campus-tab-${view}`}
+        tabIndex={0}
+      >
         {view === 'photo' && (
           <CampusCloseView
             key={activeWorkspaceId || 'root'}

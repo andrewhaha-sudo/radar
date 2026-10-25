@@ -40,22 +40,11 @@ const SEEDED_ACCOUNTS = [
 
 export function LoginPage() {
   const { user, loading: authLoading, login } = useAuth();
-  const [launchSeen, setLaunchSeen] = useState(() => {
-    try {
-      return sessionStorage.getItem('radar:launch:v1') === '1';
-    } catch {
-      return false;
-    }
-  });
-  const finishLaunch = useCallback(() => {
-    try {
-      sessionStorage.setItem('radar:launch:v1', '1');
-    } catch {}
-    setLaunchSeen(true);
-  }, []);
+  const [replayingOpening, setReplayingOpening] = useState(false);
+  const finishLaunch = useCallback(() => setReplayingOpening(false), []);
   function replayOpening() {
     setWelcomeSeen(false);
-    setLaunchSeen(false);
+    setReplayingOpening(true);
   }
   const [welcomeSeen, setWelcomeSeen] = useState(() => {
     try {
@@ -146,7 +135,7 @@ export function LoginPage() {
     setShowAccounts(false);
   };
 
-  if (!launchSeen) return <BrandLaunch onComplete={finishLaunch} />;
+  if (replayingOpening) return <BrandLaunch onComplete={finishLaunch} />;
   if (!welcomeSeen)
     return <WelcomeIntro onContinue={continueToLogin} onReplayLogo={replayOpening} />;
   return (

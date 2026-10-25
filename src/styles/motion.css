@@ -401,3 +401,92 @@ header [role='menu'] {
     animation: none !important;
   }
 }
+/* Shared tab selection travels between controls; their content stays in flow. */
+.desk-view-tabs button {
+  position: relative;
+  isolation: isolate;
+  transition: color 0.18s ease;
+}
+.desk-view-tabs button[aria-selected='true'] {
+  background: transparent;
+}
+.campus-tab-indicator {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--desk-accent) 13%, var(--card));
+  box-shadow: 0 1px 3px #00000008;
+}
+.campus-view-enter {
+  animation: radar-content-enter 0.24s ease-out;
+}
+.radar-mobile-dock a {
+  position: relative;
+  isolation: isolate;
+  border-radius: 12px;
+  transition: color 0.2s ease;
+}
+.dock-active-indicator {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--desk-accent) 9%, transparent);
+}
+.dock-active-indicator::before {
+  content: '';
+  position: absolute;
+  height: 2px;
+  width: 18px;
+  top: 0;
+  left: calc(50% - 9px);
+  border-radius: 2px;
+  background: var(--desk-accent);
+}
+.radar-mobile-dock a[aria-current='page'] > svg {
+  animation: dock-icon-arrive 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes dock-icon-arrive {
+  from {
+    translate: 0 2px;
+    scale: 0.9;
+  }
+  to {
+    translate: 0 0;
+    scale: 1;
+  }
+}
+@supports (interpolate-size: allow-keywords) {
+  .action-disclosure {
+    interpolate-size: allow-keywords;
+  }
+  .action-disclosure::details-content {
+    block-size: 0;
+    overflow: clip;
+    transition:
+      block-size 0.28s ease,
+      content-visibility 0.28s allow-discrete;
+  }
+  .action-disclosure[open]::details-content {
+    block-size: auto;
+  }
+}
+/* A longer sweep keeps the five-second introduction alive before its handoff. */
+.launch-sweep {
+  animation-duration: 3.4s;
+}
+.launch-orbit i {
+  animation-duration: 4.3s;
+}
+@media (prefers-reduced-motion: reduce) {
+  .campus-view-enter,
+  .radar-mobile-dock a[aria-current='page'] > svg {
+    animation: none;
+  }
+  .desk-view-tabs button,
+  .radar-mobile-dock a,
+  .action-disclosure::details-content {
+    transition: none;
+  }
+}

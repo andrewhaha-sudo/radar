@@ -2278,11 +2278,16 @@ body:has(.operations-page) .radar-ambient {
 }
 @media (max-width: 600px) {
   .desk-response {
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: 23px minmax(0, 1fr);
+    align-items: start;
+    gap: 12px;
     padding: 17px;
   }
   .desk-response > .desk-button {
-    margin-left: 40px;
+    grid-column: 2;
+    justify-self: start;
+    margin-left: 0;
   }
 }
 .survey-ai-help{border:1px solid var(--border);border-radius:8px;padding:11px 14px;margin:12px 0}.survey-ai-help>summary{cursor:pointer;font-size:11px;color:var(--desk-accent)}.survey-ai-help h3{margin-top:16px;font-size:14px}.survey-ai-help code{font-size:10px}.survey-ai-help p{font-size:11px!important}

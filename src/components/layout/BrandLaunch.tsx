@@ -5,8 +5,8 @@ import { ArrowRight } from 'lucide-react';
 export function BrandLaunch({ onComplete }: { onComplete: () => void }) {
   const [leaving, setLeaving] = useState(false);
   useEffect(() => {
-    const preference = matchMedia('(prefers-reduced-motion: reduce)');
-    const timer = window.setTimeout(() => setLeaving(true), preference.matches ? 450 : 2650);
+    // 4.65 seconds of logo + 0.35 seconds of exit = five seconds total.
+    const timer = window.setTimeout(() => setLeaving(true), 4650);
     return () => window.clearTimeout(timer);
   }, []);
   useEffect(() => {

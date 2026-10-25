@@ -30,3 +30,8 @@ server/uploads/
 *.njsproj
 *.sln
 *.sw?
+
+# Server credentials: never commit local Supabase connection settings
+.env
+.env.*
+!.env.example

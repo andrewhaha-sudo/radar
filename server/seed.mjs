@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { db, UPLOAD_DIR, isoDaysAgo, isoDaysFromNow } from './db.mjs';
+import { db, usesPostgres, UPLOAD_DIR, isoDaysAgo, isoDaysFromNow } from './db.mjs';
 import { hashPassword } from './auth.mjs';
 
 const ROOM_TYPES = {
@@ -42,23 +42,67 @@ function svgEvidence(filename, label, detail) {
   return `/uploads/${filename}`;
 }
 
-function seed() {
-  const existing = db.prepare('SELECT COUNT(*) AS c FROM users').get();
+async function seed() {
+  const existing = await db.prepare('SELECT COUNT(*) AS c FROM users').get();
   if (existing.c > 0) return false;
 
   const schoolId = Number(
-    db
-      .prepare('INSERT INTO schools (name, address, lat, lng) VALUES (?, ?, ?, ?)')
-      .run('Northridge High School', '4500 N Broadway, Chicago, IL 60640', 41.8781, -87.6298).lastInsertRowid,
+    (
+      await db
+        .prepare('INSERT INTO schools (name, address, lat, lng) VALUES (?, ?, ?, ?)')
+        .run('Northridge High School', '4500 N Broadway, Chicago, IL 60640', 41.8781, -87.6298)
+    ).lastInsertRowid,
   );
 
   const users = [
-    ['admin@northridge.edu', 'Admin#2026', 'Alex Rivera', 'admin', 'Safety Director', '+1 312 555 0101'],
-    ['inspector@northridge.edu', 'Inspect#2026', 'Maya Cruz', 'inspector', 'Facilities Inspector', '+1 312 555 0102'],
-    ['teacher@northridge.edu', 'Teach#2026', 'Daniel Lim', 'teacher', 'Science Teacher', '+1 312 555 0103'],
-    ['responder@northridge.edu', 'Respond#2026', 'Priya Nair', 'responder', 'Campus Safety Lead', '+1 312 555 0104'],
-    ['student@northridge.edu', 'Student#2026', 'Jordan Lee', 'student', 'Grade 11', '+1 312 555 0105'],
-    ['parent@northridge.edu', 'Parent#2026', 'Sam Okafor', 'parent', 'Parent / Guardian', '+1 312 555 0106'],
+    [
+      'admin@northridge.edu',
+      'Admin#2026',
+      'Alex Rivera',
+      'admin',
+      'Safety Director',
+      '+1 312 555 0101',
+    ],
+    [
+      'inspector@northridge.edu',
+      'Inspect#2026',
+      'Maya Cruz',
+      'inspector',
+      'Facilities Inspector',
+      '+1 312 555 0102',
+    ],
+    [
+      'teacher@northridge.edu',
+      'Teach#2026',
+      'Daniel Lim',
+      'teacher',
+      'Science Teacher',
+      '+1 312 555 0103',
+    ],
+    [
+      'responder@northridge.edu',
+      'Respond#2026',
+      'Priya Nair',
+      'responder',
+      'Campus Safety Lead',
+      '+1 312 555 0104',
+    ],
+    [
+      'student@northridge.edu',
+      'Student#2026',
+      'Jordan Lee',
+      'student',
+      'Grade 11',
+      '+1 312 555 0105',
+    ],
+    [
+      'parent@northridge.edu',
+      'Parent#2026',
+      'Sam Okafor',
+      'parent',
+      'Parent / Guardian',
+      '+1 312 555 0106',
+    ],
   ];
 
   const userIds = {};
@@ -66,11 +110,16 @@ function seed() {
     'INSERT INTO users (email, password_hash, name, role, title, phone, school_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
   );
   for (const [email, password, name, role, title, phone] of users) {
-    const id = Number(insertUser.run(email, hashPassword(password), name, role, title, phone, schoolId).lastInsertRowid);
+    const id = Number(
+      (await insertUser.run(email, hashPassword(password), name, role, title, phone, schoolId))
+        .lastInsertRowid,
+    );
     userIds[role] = id;
   }
-  db.prepare("UPDATE users SET grade = '11', section = 'A' WHERE id = ?").run(userIds.student);
-  db.prepare("UPDATE users SET grade = '11', section = 'A' WHERE id = ?").run(userIds.parent);
+  await db
+    .prepare("UPDATE users SET grade = '11', section = 'A' WHERE id = ?")
+    .run(userIds.student);
+  await db.prepare("UPDATE users SET grade = '11', section = 'A' WHERE id = ?").run(userIds.parent);
 
   /* ---------------- Buildings, floors, rooms ---------------- */
 
@@ -235,28 +284,47 @@ function seed() {
 
   for (const b of buildingDefs) {
     const buildingId = Number(
-      insertBuilding.run(
-        schoolId,
-        b.code,
-        b.name,
-        b.description,
-        b.lat,
-        b.lng,
-        '4500 N Broadway, Chicago, IL',
-        b.yearBuilt,
+      (
+        await insertBuilding.run(
+          schoolId,
+          b.code,
+          b.name,
+          b.description,
+          b.lat,
+          b.lng,
+          '4500 N Broadway, Chicago, IL',
+          b.yearBuilt,
+        )
       ).lastInsertRowid,
     );
     const floors = [];
     for (const f of b.floors) {
-      const floorId = Number(insertFloor.run(buildingId, f.level, f.name, 1000, 620).lastInsertRowid);
+      const floorId = Number(
+        (await insertFloor.run(buildingId, f.level, f.name, 1000, 620)).lastInsertRowid,
+      );
       const rooms = [];
       for (const [code, name, type, x, y, w, h, capacity] of f.rooms) {
         const status = code === '204' ? 'under_review' : 'operational';
         const inspected =
-          type === 'corridor' || type === 'restroom' ? null : isoDaysAgo(Math.floor(Math.random() * 80) + 3);
+          type === 'corridor' || type === 'restroom'
+            ? null
+            : isoDaysAgo(Math.floor(Math.random() * 80) + 3);
         const roomId = Number(
-          insertRoom.run(floorId, code, name, ROOM_TYPES[type] ?? type, x, y, w, h, capacity, status, inspected)
-            .lastInsertRowid,
+          (
+            await insertRoom.run(
+              floorId,
+              code,
+              name,
+              ROOM_TYPES[type] ?? type,
+              x,
+              y,
+              w,
+              h,
+              capacity,
+              status,
+              inspected,
+            )
+          ).lastInsertRowid,
         );
         roomIdByCode[`${b.code}-${code}`] = roomId;
         roomIdByCode[code] = roomId;
@@ -276,27 +344,267 @@ function seed() {
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   );
   const equipment = [
-    [R('101'), null, 'aed', 'AED — Main Lobby', 'ok', isoDaysAgo(12), 'Battery at 92%. Pads sealed.', 1, isoDaysFromNow(300), 'Health services', 'Reception wall cabinet'],
-    [R('103'), null, 'extinguisher', 'FE-01 Cafeteria', 'ok', isoDaysAgo(30), 'ABC dry chemical, 9 kg.', 2, isoDaysFromNow(120), 'Facilities', 'Serving line, east wall'],
-    [R('204'), null, 'extinguisher', 'FE-14 Second Floor East', 'due', isoDaysAgo(70), 'Annual service due.', 1, isoDaysFromNow(20), 'Facilities', 'Corridor niche'],
-    [R('S101'), null, 'eyewash', 'Eyewash — Chemistry Lab', 'ok', isoDaysAgo(9), 'Flow tested weekly.', 1, null, 'Science department', 'Rear bench, beside sink'],
-    [R('S102'), null, 'eyewash', 'Eyewash — Biology Lab', 'due', isoDaysAgo(21), 'Flow test overdue by 7 days.', 1, null, 'Science department', 'Rear of lab'],
-    [R('G101'), null, 'aed', 'AED — Main Gymnasium', 'ok', isoDaysAgo(15), 'Pads sealed.', 1, isoDaysFromNow(280), 'Athletics', 'Training room entrance'],
-    [R('A104'), null, 'extinguisher', 'FE-22 Theatre', 'missing', null, 'Unit removed for service; replacement not installed.', 0, null, 'Facilities', 'Stage-left wing'],
-    [R('A201'), null, 'extinguisher', 'FE-25 Library', 'ok', isoDaysAgo(40), 'Inspected.', 1, isoDaysFromNow(260), 'Facilities', 'Main desk'],
-    [R('302'), null, 'extinguisher', 'FE-18 Third Floor West', 'expired', isoDaysAgo(400), 'Past 12-month certification.', 1, isoDaysAgo(5), 'Facilities', 'Corridor niche'],
-    [R('S104'), null, 'spill_kit', 'Spill kit — Chemical Storage', 'ok', isoDaysAgo(18), 'Sealed and complete.', 1, isoDaysFromNow(210), 'Science department', 'Storage room door'],
-    [R('105'), null, 'first_aid', 'First-aid kit — Health Office', 'ok', isoDaysAgo(6), 'Restocked after last use.', 1, isoDaysFromNow(180), 'Health services', 'Treatment room cabinet'],
-    [R('G105'), null, 'first_aid', 'First-aid kit — Training Room', 'due', isoDaysAgo(95), 'Quarterly stock check overdue.', 1, isoDaysFromNow(90), 'Athletics', 'Treatment table'],
-    [R('S106'), null, 'emergency_light', 'Emergency light — Science corridor', 'ok', isoDaysAgo(14), '90-minute battery test passed.', 1, isoDaysFromNow(160), 'Facilities', 'Above east exit'],
-    [R('307'), null, 'emergency_light', 'Emergency light — West corridor', 'due', isoDaysAgo(200), 'Battery test overdue.', 1, isoDaysFromNow(30), 'Facilities', 'Stairwell junction'],
-    [R('106'), null, 'radio', 'Handheld radio — Security desk', 'ok', isoDaysAgo(2), 'Channel 3 campus safety.', 4, null, 'Campus safety', 'Charging dock'],
-    [R('103'), null, 'water', 'Emergency water — Cafeteria store', 'ok', isoDaysAgo(45), 'Sealed cases; rotate stock.', 48, isoDaysFromNow(500), 'Facilities', 'Dry store, bay 2'],
-    [null, buildings?.[0]?.id ?? null, 'first_aid', 'First-aid station — Main entrance', 'ok', isoDaysAgo(11), 'Wall-mounted station.', 1, isoDaysFromNow(200), 'Health services', 'Beside reception'],
-    [null, buildings?.[2]?.id ?? null, 'aed', 'AED — Gym annex lobby', 'ok', isoDaysAgo(8), 'Pads sealed.', 1, isoDaysFromNow(310), 'Athletics', 'Lobby wall cabinet'],
+    [
+      R('101'),
+      null,
+      'aed',
+      'AED — Main Lobby',
+      'ok',
+      isoDaysAgo(12),
+      'Battery at 92%. Pads sealed.',
+      1,
+      isoDaysFromNow(300),
+      'Health services',
+      'Reception wall cabinet',
+    ],
+    [
+      R('103'),
+      null,
+      'extinguisher',
+      'FE-01 Cafeteria',
+      'ok',
+      isoDaysAgo(30),
+      'ABC dry chemical, 9 kg.',
+      2,
+      isoDaysFromNow(120),
+      'Facilities',
+      'Serving line, east wall',
+    ],
+    [
+      R('204'),
+      null,
+      'extinguisher',
+      'FE-14 Second Floor East',
+      'due',
+      isoDaysAgo(70),
+      'Annual service due.',
+      1,
+      isoDaysFromNow(20),
+      'Facilities',
+      'Corridor niche',
+    ],
+    [
+      R('S101'),
+      null,
+      'eyewash',
+      'Eyewash — Chemistry Lab',
+      'ok',
+      isoDaysAgo(9),
+      'Flow tested weekly.',
+      1,
+      null,
+      'Science department',
+      'Rear bench, beside sink',
+    ],
+    [
+      R('S102'),
+      null,
+      'eyewash',
+      'Eyewash — Biology Lab',
+      'due',
+      isoDaysAgo(21),
+      'Flow test overdue by 7 days.',
+      1,
+      null,
+      'Science department',
+      'Rear of lab',
+    ],
+    [
+      R('G101'),
+      null,
+      'aed',
+      'AED — Main Gymnasium',
+      'ok',
+      isoDaysAgo(15),
+      'Pads sealed.',
+      1,
+      isoDaysFromNow(280),
+      'Athletics',
+      'Training room entrance',
+    ],
+    [
+      R('A104'),
+      null,
+      'extinguisher',
+      'FE-22 Theatre',
+      'missing',
+      null,
+      'Unit removed for service; replacement not installed.',
+      0,
+      null,
+      'Facilities',
+      'Stage-left wing',
+    ],
+    [
+      R('A201'),
+      null,
+      'extinguisher',
+      'FE-25 Library',
+      'ok',
+      isoDaysAgo(40),
+      'Inspected.',
+      1,
+      isoDaysFromNow(260),
+      'Facilities',
+      'Main desk',
+    ],
+    [
+      R('302'),
+      null,
+      'extinguisher',
+      'FE-18 Third Floor West',
+      'expired',
+      isoDaysAgo(400),
+      'Past 12-month certification.',
+      1,
+      isoDaysAgo(5),
+      'Facilities',
+      'Corridor niche',
+    ],
+    [
+      R('S104'),
+      null,
+      'spill_kit',
+      'Spill kit — Chemical Storage',
+      'ok',
+      isoDaysAgo(18),
+      'Sealed and complete.',
+      1,
+      isoDaysFromNow(210),
+      'Science department',
+      'Storage room door',
+    ],
+    [
+      R('105'),
+      null,
+      'first_aid',
+      'First-aid kit — Health Office',
+      'ok',
+      isoDaysAgo(6),
+      'Restocked after last use.',
+      1,
+      isoDaysFromNow(180),
+      'Health services',
+      'Treatment room cabinet',
+    ],
+    [
+      R('G105'),
+      null,
+      'first_aid',
+      'First-aid kit — Training Room',
+      'due',
+      isoDaysAgo(95),
+      'Quarterly stock check overdue.',
+      1,
+      isoDaysFromNow(90),
+      'Athletics',
+      'Treatment table',
+    ],
+    [
+      R('S106'),
+      null,
+      'emergency_light',
+      'Emergency light — Science corridor',
+      'ok',
+      isoDaysAgo(14),
+      '90-minute battery test passed.',
+      1,
+      isoDaysFromNow(160),
+      'Facilities',
+      'Above east exit',
+    ],
+    [
+      R('307'),
+      null,
+      'emergency_light',
+      'Emergency light — West corridor',
+      'due',
+      isoDaysAgo(200),
+      'Battery test overdue.',
+      1,
+      isoDaysFromNow(30),
+      'Facilities',
+      'Stairwell junction',
+    ],
+    [
+      R('106'),
+      null,
+      'radio',
+      'Handheld radio — Security desk',
+      'ok',
+      isoDaysAgo(2),
+      'Channel 3 campus safety.',
+      4,
+      null,
+      'Campus safety',
+      'Charging dock',
+    ],
+    [
+      R('103'),
+      null,
+      'water',
+      'Emergency water — Cafeteria store',
+      'ok',
+      isoDaysAgo(45),
+      'Sealed cases; rotate stock.',
+      48,
+      isoDaysFromNow(500),
+      'Facilities',
+      'Dry store, bay 2',
+    ],
+    [
+      null,
+      buildings?.[0]?.id ?? null,
+      'first_aid',
+      'First-aid station — Main entrance',
+      'ok',
+      isoDaysAgo(11),
+      'Wall-mounted station.',
+      1,
+      isoDaysFromNow(200),
+      'Health services',
+      'Beside reception',
+    ],
+    [
+      null,
+      buildings?.[2]?.id ?? null,
+      'aed',
+      'AED — Gym annex lobby',
+      'ok',
+      isoDaysAgo(8),
+      'Pads sealed.',
+      1,
+      isoDaysFromNow(310),
+      'Athletics',
+      'Lobby wall cabinet',
+    ],
   ];
-  for (const [roomId, buildingId, type, label, status, checked, notes, quantity, expires, department, location] of equipment) {
-    insertEquipment.run(roomId ?? null, buildingId ?? null, type, label, status, checked, notes, quantity, expires, department, location);
+  for (const [
+    roomId,
+    buildingId,
+    type,
+    label,
+    status,
+    checked,
+    notes,
+    quantity,
+    expires,
+    department,
+    location,
+  ] of equipment) {
+    await insertEquipment.run(
+      roomId ?? null,
+      buildingId ?? null,
+      type,
+      label,
+      status,
+      checked,
+      notes,
+      quantity,
+      expires,
+      department,
+      location,
+    );
   }
 
   /* ---------------- Assembly points & evacuation routes ---------------- */
@@ -305,29 +613,33 @@ function seed() {
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   );
   const northFieldId = Number(
-    insertAssembly.run(
-      schoolId,
-      'North Field',
-      41.8804,
-      -87.6288,
-      900,
-      'Primary assembly area for MAIN and SCI. Grass surface; keep the access lane clear.',
-      'open',
-      1,
-      isoDaysAgo(1),
+    (
+      await insertAssembly.run(
+        schoolId,
+        'North Field',
+        41.8804,
+        -87.6288,
+        900,
+        'Primary assembly area for MAIN and SCI. Grass surface; keep the access lane clear.',
+        'open',
+        1,
+        isoDaysAgo(1),
+      )
     ).lastInsertRowid,
   );
   const southLotId = Number(
-    insertAssembly.run(
-      schoolId,
-      'South Parking Lot',
-      41.8766,
-      -87.6304,
-      700,
-      'Secondary assembly area for GYM and ART. Vehicle traffic must be stopped during an evacuation.',
-      'open',
-      1,
-      isoDaysAgo(1),
+    (
+      await insertAssembly.run(
+        schoolId,
+        'South Parking Lot',
+        41.8766,
+        -87.6304,
+        700,
+        'Secondary assembly area for GYM and ART. Vehicle traffic must be stopped during an evacuation.',
+        'open',
+        1,
+        isoDaysAgo(1),
+      )
     ).lastInsertRowid,
   );
 
@@ -336,7 +648,7 @@ function seed() {
       distance_m, walk_minutes, assembly_point_id, scenario, updated_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   );
-  insertRoute.run(
+  await insertRoute.run(
     schoolId,
     'MAIN → North Field',
     buildings[0].id,
@@ -355,7 +667,7 @@ function seed() {
     'general',
     isoDaysAgo(1),
   );
-  insertRoute.run(
+  await insertRoute.run(
     schoolId,
     'SCI → North Field',
     buildings[1].id,
@@ -374,7 +686,7 @@ function seed() {
     'general',
     isoDaysAgo(1),
   );
-  insertRoute.run(
+  await insertRoute.run(
     schoolId,
     'GYM → South Parking Lot',
     buildings[2].id,
@@ -392,7 +704,7 @@ function seed() {
     'general',
     isoDaysAgo(1),
   );
-  insertRoute.run(
+  await insertRoute.run(
     schoolId,
     'ART → South Parking Lot',
     buildings[3].id,
@@ -411,7 +723,7 @@ function seed() {
     'general',
     isoDaysAgo(1),
   );
-  insertRoute.run(
+  await insertRoute.run(
     schoolId,
     'MAIN → South Lot (alternate)',
     buildings[0].id,
@@ -462,8 +774,22 @@ function seed() {
         ['verified', 'Verified on site. Room cordoned and circuit isolated.', 'inspector', 1.8],
       ],
       actions: [
-        ['Isolate circuit and replace cable run', 'inspector', 1, 'done', 'Circuit isolated and cable replaced by licensed electrician.', 0.5],
-        ['Re-inspect junction after repair', 'inspector', 3, 'in_progress', 'Follow-up inspection scheduled.', null],
+        [
+          'Isolate circuit and replace cable run',
+          'inspector',
+          1,
+          'done',
+          'Circuit isolated and cable replaced by licensed electrician.',
+          0.5,
+        ],
+        [
+          'Re-inspect junction after repair',
+          'inspector',
+          3,
+          'in_progress',
+          'Follow-up inspection scheduled.',
+          null,
+        ],
       ],
     },
     {
@@ -484,13 +810,21 @@ function seed() {
         ['assigned', 'Assigned to facilities for shoring assessment.', 'admin', 3.5],
       ],
       actions: [
-        ['Structural engineer assessment', 'inspector', 4, 'in_progress', 'Site visit booked.', null],
+        [
+          'Structural engineer assessment',
+          'inspector',
+          4,
+          'in_progress',
+          'Site visit booked.',
+          null,
+        ],
       ],
     },
     {
       ref: 'H-2026-0045',
       title: 'Slippery floor',
-      description: 'Water tracked across the gym entrance from the changing rooms. No wet-floor sign present at time of report.',
+      description:
+        'Water tracked across the gym entrance from the changing rooms. No wet-floor sign present at time of report.',
       severity: 'medium',
       status: 'new',
       room: R('G101'),
@@ -504,7 +838,8 @@ function seed() {
     {
       ref: 'H-2026-0046',
       title: 'Blocked emergency exit',
-      description: 'Stacked furniture is obstructing the east emergency exit door on the science corridor. Door cannot open fully.',
+      description:
+        'Stacked furniture is obstructing the east emergency exit door on the science corridor. Door cannot open fully.',
       severity: 'high',
       status: 'pending_review',
       room: R('S106'),
@@ -518,7 +853,8 @@ function seed() {
     {
       ref: 'H-2026-0047',
       title: 'Broken handrail',
-      description: 'Handrail bracket has separated from the wall on the third-floor stairwell. Rail is unstable under load.',
+      description:
+        'Handrail bracket has separated from the wall on the third-floor stairwell. Rail is unstable under load.',
       severity: 'low',
       status: 'resolved',
       room: R('308'),
@@ -531,12 +867,15 @@ function seed() {
         ['verified', 'Confirmed loose bracket.', 'inspector', 11],
         ['resolved', 'Bracket replaced and load tested.', 'inspector', 3],
       ],
-      actions: [['Replace handrail bracket', 'inspector', 5, 'done', 'Completed and signed off.', 3]],
+      actions: [
+        ['Replace handrail bracket', 'inspector', 5, 'done', 'Completed and signed off.', 3],
+      ],
     },
     {
       ref: 'H-2026-0048',
       title: 'Frayed laboratory power cord',
-      description: 'Power cord on bench 4 is frayed where it passes under the bench edge. Earth continuity is unreliable.',
+      description:
+        'Power cord on bench 4 is frayed where it passes under the bench edge. Earth continuity is unreliable.',
       severity: 'high',
       status: 'verified',
       room: R('S101'),
@@ -553,7 +892,8 @@ function seed() {
     {
       ref: 'H-2026-0049',
       title: 'Missing fire extinguisher',
-      description: 'The extinguisher bracket in the theatre wings is empty. Unit was removed for service and never replaced.',
+      description:
+        'The extinguisher bracket in the theatre wings is empty. Unit was removed for service and never replaced.',
       severity: 'critical',
       status: 'in_progress',
       room: R('A104'),
@@ -565,12 +905,22 @@ function seed() {
         ['reported', 'Reported by campus safety lead.', 'responder', 1.5],
         ['verified', 'Bracket empty, no service tag present.', 'responder', 1.4],
       ],
-      actions: [['Install replacement extinguisher', 'responder', 1, 'in_progress', 'Replacement requested from supplier.', null]],
+      actions: [
+        [
+          'Install replacement extinguisher',
+          'responder',
+          1,
+          'in_progress',
+          'Replacement requested from supplier.',
+          null,
+        ],
+      ],
     },
     {
       ref: 'H-2026-0050',
       title: 'Water leak near ceiling',
-      description: 'Active drip from the ceiling tile grid near the window wall. Bucket placed; tile removed to inspect.',
+      description:
+        'Active drip from the ceiling tile grid near the window wall. Bucket placed; tile removed to inspect.',
       severity: 'medium',
       status: 'verified',
       room: R('302'),
@@ -587,7 +937,8 @@ function seed() {
     {
       ref: 'H-2026-0051',
       title: 'Obstructed eyewash station',
-      description: 'Boxes stored in front of the eyewash station. Access path is narrower than the required 75 cm.',
+      description:
+        'Boxes stored in front of the eyewash station. Access path is narrower than the required 75 cm.',
       severity: 'medium',
       status: 'new',
       room: R('S102'),
@@ -601,7 +952,8 @@ function seed() {
     {
       ref: 'H-2026-0052',
       title: 'Loose floor tile',
-      description: 'Floor tile at the serving line is lifting at one corner. Trip hazard during peak lunch service.',
+      description:
+        'Floor tile at the serving line is lifting at one corner. Trip hazard during peak lunch service.',
       severity: 'low',
       status: 'pending_review',
       room: R('103'),
@@ -615,7 +967,8 @@ function seed() {
     {
       ref: 'H-2026-0053',
       title: 'Damaged outlet cover',
-      description: 'Outlet cover plate is cracked and the inner shutter is exposed. Outlet is still energised.',
+      description:
+        'Outlet cover plate is cracked and the inner shutter is exposed. Outlet is still energised.',
       severity: 'medium',
       status: 'resolved',
       room: R('A101'),
@@ -628,12 +981,15 @@ function seed() {
         ['verified', 'Confirmed cracked plate.', 'inspector', 19],
         ['resolved', 'Plate replaced and outlet tested.', 'inspector', 15],
       ],
-      actions: [['Replace outlet cover plate', 'inspector', 17, 'done', 'Completed by maintenance.', 15]],
+      actions: [
+        ['Replace outlet cover plate', 'inspector', 17, 'done', 'Completed by maintenance.', 15],
+      ],
     },
     {
       ref: 'H-2026-0054',
       title: 'Poor lighting in stairwell',
-      description: 'Two of four luminaires in the gym stairwell are not working. Light level measured at 38 lux.',
+      description:
+        'Two of four luminaires in the gym stairwell are not working. Light level measured at 38 lux.',
       severity: 'low',
       status: 'verified',
       room: R('G106'),
@@ -645,7 +1001,16 @@ function seed() {
         ['reported', 'Reported after lighting survey.', 'inspector', 8],
         ['verified', 'Measured 38 lux against 100 lux requirement.', 'inspector', 7.5],
       ],
-      actions: [['Replace stairwell luminaires', 'inspector', 10, 'open', 'Awaiting electrical contractor.', null]],
+      actions: [
+        [
+          'Replace stairwell luminaires',
+          'inspector',
+          10,
+          'open',
+          'Awaiting electrical contractor.',
+          null,
+        ],
+      ],
     },
   ];
 
@@ -653,28 +1018,30 @@ function seed() {
     const created = isoDaysAgo(h.days);
     const updated = isoDaysAgo(Math.max(0, h.days - 1));
     const hazardId = Number(
-      insertHazard.run(
-        h.ref,
-        h.title,
-        h.description,
-        h.severity,
-        h.status,
-        h.room,
-        h.note,
-        userIds[h.reported],
-        h.assigned ? userIds[h.assigned] : null,
-        'manual',
-        created,
-        updated,
-        h.status === 'new' || h.status === 'pending_review' ? null : isoDaysAgo(h.days - 0.5),
-        h.status === 'resolved' ? isoDaysAgo(Math.max(0, h.days - 2)) : null,
+      (
+        await insertHazard.run(
+          h.ref,
+          h.title,
+          h.description,
+          h.severity,
+          h.status,
+          h.room,
+          h.note,
+          userIds[h.reported],
+          h.assigned ? userIds[h.assigned] : null,
+          'manual',
+          created,
+          updated,
+          h.status === 'new' || h.status === 'pending_review' ? null : isoDaysAgo(h.days - 0.5),
+          h.status === 'resolved' ? isoDaysAgo(Math.max(0, h.days - 2)) : null,
+        )
       ).lastInsertRowid,
     );
     for (const [type, note, actor, days] of h.events) {
-      insertEvent.run(hazardId, type, note, userIds[actor], isoDaysAgo(days));
+      await insertEvent.run(hazardId, type, note, userIds[actor], isoDaysAgo(days));
     }
     for (const [title, owner, dueDays, status, notes, completedDays] of h.actions) {
-      insertAction.run(
+      await insertAction.run(
         hazardId,
         title,
         userIds[owner],
@@ -688,8 +1055,8 @@ function seed() {
   }
 
   // Evidence — schematic SVG files generated locally, explicitly not photographs.
-  const h43 = db.prepare('SELECT id FROM hazards WHERE ref = ?').get('H-2026-0043');
-  const h44 = db.prepare('SELECT id FROM hazards WHERE ref = ?').get('H-2026-0044');
+  const h43 = await db.prepare('SELECT id FROM hazards WHERE ref = ?').get('H-2026-0043');
+  const h44 = await db.prepare('SELECT id FROM hazards WHERE ref = ?').get('H-2026-0044');
   const evidence43 = svgEvidence(
     'seed-h43-schematic.svg',
     'H-2026-0043 — Exposed wire',
@@ -703,8 +1070,20 @@ function seed() {
   const insertEvidence = db.prepare(
     'INSERT INTO hazard_evidence (hazard_id, url, caption, uploaded_by, created_at) VALUES (?, ?, ?, ?, ?)',
   );
-  insertEvidence.run(h43.id, evidence43, 'Annotated schematic of the ceiling junction.', userIds.inspector, isoDaysAgo(2));
-  insertEvidence.run(h44.id, evidence44, 'Annotated schematic showing crack location and width.', userIds.inspector, isoDaysAgo(5));
+  await insertEvidence.run(
+    h43.id,
+    evidence43,
+    'Annotated schematic of the ceiling junction.',
+    userIds.inspector,
+    isoDaysAgo(2),
+  );
+  await insertEvidence.run(
+    h44.id,
+    evidence44,
+    'Annotated schematic showing crack location and width.',
+    userIds.inspector,
+    isoDaysAgo(5),
+  );
 
   /* ---------------- Scans ---------------- */
   const insertScan = db.prepare(
@@ -718,10 +1097,24 @@ function seed() {
   );
 
   const pastScan = Number(
-    insertScan.run(R('204'), userIds.inspector, 'submitted', 'Completed during the spring safety sweep.', isoDaysAgo(2.2), isoDaysAgo(2)).lastInsertRowid,
+    (
+      await insertScan.run(
+        R('204'),
+        userIds.inspector,
+        'submitted',
+        'Completed during the spring safety sweep.',
+        isoDaysAgo(2.2),
+        isoDaysAgo(2),
+      )
+    ).lastInsertRowid,
   );
-  insertScanPhoto.run(pastScan, evidence43, 'Ceiling junction, before isolation.', isoDaysAgo(2.1));
-  insertObservation.run(
+  await insertScanPhoto.run(
+    pastScan,
+    evidence43,
+    'Ceiling junction, before isolation.',
+    isoDaysAgo(2.1),
+  );
+  await insertObservation.run(
     pastScan,
     'Exposed electrical wire',
     'Sheath split at ceiling junction, conductor visible.',
@@ -733,9 +1126,10 @@ function seed() {
   );
 
   const draftScan = Number(
-    insertScan.run(R('S106'), userIds.inspector, 'draft', '', isoDaysAgo(0.3), null).lastInsertRowid,
+    (await insertScan.run(R('S106'), userIds.inspector, 'draft', '', isoDaysAgo(0.3), null))
+      .lastInsertRowid,
   );
-  insertObservation.run(
+  await insertObservation.run(
     draftScan,
     'Blocked emergency exit',
     'Stacked furniture preventing the east exit from opening fully.',
@@ -754,39 +1148,58 @@ function seed() {
     'INSERT INTO incident_updates (incident_id, note, actor_id, created_at) VALUES (?, ?, ?, ?)',
   );
   const inc1 = Number(
-    insertIncident.run(
-      'INC-2026-0012',
-      'Laboratory power failure',
-      'Loss of power to the chemistry and biology labs. No injuries reported. Labs closed pending electrical inspection.',
-      'high',
-      'active',
-      'Science Wing — Ground floor',
-      'utility',
-      isoDaysAgo(0.3),
-      null,
-      userIds.responder,
-      isoDaysAgo(0.3),
+    (
+      await insertIncident.run(
+        'INC-2026-0012',
+        'Laboratory power failure',
+        'Loss of power to the chemistry and biology labs. No injuries reported. Labs closed pending electrical inspection.',
+        'high',
+        'active',
+        'Science Wing — Ground floor',
+        'utility',
+        isoDaysAgo(0.3),
+        null,
+        userIds.responder,
+        isoDaysAgo(0.3),
+      )
     ).lastInsertRowid,
   );
-  insertIncidentUpdate.run(inc1, 'Labs evacuated. Students relocated to the library.', userIds.responder, isoDaysAgo(0.28));
-  insertIncidentUpdate.run(inc1, 'Electrical contractor on site isolating the distribution board.', userIds.admin, isoDaysAgo(0.1));
+  await insertIncidentUpdate.run(
+    inc1,
+    'Labs evacuated. Students relocated to the library.',
+    userIds.responder,
+    isoDaysAgo(0.28),
+  );
+  await insertIncidentUpdate.run(
+    inc1,
+    'Electrical contractor on site isolating the distribution board.',
+    userIds.admin,
+    isoDaysAgo(0.1),
+  );
 
   const inc2 = Number(
-    insertIncident.run(
-      'INC-2026-0011',
-      'Water intrusion — third floor',
-      'Ceiling leak affecting two classrooms. Buckets deployed, ceiling tiles removed for access.',
-      'medium',
-      'monitoring',
-      'Main Building — Third floor',
-      'utility',
-      isoDaysAgo(4),
-      null,
-      userIds.inspector,
-      isoDaysAgo(4),
+    (
+      await insertIncident.run(
+        'INC-2026-0011',
+        'Water intrusion — third floor',
+        'Ceiling leak affecting two classrooms. Buckets deployed, ceiling tiles removed for access.',
+        'medium',
+        'monitoring',
+        'Main Building — Third floor',
+        'utility',
+        isoDaysAgo(4),
+        null,
+        userIds.inspector,
+        isoDaysAgo(4),
+      )
     ).lastInsertRowid,
   );
-  insertIncidentUpdate.run(inc2, 'Condensate line repaired; monitoring for further leaks.', userIds.inspector, isoDaysAgo(1));
+  await insertIncidentUpdate.run(
+    inc2,
+    'Condensate line repaired; monitoring for further leaks.',
+    userIds.inspector,
+    isoDaysAgo(1),
+  );
 
   /* ---------------- Roll call ---------------- */
   const insertClass = db.prepare(
@@ -801,7 +1214,7 @@ function seed() {
     ['Grade 12 — Section A', '12', R('302'), 26, 24, 'incomplete', isoDaysAgo(0.1)],
   ];
   for (const [name, grade, roomId, expected, present, status, updated] of classes) {
-    insertClass.run(name, grade, userIds.teacher, roomId, expected, present, status, updated);
+    await insertClass.run(name, grade, userIds.teacher, roomId, expected, present, status, updated);
   }
 
   /* ---------------- Notifications ---------------- */
@@ -809,16 +1222,58 @@ function seed() {
     'INSERT INTO notifications (user_id, type, title, body, href, read, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
   );
   const notificationDefs = [
-    ['success', 'Hazard verified', 'H-2026-0043 (exposed wire, room 204) was verified by Maya Cruz.', '/hazards', 0, isoDaysAgo(0, 0.1)],
-    ['warning', 'New hazard reported', 'Slippery floor reported in the Main Gymnasium by Daniel Lim.', '/hazards', 0, isoDaysAgo(0, 0.3)],
-    ['alert', 'Incident active', 'INC-2026-0012 — Laboratory power failure is still active.', '/incidents', 0, isoDaysAgo(0.3)],
-    ['info', 'Inspection due', 'Annual extinguisher service for FE-14 is overdue.', '/hazards', 1, isoDaysAgo(1)],
-    ['success', 'Roll call updated', 'Grade 10 — Section A completed with 31 of 31 present.', '/rollcall', 1, isoDaysAgo(1.2)],
-    ['info', 'Scheduled inspection', 'Room scanning scheduled for the Science Wing.', '/scan', 1, isoDaysAgo(2)],
+    [
+      'success',
+      'Hazard verified',
+      'H-2026-0043 (exposed wire, room 204) was verified by Maya Cruz.',
+      '/hazards',
+      0,
+      isoDaysAgo(0, 0.1),
+    ],
+    [
+      'warning',
+      'New hazard reported',
+      'Slippery floor reported in the Main Gymnasium by Daniel Lim.',
+      '/hazards',
+      0,
+      isoDaysAgo(0, 0.3),
+    ],
+    [
+      'alert',
+      'Incident active',
+      'INC-2026-0012 — Laboratory power failure is still active.',
+      '/incidents',
+      0,
+      isoDaysAgo(0.3),
+    ],
+    [
+      'info',
+      'Inspection due',
+      'Annual extinguisher service for FE-14 is overdue.',
+      '/hazards',
+      1,
+      isoDaysAgo(1),
+    ],
+    [
+      'success',
+      'Roll call updated',
+      'Grade 10 — Section A completed with 31 of 31 present.',
+      '/rollcall',
+      1,
+      isoDaysAgo(1.2),
+    ],
+    [
+      'info',
+      'Scheduled inspection',
+      'Room scanning scheduled for the Science Wing.',
+      '/scan',
+      1,
+      isoDaysAgo(2),
+    ],
   ];
   for (const [type, title, body, href, read, at] of notificationDefs) {
     for (const role of ['admin', 'inspector', 'teacher', 'responder']) {
-      insertNotification.run(userIds[role], type, title, body, href, read, at);
+      await insertNotification.run(userIds[role], type, title, body, href, read, at);
     }
   }
 
@@ -828,7 +1283,7 @@ function seed() {
       effective_at, expires_at, published_by, published_at, archived_at, created_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?)`,
   );
-  insertAlert.run(
+  await insertAlert.run(
     'A-2026-0001',
     'green',
     'announcement',
@@ -843,7 +1298,7 @@ function seed() {
     isoDaysAgo(2),
     isoDaysAgo(2),
   );
-  insertAlert.run(
+  await insertAlert.run(
     'A-2026-0002',
     'yellow',
     'announcement',
@@ -858,7 +1313,7 @@ function seed() {
     isoDaysAgo(0.5),
     isoDaysAgo(0.5),
   );
-  insertAlert.run(
+  await insertAlert.run(
     'A-2026-0003',
     'orange',
     'alert',
@@ -878,7 +1333,7 @@ function seed() {
     `INSERT INTO safety_checks (user_id, status, note, building_id, room_id, sharing, expires_at, created_at, updated_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   );
-  insertSafety.run(
+  await insertSafety.run(
     userIds.student,
     'safe',
     'In homeroom when the alert was raised.',
@@ -889,7 +1344,7 @@ function seed() {
     isoDaysAgo(0, 1),
     isoDaysAgo(0, 1),
   );
-  insertSafety.run(
+  await insertSafety.run(
     userIds.teacher,
     'safe',
     'Class accounted for; moving to the north field.',
@@ -906,7 +1361,7 @@ function seed() {
       completed_at, created_by, created_at, updated_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   );
-  insertRecoveryTask.run(
+  await insertRecoveryTask.run(
     inc1,
     'Verify distribution board and lab circuits',
     'Thermal scan and insulation-resistance test of the isolated board before re-energizing.',
@@ -919,7 +1374,7 @@ function seed() {
     isoDaysAgo(0.2),
     isoDaysAgo(0.1),
   );
-  insertRecoveryTask.run(
+  await insertRecoveryTask.run(
     inc1,
     'Commission independent electrical sign-off',
     'Engage the electrical contractor to provide written clearance before labs reopen.',
@@ -932,7 +1387,7 @@ function seed() {
     isoDaysAgo(0.2),
     isoDaysAgo(0.2),
   );
-  insertRecoveryTask.run(
+  await insertRecoveryTask.run(
     inc1,
     'Restock science spill kit',
     'Inspection used part of the absorbent stock. Replace to the sealed baseline quantity.',
@@ -951,7 +1406,7 @@ function seed() {
       assessed_by, assessed_at, created_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   );
-  insertAssessment.run(
+  await insertAssessment.run(
     inc1,
     buildings[1].id,
     null,
@@ -962,7 +1417,7 @@ function seed() {
     isoDaysAgo(0.15),
     isoDaysAgo(0.15),
   );
-  insertAssessment.run(
+  await insertAssessment.run(
     inc1,
     buildings[1].id,
     R('S101'),
@@ -978,19 +1433,73 @@ function seed() {
   const insertAudit = db.prepare(
     'INSERT INTO audit_log (actor_id, action, entity, entity_id, meta, created_at) VALUES (?, ?, ?, ?, ?, ?)',
   );
-  insertAudit.run(userIds.inspector, 'hazard.verify', 'hazard', '1', JSON.stringify({ ref: 'H-2026-0043' }), isoDaysAgo(2));
-  insertAudit.run(userIds.admin, 'hazard.assign', 'hazard', '2', JSON.stringify({ assignee: 'Maya Cruz' }), isoDaysAgo(3.5));
-  insertAudit.run(userIds.inspector, 'scan.submit', 'scan', String(pastScan), JSON.stringify({ room: 'MAIN-204' }), isoDaysAgo(2));
-  insertAudit.run(userIds.responder, 'incident.open', 'incident', '1', JSON.stringify({ ref: 'INC-2026-0012' }), isoDaysAgo(0.3));
-  insertAudit.run(userIds.responder, 'alert.publish', 'alert', '3', JSON.stringify({ ref: 'A-2026-0003', level: 'orange' }), isoDaysAgo(0.3));
-  insertAudit.run(userIds.student, 'safety.check', 'safety_check', String(userIds.student), JSON.stringify({ status: 'safe' }), isoDaysAgo(0, 1));
-  insertAudit.run(userIds.admin, 'recovery.task.create', 'recovery_task', '1', JSON.stringify({ incident: 'INC-2026-0012' }), isoDaysAgo(0.2));
+  await insertAudit.run(
+    userIds.inspector,
+    'hazard.verify',
+    'hazard',
+    '1',
+    JSON.stringify({ ref: 'H-2026-0043' }),
+    isoDaysAgo(2),
+  );
+  await insertAudit.run(
+    userIds.admin,
+    'hazard.assign',
+    'hazard',
+    '2',
+    JSON.stringify({ assignee: 'Maya Cruz' }),
+    isoDaysAgo(3.5),
+  );
+  await insertAudit.run(
+    userIds.inspector,
+    'scan.submit',
+    'scan',
+    String(pastScan),
+    JSON.stringify({ room: 'MAIN-204' }),
+    isoDaysAgo(2),
+  );
+  await insertAudit.run(
+    userIds.responder,
+    'incident.open',
+    'incident',
+    '1',
+    JSON.stringify({ ref: 'INC-2026-0012' }),
+    isoDaysAgo(0.3),
+  );
+  await insertAudit.run(
+    userIds.responder,
+    'alert.publish',
+    'alert',
+    '3',
+    JSON.stringify({ ref: 'A-2026-0003', level: 'orange' }),
+    isoDaysAgo(0.3),
+  );
+  await insertAudit.run(
+    userIds.student,
+    'safety.check',
+    'safety_check',
+    String(userIds.student),
+    JSON.stringify({ status: 'safe' }),
+    isoDaysAgo(0, 1),
+  );
+  await insertAudit.run(
+    userIds.admin,
+    'recovery.task.create',
+    'recovery_task',
+    '1',
+    JSON.stringify({ incident: 'INC-2026-0012' }),
+    isoDaysAgo(0.2),
+  );
 
   return true;
 }
 
-const seeded = seed();
-if (seeded) {
+const seeded =
+  !usesPostgres || (process.env.NODE_ENV === 'test' && process.env.RADAR_ALLOW_TEST_SEED === '1')
+    ? await seed()
+    : false;
+if (usesPostgres && !(process.env.NODE_ENV === 'test' && process.env.RADAR_ALLOW_TEST_SEED === '1')) {
+  console.log('[radar] hosted mode — demonstration seeding disabled');
+} else if (seeded) {
   console.log('[radar] database seeded with Northridge High School records');
 } else {
   console.log('[radar] database already contains data — seed skipped');

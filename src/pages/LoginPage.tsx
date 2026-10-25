@@ -1,13 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/context/AuthContext';
-import { errorMessage } from '@/lib/api';
+import { api, errorMessage } from '@/lib/api';
 import {
   Mail,
   Lock,
@@ -31,6 +31,20 @@ const SEEDED_ACCOUNTS = [
 
 export function LoginPage() {
   const { user, loading: authLoading, login } = useAuth();
+  const [signupEnabled, setSignupEnabled] = useState(false);
+  const [cloudAuth, setCloudAuth] = useState(true);
+  const [signup, setSignup] = useState(false);
+  const [name, setName] = useState('');
+  const [notice, setNotice] = useState('');
+  useEffect(() => {
+    api
+      .get<{ signupEnabled: boolean; provider: string }>('/api/auth/config')
+      .then((config) => {
+        setSignupEnabled(config.signupEnabled);
+        setCloudAuth(config.provider === 'supabase');
+      })
+      .catch(() => {});
+  }, []);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -54,6 +68,17 @@ export function LoginPage() {
     }
     setSubmitting(true);
     try {
+      if (signup) {
+        const result = await api.post<{ message: string }>('/api/auth/signup', {
+          name,
+          email: email.trim(),
+          password,
+        });
+        setNotice(result.message);
+        setSignup(false);
+        setPassword('');
+        return;
+      }
       await login(email.trim(), password);
       navigate(from, { replace: true });
     } catch (err) {
@@ -101,16 +126,32 @@ export function LoginPage() {
             One operational picture for a safer campus.
           </h1>
           <p className="text-sm leading-relaxed text-muted-foreground">
-            Map every building and room, run guided inspections, and keep hazard findings, evidence and
-            corrective actions in a single auditable record.
+            Map every building and room, run guided inspections, and keep hazard findings, evidence
+            and corrective actions in a single auditable record.
           </p>
 
           <ul className="space-y-4">
             {[
-              { icon: MapPinned, title: 'Live campus map', body: 'Buildings, rooms, equipment and evacuation routes.' },
-              { icon: ScanEye, title: 'Guided room scans', body: 'Capture evidence and track findings to verification.' },
-              { icon: AlertTriangle, title: 'Hazard workspace', body: 'Severity, ownership, timelines and corrective actions.' },
-              { icon: ShieldCheck, title: 'Role-based access', body: 'Server-enforced permissions and an audit trail.' },
+              {
+                icon: MapPinned,
+                title: 'Live campus map',
+                body: 'Buildings, rooms, equipment and evacuation routes.',
+              },
+              {
+                icon: ScanEye,
+                title: 'Guided room scans',
+                body: 'Capture evidence and track findings to verification.',
+              },
+              {
+                icon: AlertTriangle,
+                title: 'Hazard workspace',
+                body: 'Severity, ownership, timelines and corrective actions.',
+              },
+              {
+                icon: ShieldCheck,
+                title: 'Role-based access',
+                body: 'Server-enforced permissions and an audit trail.',
+              },
             ].map((feature) => {
               const Icon = feature.icon;
               return (
@@ -119,7 +160,9 @@ export function LoginPage() {
                     <Icon className="h-4 w-4" />
                   </span>
                   <span>
-                    <span className="block text-sm font-medium text-foreground">{feature.title}</span>
+                    <span className="block text-sm font-medium text-foreground">
+                      {feature.title}
+                    </span>
                     <span className="block text-xs text-muted-foreground">{feature.body}</span>
                   </span>
                 </li>
@@ -152,11 +195,28 @@ export function LoginPage() {
 
           <Card hover={false} className="shadow-xl">
             <CardHeader>
-              <CardTitle>Sign in</CardTitle>
+              <CardTitle>{signup ? 'Create your account' : 'Sign in'}</CardTitle>
               <CardDescription>Use your school account to continue.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-5">
+              {notice && (
+                <p
+                  role="status"
+                  className="rounded-lg border border-success/30 bg-success/10 p-3 text-sm"
+                >
+                  {notice}
+                </p>
+              )}
               <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+                {signup && (
+                  <Input
+                    label="Full name"
+                    autoComplete="name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    required
+                  />
+                )}
                 <div className="relative">
                   <Mail className="pointer-events-none absolute left-3 top-[38px] h-4 w-4 text-muted-foreground" />
                   <Input
@@ -176,7 +236,7 @@ export function LoginPage() {
                   <Input
                     label="Password"
                     type={showPassword ? 'text' : 'password'}
-                    autoComplete="current-password"
+                    autoComplete={signup ? 'new-password' : 'current-password'}
                     placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -203,17 +263,30 @@ export function LoginPage() {
                 )}
 
                 <Button type="submit" className="w-full" loading={submitting}>
-                  {submitting ? 'Signing in…' : 'Sign in'}
+                  {submitting ? 'Please wait…' : signup ? 'Create account' : 'Sign in'}
                 </Button>
               </form>
 
+              {signupEnabled && (
+                <button
+                  type="button"
+                  className="w-full text-center text-sm text-primary"
+                  onClick={() => {
+                    setSignup(!signup);
+                    setError(null);
+                    setNotice('');
+                  }}
+                >
+                  {signup ? 'Already have an account? Sign in' : 'New to RADAR? Create an account'}
+                </button>
+              )}
               <p className="text-center text-[11px] text-muted-foreground">
                 Sessions are stored in an HttpOnly cookie. Access is enforced on the server.
               </p>
 
               {/* Development convenience only: seeded credentials must never be
                   printed on a production login screen. */}
-              {import.meta.env.DEV && (
+              {import.meta.env.DEV && !cloudAuth && (
                 <div className="rounded-lg border border-dashed border-border bg-muted/40">
                   <button
                     type="button"
@@ -232,8 +305,8 @@ export function LoginPage() {
                   {showAccounts && (
                     <div className="border-t border-border p-2">
                       <p className="px-1 pb-2 text-[11px] text-muted-foreground">
-                        Development build only. These accounts exist in the local database — replace them
-                        before any real deployment.
+                        Development build only. These accounts exist in the local database — replace
+                        them before any real deployment.
                       </p>
                       <ul className="space-y-1">
                         {SEEDED_ACCOUNTS.map((account) => (
@@ -244,12 +317,16 @@ export function LoginPage() {
                               className="flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left text-xs transition-colors hover:bg-accent"
                             >
                               <span className="min-w-0">
-                                <span className="block font-medium text-foreground">{account.role}</span>
+                                <span className="block font-medium text-foreground">
+                                  {account.role}
+                                </span>
                                 <span className="block truncate font-mono text-[11px] text-muted-foreground">
                                   {account.email}
                                 </span>
                               </span>
-                              <span className="shrink-0 text-[11px] font-medium text-accent-foreground">Use</span>
+                              <span className="shrink-0 text-[11px] font-medium text-accent-foreground">
+                                Use
+                              </span>
                             </button>
                           </li>
                         ))}

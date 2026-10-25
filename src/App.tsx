@@ -112,7 +112,7 @@ function ProtectedLayout() {
 
 function ScopedOfflineProvider({children}: {children: React.ReactNode}) {
   const { user, activeWorkspaceId } = useAuth();
-  return <OfflineProvider key={`${user?.id ?? 'guest'}:${activeWorkspaceId ?? 'default'}`}>{children}</OfflineProvider>;
+  return <OfflineProvider key={`${user?.accountScope ?? user?.id ?? 'guest'}:${activeWorkspaceId ?? 'default'}`}>{children}</OfflineProvider>;
 }
 
 export default function App() {

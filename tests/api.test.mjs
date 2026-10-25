@@ -66,6 +66,9 @@ before(async () => {
     cwd: ROOT,
     env: {
       ...process.env,
+      RADAR_DATABASE_DRIVER: 'sqlite',
+      RADAR_PGLITE_TEST_DIR: '',
+      RADAR_TEST_CLOUD_AUTH: '0',
       PORT: String(PORT),
       HOST: '127.0.0.1',
       RADAR_DB_DIR: dataDir,

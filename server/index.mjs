@@ -1,3 +1,4 @@
+import { usesSupabase, cloudDownload } from './supabase.mjs';
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -64,7 +65,11 @@ function checkOrigin(req) {
   try {
     const originUrl = new URL(origin);
     const host = req.headers.host;
-    return originUrl.host === host || originUrl.hostname === 'localhost' || originUrl.hostname === '127.0.0.1';
+    return (
+      originUrl.host === host ||
+      originUrl.hostname === 'localhost' ||
+      originUrl.hostname === '127.0.0.1'
+    );
   } catch {
     return false;
   }
@@ -91,7 +96,7 @@ const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host ?? 'localhost'}`);
 
   if (url.pathname.startsWith('/api/')) {
-    return handleApi(req, res);
+    return await handleApi(req, res);
   }
 
   if (url.pathname === '/uploads' || url.pathname.startsWith('/uploads/')) {
@@ -99,13 +104,43 @@ const server = http.createServer(async (req, res) => {
     let uploadPath = url.pathname.replace(/^\/uploads/, '');
     const workspaceMatch = /^\/uploads\/workspaces\/(\d{6})\/([^/]+)$/.exec(url.pathname);
     if (url.pathname.startsWith('/uploads/workspaces/')) {
-      const user = getUserFromRequest(req);
-      const record = workspaceMatch && workspaceRecord(workspaceMatch[1]);
+      const user = await getUserFromRequest(req);
+      const record = workspaceMatch && (await workspaceRecord(workspaceMatch[1]));
       if (!user || !record || record.owner_user_id !== user.id) {
-        res.writeHead(403); return res.end('School workspace access denied.');
+        res.writeHead(403);
+        return res.end('School workspace access denied.');
       }
       uploadRoot = workspaceUploads(workspaceMatch[1]);
       uploadPath = '/' + workspaceMatch[2];
+    }
+    if (usesSupabase) {
+      const user = await getUserFromRequest(req);
+      if (!user || (!workspaceMatch && user.workspaceId)) {
+        res.writeHead(403);
+        return res.end('Sign in to the correct school workspace.');
+      }
+      const name = workspaceMatch ? workspaceMatch[2] : uploadPath.slice(1);
+      if (!/^[A-Za-z0-9_.-]+$/.test(name)) {
+        res.writeHead(404);
+        return res.end('Not found');
+      }
+      try {
+        const file = await cloudDownload(workspaceMatch?.[1], name);
+        if (!file) {
+          res.writeHead(404);
+          return res.end('Not found');
+        }
+        res.writeHead(200, {
+          'Content-Type': file.type || 'application/octet-stream',
+          'Cache-Control': 'private, no-store',
+          'Content-Security-Policy':
+            "default-src 'none'; img-src 'self'; style-src 'unsafe-inline'",
+        });
+        return res.end(file.buffer);
+      } catch {
+        res.writeHead(502);
+        return res.end('Cloud file storage is unavailable.');
+      }
     }
     const filePath = safeJoin(uploadRoot, uploadPath);
     if (!filePath || !fs.existsSync(filePath) || !fs.statSync(filePath).isFile()) {
@@ -135,7 +170,9 @@ const server = http.createServer(async (req, res) => {
   const requested = url.pathname === '/' ? '/index.html' : url.pathname;
   const filePath = safeJoin(DIST_DIR, requested);
   if (filePath && fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
-    const cache = requested.startsWith('/assets/') ? 'public, max-age=31536000, immutable' : 'no-cache';
+    const cache = requested.startsWith('/assets/')
+      ? 'public, max-age=31536000, immutable'
+      : 'no-cache';
     return serveFile(res, filePath, cache);
   }
 

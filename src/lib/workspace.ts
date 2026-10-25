@@ -2,7 +2,7 @@
 export function workspaceId(): string {
   try { return sessionStorage.getItem('radar:active-workspace') ?? ''; } catch { return ''; }
 }
-export function setWorkspaceScope(id: string | null, userId?: number) {
+export function setWorkspaceScope(id: string | null, userId?: number | string) {
   try {
     sessionStorage.setItem('radar:active-workspace', id ?? '');
     if (userId != null) sessionStorage.setItem('radar:workspace-account', String(userId));

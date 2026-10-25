@@ -160,3 +160,7 @@ The original account database stays in `server/data/radar.db` (or `RADAR_DB_DIR/
 Workspace selection belongs to the signed-in session. A request's workspace expectation prevents stale tabs and queued writes from being applied to another school after a switch. Offline data packs and outboxes are separated by account and workspace; older unscoped data packs and queued items are not automatically migrated or replayed. Downloads and uploads use the selected school scope. New workspace uploads require the owner's authenticated session and are not publicly cached.
 
 After updating this code, stop the old development server with Ctrl+C and run `npm run dev` again so the API loads the new routes and migrations. `npm test` includes integration checks for ownership, empty-school creation, campus record creation, isolation, stale requests, uploads, and persistence across server restart.
+
+## Supabase accounts and cloud storage
+
+RADAR can use Supabase Auth, PostgreSQL and private Storage instead of local SQLite/files. See [Supabase connection instructions](docs/SUPABASE.md). Copy `.env.example` to `.env` and configure the server-only database connection, storage key and administrator email before enabling `RADAR_DATABASE_DRIVER=postgres`. Local records are retained and are not automatically migrated or uploaded.

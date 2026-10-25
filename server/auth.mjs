@@ -31,22 +31,19 @@ export function verifyPassword(password, stored) {
 /* Sessions                                                            */
 /* ------------------------------------------------------------------ */
 
-export function createSession(userId) {
+export async function createSession(userId) {
   const token = crypto.randomBytes(32).toString('hex');
   const created = new Date();
   const expires = new Date(created.getTime() + SESSION_DAYS * 24 * 60 * 60 * 1000);
-  coreDb.prepare('INSERT INTO sessions (token, user_id, created_at, expires_at) VALUES (?, ?, ?, ?)').run(
-    token,
-    userId,
-    created.toISOString(),
-    expires.toISOString(),
-  );
+  await coreDb
+    .prepare('INSERT INTO sessions (token, user_id, created_at, expires_at) VALUES (?, ?, ?, ?)')
+    .run(token, userId, created.toISOString(), expires.toISOString());
   return { token, expires };
 }
 
-export function destroySession(token) {
+export async function destroySession(token) {
   if (!token) return;
-  coreDb.prepare('DELETE FROM sessions WHERE token = ?').run(token);
+  await coreDb.prepare('DELETE FROM sessions WHERE token = ?').run(token);
 }
 
 export function parseCookies(header = '') {
@@ -69,13 +66,13 @@ export function clearCookie() {
   return `${COOKIE_NAME}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`;
 }
 
-export function getUserFromRequest(req) {
+export async function getUserFromRequest(req) {
   const token = parseCookies(req.headers.cookie)[COOKIE_NAME];
   if (!token) return null;
 
-  let row = coreDb
+  let row = await coreDb
     .prepare(
-      `SELECT s.token, s.expires_at, s.workspace_id, u.id, u.email, u.name, u.role, u.title, u.phone, u.school_id, u.grade
+      `SELECT s.token, s.expires_at, s.workspace_id, u.id, u.email, u.name, u.role, u.title, u.phone, u.school_id, u.grade, u.supabase_auth_id
        FROM sessions s JOIN users u ON u.id = s.user_id
        WHERE s.token = ?`,
     )
@@ -83,16 +80,18 @@ export function getUserFromRequest(req) {
 
   if (!row) return null;
   if (new Date(row.expires_at).getTime() < Date.now()) {
-    destroySession(token);
+    await destroySession(token);
     return null;
   }
+  const accountScope = row.supabase_auth_id ? `supabase:${row.supabase_auth_id}` : `local:${row.id}`;
   const context = currentDatabaseContext();
   if (context?.workspaceId) {
-    const member = db.prepare('SELECT * FROM users WHERE id = ?').get(row.id);
+    const member = await db.prepare('SELECT * FROM users WHERE id = ?').get(row.id);
     if (!member) return null;
     row = { ...row, ...member };
   }
   return {
+    accountScope,
     workspaceId: row.workspace_id ?? null,
     id: row.id,
     email: row.email,
@@ -220,6 +219,7 @@ export function publicUser(user) {
   if (!user) return null;
   return {
     id: user.id,
+    accountScope: user.accountScope ?? `local:${user.id}`,
     email: user.email,
     name: user.name,
     role: user.role,
@@ -235,8 +235,17 @@ export function publicUser(user) {
 /* Audit                                                               */
 /* ------------------------------------------------------------------ */
 
-export function audit(actorId, action, entity, entityId, meta = {}) {
-  db.prepare(
-    'INSERT INTO audit_log (actor_id, action, entity, entity_id, meta, created_at) VALUES (?, ?, ?, ?, ?, ?)',
-  ).run(actorId ?? null, action, entity, entityId == null ? null : String(entityId), JSON.stringify(meta), nowIso());
+export async function audit(actorId, action, entity, entityId, meta = {}) {
+  await db
+    .prepare(
+      'INSERT INTO audit_log (actor_id, action, entity, entity_id, meta, created_at) VALUES (?, ?, ?, ?, ?, ?)',
+    )
+    .run(
+      actorId ?? null,
+      action,
+      entity,
+      entityId == null ? null : String(entityId),
+      JSON.stringify(meta),
+      nowIso(),
+    );
 }

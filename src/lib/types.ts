@@ -15,6 +15,7 @@ export interface School {
 
 export interface User {
   id: number;
+  accountScope?: string;
   email: string;
   name: string;
   role: Role;

@@ -37,7 +37,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const refresh = useCallback(async () => {
     try {
       const data = await api.get<{ user: User; school: School; activeWorkspaceId: string | null }>('/api/auth/me');
-      setWorkspaceScope(data.activeWorkspaceId, data.user.id);
+      setWorkspaceScope(data.activeWorkspaceId, data.user.accountScope ?? data.user.id);
       setActiveWorkspaceId(data.activeWorkspaceId);
       setUser(data.user);
       setSchool(data.school);
@@ -63,7 +63,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = useCallback(async (email: string, password: string) => {
     setError(null);
     const data = await api.post<{ user: User; school: School; activeWorkspaceId: string | null }>('/api/auth/login', { email, password });
-    setWorkspaceScope(data.activeWorkspaceId, data.user.id);
+    setWorkspaceScope(data.activeWorkspaceId, data.user.accountScope ?? data.user.id);
     setActiveWorkspaceId(data.activeWorkspaceId);
     setUser(data.user);
     setSchool(data.school);

@@ -20,7 +20,7 @@ export function SchoolDirectoryProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     api.get<{workspaces: Array<{beisId: string}>}>('/api/workspaces').then(data => setWorkspaces(data.workspaces.map(w => w.beisId))).catch(err => setSwitchError(errorMessage(err)));
   }, []);
-  const storageKey = `radar:directory-school:${user?.id ?? 'guest'}`;
+  const storageKey = `radar:directory-school:${user?.accountScope ?? user?.id ?? 'guest'}`;
   const [selected, setSelected] = useState<DirectorySchool | null>(() => {
     try { const id = localStorage.getItem(storageKey); return entries.find(s => s.id === id) ?? null; }
     catch { return null; }
@@ -34,7 +34,7 @@ export function SchoolDirectoryProvider({ children }: { children: ReactNode }) {
   function select(school: DirectorySchool | null) {
     if (!school && activeWorkspaceId) {
       api.post('/api/workspaces/select', {beisId: null}).then(() => {
-        setWorkspaceScope(null, user?.id);
+        setWorkspaceScope(null, user?.accountScope ?? user?.id);
         try { localStorage.removeItem(storageKey); } catch { /* Navigation remains available. */ }
         window.location.assign('/dashboard');
       }).catch(err => setSwitchError(errorMessage(err)));
@@ -89,7 +89,7 @@ export function SchoolWorkspaceBoundary({ children }: { children: ReactNode }) {
     try {
       if (!workspaces.includes(selected.id)) await api.post('/api/workspaces', {beisId: selected.id});
       await api.post('/api/workspaces/select', {beisId: selected.id});
-      setWorkspaceScope(selected.id, user?.id);
+      setWorkspaceScope(selected.id, user?.accountScope ?? user?.id);
       window.location.assign('/dashboard');
     } catch (err) { setError(errorMessage(err)); setBusy(false); }
   }

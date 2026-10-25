@@ -76,3 +76,7 @@ The repository does not install a paid plan, create provider accounts, send live
 4. Save the school location and a real inspection/photo, then reload and redeploy to verify persistence.
 5. Test optional providers independently, including a file above 3 MB, actual browser push permission/delivery, signed SMS receipts and scheduler batches. Configured flags do not establish those outcomes.
 6. Review Vercel function logs, database backups, Storage privacy and restore procedures. Do not publish secret keys in screenshots, support messages or frontend environment variables.
+
+## Optional advanced services
+
+The advanced tools use the same private database/Storage configuration. Configure vision, VAPID, Twilio and optional TLS TURN REST settings as server variables only; see [Testing and configuration](TESTING-AND-CONFIGURATION.md). Campus video analysis uploads only bounded selected JPEG frames, not a full video; it does not require hosting large videos in the Vercel function. Saved reviewed surveys are school-scoped. Configure scheduled maintenance for queued alert/SOS SMS work, and inspect actual provider receipts. Do not turn on training mode in a production deployment.

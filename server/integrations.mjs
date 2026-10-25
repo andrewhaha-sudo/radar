@@ -4,12 +4,18 @@ export async function analyzeVisibleHazards(
     apiKey = process.env.RADAR_VISION_API_KEY,
     request = fetch,
     model = process.env.RADAR_VISION_MODEL ?? 'gpt-4.1-mini',
+    calibratedImageIndexes = [],
   } = {},
 ) {
+  if (process.env.RADAR_TEST_LAB === '1')
+    throw new Error('External vision calls are disabled in the training environment.');
   if (!apiKey) throw new Error('The vision provider is not configured.');
   const response = await request('https://api.openai.com/v1/responses', {
     method: 'POST',
-    headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
     signal: AbortSignal.timeout(60000),
     body: JSON.stringify({
       model,
@@ -19,9 +25,15 @@ export async function analyzeVisibleHazards(
           content: [
             {
               type: 'input_text',
-              text: 'Review these room inspection photos for potentially visible hazards only: blocked exits, exposed wiring, visibly damaged surfaces, slips/clutter, chemical storage, and obstructed safety equipment. Do not claim hidden defects, structural integrity, electrical live status, or a safety certification. Propose findings for a human to confirm or reject. Confidence, when returned, is an uncalibrated model estimate. Return no findings when the images do not support one.',
+              text:
+                'Review these room inspection photos for potentially visible hazards only: blocked exits, exposed wiring, visibly damaged surfaces, slips/clutter, chemical storage, and obstructed safety equipment. Do not claim hidden defects, structural integrity, electrical live status, or a safety certification. Propose findings for a human to confirm or reject. Confidence, when returned, is an uncalibrated model estimate. Return no findings when the images do not support one. For images with a verified planar calibration (zero-based indexes: ' +
+                JSON.stringify(calibratedImageIndexes) +
+                '), optionally identify an imagePoint [x,y] normalized 0–1 only when the visible finding has a clearly identifiable point on that plane. Otherwise imageIndex and imagePoint must both be null. Never guess coordinates.',
             },
-            ...images.map((image) => ({ type: 'input_image', image_url: image })),
+            ...images.map((image) => ({
+              type: 'input_image',
+              image_url: image,
+            })),
           ],
         },
       ],
@@ -47,9 +59,40 @@ export async function analyzeVisibleHazards(
                       type: 'string',
                       enum: ['critical', 'high', 'medium', 'low', 'info'],
                     },
+                    category: {
+                      type: 'string',
+                      enum: [
+                        'electrical',
+                        'structural',
+                        'fire',
+                        'chemical',
+                        'slip',
+                        'blocked_exit',
+                        'other',
+                      ],
+                    },
                     confidence: { type: ['number', 'null'] },
+                    imageIndex: {
+                      type: ['integer', 'null'],
+                      minimum: 0,
+                      maximum: 3,
+                    },
+                    imagePoint: {
+                      type: ['array', 'null'],
+                      items: { type: 'number', minimum: 0, maximum: 1 },
+                      minItems: 2,
+                      maxItems: 2,
+                    },
                   },
-                  required: ['title', 'description', 'severity', 'confidence'],
+                  required: [
+                    'title',
+                    'description',
+                    'severity',
+                    'confidence',
+                    'category',
+                    'imageIndex',
+                    'imagePoint',
+                  ],
                 },
               },
             },
@@ -90,7 +133,30 @@ export async function analyzeVisibleHazards(
       )
     )
       throw new Error('The vision provider returned invalid finding data.');
+    if (
+      f.imagePoint != null &&
+      (!Number.isInteger(f.imageIndex) ||
+        f.imageIndex < 0 ||
+        f.imageIndex >= images.length ||
+        !Array.isArray(f.imagePoint) ||
+        f.imagePoint.length !== 2 ||
+        f.imagePoint.some((v) => !Number.isFinite(v) || v < 0 || v > 1))
+    )
+      throw new Error('The vision provider returned invalid image positioning.');
     return {
+      category: [
+        'electrical',
+        'structural',
+        'fire',
+        'chemical',
+        'slip',
+        'blocked_exit',
+        'other',
+      ].includes(f.category)
+        ? f.category
+        : 'other',
+      imageIndex: f.imageIndex ?? null,
+      imagePoint: f.imagePoint ?? null,
       title: f.title.slice(0, 140),
       description: f.description.slice(0, 3000),
       severity: f.severity,

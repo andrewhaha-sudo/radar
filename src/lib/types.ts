@@ -226,6 +226,9 @@ export interface ScanPhoto {
 }
 
 export interface ScanObservation {
+  category?:string;
+  mappedX?:number|null;
+  mappedY?:number|null;
   id: number;
   scanId: number;
   title: string;

@@ -821,10 +821,11 @@ export function ScanPage() {
                               {observation.status}
                             </Badge>
                             <Badge variant="outline" className="text-[9px]">
-                              {observation.source === 'ai' ? 'AI suggested' : 'Manual finding'}
+                              {observation.source === 'ai' ? 'AI suggested' : 'Manual finding'} {observation.category&&observation.category!=='other'?`· ${observation.category.replaceAll('_',' ')}`:''}
                             </Badge>
                           </div>
                           <p className="mt-1 text-sm font-medium">{observation.title}</p>
+                          {observation.mappedX!=null&&observation.mappedY!=null&&<p className="text-xs text-warning">Approximate calibrated pin: {observation.mappedX.toFixed(3)}, {observation.mappedY.toFixed(3)}. Check the image anchors and proposed location before accepting.</p>}
                           {observation.description && (
                             <p className="mt-0.5 text-xs text-muted-foreground">
                               {observation.description}

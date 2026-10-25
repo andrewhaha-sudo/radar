@@ -1,3 +1,4 @@
+import crypto from 'node:crypto';
 import { usesSupabase, cloudDownload, cloudSignedDownload } from './supabase.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -74,6 +75,22 @@ function checkOrigin(req) {
 }
 
 export async function handleRequest(req, res) {
+  const requestId = crypto.randomUUID(),
+    started = Date.now();
+  res.setHeader('X-Request-ID', requestId);
+  if (process.env.RADAR_STRUCTURED_LOGS === 'true')
+    res.once('finish', () =>
+      console.log(
+        JSON.stringify({
+          event: 'http',
+          requestId,
+          method: req.method,
+          path: String(req.url).split('?')[0],
+          status: res.statusCode,
+          durationMs: Date.now() - started,
+        }),
+      ),
+    );
   try {
     await dispatch(req, res);
   } catch (error) {

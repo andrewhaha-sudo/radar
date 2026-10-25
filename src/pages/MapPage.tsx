@@ -1,5 +1,4 @@
-'use client';
-
+import {OfficialLayerOverlay} from '@/components/advanced/OfficialLayerOverlay';
 import {CampusSearch} from '@/components/map/CampusSearch';
 import { useEffect, useMemo, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, Tooltip, useMap, GeoJSON, CircleMarker } from 'react-leaflet';
@@ -374,6 +373,7 @@ export function MapPage() {
           className="h-full w-full"
           attributionControl
         >
+          <OfficialLayerOverlay/>
           <TileLayer
             key={`${basemap}-${resolvedMode}`}
             url={activeBasemap.url}

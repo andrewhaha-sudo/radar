@@ -1,3 +1,4 @@
+import {TrainingNotice} from '@/components/advanced/TrainingNotice';
 import { lazy } from 'react';
 import {
   BrowserRouter,
@@ -121,6 +122,7 @@ export default function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
+        <TrainingNotice/>
         <ScopedOfflineProvider>
           <BrowserRouter>
             <Routes>

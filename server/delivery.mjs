@@ -10,9 +10,21 @@ async function record(channel, userId, alertId, state, detail) {
     .run(channel, userId, alertId, state, String(detail).slice(0, 500), nowIso());
 }
 export async function deliverAlert(alert, recipient) {
+  if (process.env.RADAR_TEST_LAB === '1') {
+    await record(
+      'system',
+      recipient.id,
+      alert.id,
+      'training_blocked',
+      'External delivery is disabled in the isolated training environment.',
+    );
+    return;
+  }
   if ((await db.prepare('SELECT active FROM users WHERE id=?').get(recipient.id))?.active === 0)
     return;
   const config = channelStatus();
+  let pushAccepted = false;
+  let smsNeeded = Boolean(alert.send_sms);
   if (alert.send_push) {
     const subscriptions = await db
       .prepare('SELECT * FROM push_subscriptions WHERE user_id=?')
@@ -39,6 +51,7 @@ export async function deliverAlert(alert, recipient) {
             }),
             { TTL: 3600, timeout: 15000 },
           );
+          pushAccepted = true;
           await record(
             'push',
             recipient.id,
@@ -59,72 +72,81 @@ export async function deliverAlert(alert, recipient) {
         }
       }
   }
-  if (alert.send_sms) {
-    const user = await db
-      .prepare('SELECT phone,sms_consent FROM users WHERE id=?')
-      .get(recipient.id);
-    if (!user?.sms_consent) return;
-    if (!config.sms.configured) {
-      await record(
-        'sms',
-        recipient.id,
-        alert.id,
-        'not_configured',
-        'SMS provider settings are missing.',
+  const policyRow = await db
+    .prepare("SELECT value FROM school_settings WHERE key='delivery_policy'")
+    .get();
+  const policy = policyRow ? JSON.parse(policyRow.value) : {};
+  if (alert.send_push && !pushAccepted && policy.fallbackSms === true) smsNeeded = true;
+  if (smsNeeded && !alert.sms_already_accepted)
+    await sendConsentSms(
+      recipient.id,
+      `RADAR: ${alert.title}. Open your school workspace for details. In immediate danger contact local emergency services.`,
+      alert.id,
+    );
+}
+
+export async function sendConsentSms(userId, message, alertId = null) {
+  if (process.env.RADAR_TEST_LAB === '1') return;
+  const config = channelStatus();
+
+  const user = await db
+    .prepare('SELECT phone,sms_consent,active FROM users WHERE id=?')
+    .get(userId);
+  if (!user?.sms_consent || !user.active) return;
+  if (!config.sms.configured) {
+    await record('sms', userId, alertId, 'not_configured', 'SMS provider settings are missing.');
+    return;
+  }
+  if (!/^\+[1-9]\d{7,14}$/.test(user.phone ?? '')) {
+    await record(
+      'sms',
+      userId,
+      alertId,
+      'failed',
+      'A valid consented E.164 phone number is required.',
+    );
+    return;
+  }
+  try {
+    const form = new URLSearchParams({
+      To: user.phone,
+      From: process.env.RADAR_TWILIO_FROM,
+      Body: message,
+    });
+    if (process.env.RADAR_PUBLIC_URL?.startsWith('https://'))
+      form.set(
+        'StatusCallback',
+        `${process.env.RADAR_PUBLIC_URL.replace(/\/$/, '')}/api/notifications/sms-status?scope=${currentDatabaseContext()?.workspaceId ?? ''}`,
       );
-      return;
-    }
-    if (!/^\+[1-9]\d{7,14}$/.test(user.phone ?? '')) {
-      await record(
-        'sms',
-        recipient.id,
-        alert.id,
-        'failed',
-        'A valid consented E.164 phone number is required.',
-      );
-      return;
-    }
-    try {
-      const form = new URLSearchParams({
-        To: user.phone,
-        From: process.env.RADAR_TWILIO_FROM,
-        Body: `RADAR: ${alert.title}. Open your school workspace for the official announcement. In immediate danger contact local emergency services.`,
-      });
-      if (process.env.RADAR_PUBLIC_URL?.startsWith('https://'))
-        form.set(
-          'StatusCallback',
-          `${process.env.RADAR_PUBLIC_URL.replace(/\/$/, '')}/api/notifications/sms-status?scope=${currentDatabaseContext()?.workspaceId ?? ''}`,
-        );
-      const response = await fetch(
-        `https://api.twilio.com/2010-04-01/Accounts/${encodeURIComponent(process.env.RADAR_TWILIO_SID)}/Messages.json`,
-        {
-          method: 'POST',
-          headers: {
-            Authorization: `Basic ${Buffer.from(`${process.env.RADAR_TWILIO_SID}:${process.env.RADAR_TWILIO_TOKEN}`).toString('base64')}`,
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-          body: form,
-          signal: AbortSignal.timeout(15000),
+    const response = await fetch(
+      `https://api.twilio.com/2010-04-01/Accounts/${encodeURIComponent(process.env.RADAR_TWILIO_SID)}/Messages.json`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Basic ${Buffer.from(`${process.env.RADAR_TWILIO_SID}:${process.env.RADAR_TWILIO_TOKEN}`).toString('base64')}`,
+          'Content-Type': 'application/x-www-form-urlencoded',
         },
-      );
-      if (!response.ok) throw new Error(`SMS service HTTP ${response.status}`);
-      const result = await response.json();
-      await record(
-        'sms',
-        recipient.id,
-        alert.id,
-        'accepted',
-        `sid:${result.sid}; provider ${result.status ?? 'accepted'}; device delivery is not yet confirmed.`,
-      );
-    } catch {
-      await record(
-        'sms',
-        recipient.id,
-        alert.id,
-        'failed',
-        'SMS service did not confirm acceptance. Use your school emergency contact procedure.',
-      );
-    }
+        body: form,
+        signal: AbortSignal.timeout(15000),
+      },
+    );
+    if (!response.ok) throw new Error(`SMS service HTTP ${response.status}`);
+    const result = await response.json();
+    await record(
+      'sms',
+      userId,
+      alertId,
+      'accepted',
+      `sid:${result.sid}; provider ${result.status ?? 'accepted'}; device delivery is not yet confirmed.`,
+    );
+  } catch {
+    await record(
+      'sms',
+      userId,
+      alertId,
+      'failed',
+      'SMS service did not confirm acceptance. Use your school emergency contact procedure.',
+    );
   }
 }
 
@@ -156,7 +178,10 @@ export async function drainDeliveryJobs() {
             "SELECT channel FROM outbound_deliveries WHERE alert_id=? AND user_id=? AND state IN ('accepted','sent','delivered')",
           )
           .all(alert.id, job.user_id);
-        if (prior.some((p) => p.channel === 'sms')) alert.send_sms = 0;
+        if (prior.some((p) => p.channel === 'sms')) {
+          alert.send_sms = 0;
+          alert.sms_already_accepted = true;
+        }
         if (prior.some((p) => p.channel === 'push')) alert.send_push = 0;
         await deliverAlert(alert, { id: job.user_id });
       }

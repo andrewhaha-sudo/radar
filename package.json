@@ -16,7 +16,13 @@
     "check:supabase": "node --env-file-if-exists=.env scripts/check-supabase.mjs",
     "setup:supabase": "node scripts/setup-supabase.mjs",
     "backup": "node --env-file-if-exists=.env scripts/backup.mjs",
-    "admin:local": "node --env-file-if-exists=.env scripts/promote-local-admin.mjs"
+    "admin:local": "node --env-file-if-exists=.env scripts/promote-local-admin.mjs",
+    "test:lab": "node scripts/test-lab.mjs",
+    "setup:integrations": "node scripts/setup-integrations.mjs",
+    "config:check": "node --env-file-if-exists=.env scripts/config-check.mjs",
+    "config:live": "node --env-file-if-exists=.env scripts/config-check.mjs --live",
+    "backup:verify": "node scripts/verify-backup.mjs",
+    "device:send": "node --env-file-if-exists=.env scripts/send-count.mjs"
   },
   "dependencies": {
     "@google/model-viewer": "^4.4.0",
@@ -29,6 +35,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.4.0",
+    "fast-xml-parser": "^5.11.2",
     "framer-motion": "^14.6.0",
     "leaflet": "^1.9.4",
     "lucide-react": "^1.61.0",

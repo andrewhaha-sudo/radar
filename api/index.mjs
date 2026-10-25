@@ -54,7 +54,7 @@ export default async function handler(req, res) {
     if (
       process.env.VERCEL &&
       res.statusCode < 400 &&
-      /^\/api\/(alerts|notifications)(?:[/?]|$)/.test(req.url)
+      /^\/api\/(alerts|notifications|sos)(?:[/?]|$)/.test(req.url)
     ) {
       waitUntil(
         import('../server/serverless-maintenance.mjs')

@@ -171,3 +171,9 @@ After updating this code, stop the old development server with Ctrl+C and run `n
 ## Supabase accounts and cloud storage
 
 RADAR can use Supabase Auth, PostgreSQL and private Storage instead of local SQLite/files. See [Supabase connection instructions](docs/SUPABASE.md). Copy `.env.example` to `.env` and configure the server-only database connection, storage key and administrator email before enabling `RADAR_DATABASE_DRIVER=postgres`. Local records are retained and are not automatically migrated or uploaded.
+
+## Advanced tools and isolated testing
+
+Open **Campus operations → Advanced tools & testing** for campus video survey, roster imports, custom reports, official datasets, measured footprint models, calibrated pins, aggregate count devices, foreground GPS and peer relay. See [Testing and configuration](docs/TESTING-AND-CONFIGURATION.md) for prerequisites and honest integration limits.
+
+Run `npm run build` then `npm run test:lab` for disposable local practice on port 8799. Use `npm run setup:integrations` to configure private optional providers locally and `npm run config:check` for presence diagnostics. No live deployment or private provider activation is implied.

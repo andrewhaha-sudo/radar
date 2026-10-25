@@ -1,3 +1,5 @@
+import { queueSosSms, drainSosSms } from './emergency-delivery.mjs';
+import { advancedHandlers } from './advanced.mjs';
 import { productHandlers } from './product.mjs';
 import { queueAlertDelivery, drainDeliveryJobs } from './delivery.mjs';
 import { inspectionReminders } from './maintenance.mjs';
@@ -489,7 +491,9 @@ async function assessmentRows(whereSql = '', params = []) {
 
 function csvEscape(value) {
   if (value == null) return '';
-  const text = String(value).replace(/"/g, '""');
+  const raw = String(value);
+  const safe = typeof value === 'string' && /^[\s]*[=+@-]/.test(raw) ? "'" + raw : raw;
+  const text = safe.replace(/"/g, '""');
   return /[",\n\r]/.test(text) ? `"${text}"` : text;
 }
 
@@ -610,6 +614,7 @@ const handlers = {};
 handlers['GET /api/auth/config'] = async (ctx) =>
   json(ctx.res, 200, {
     provider: usesSupabase ? 'supabase' : 'local',
+    training: process.env.RADAR_TEST_LAB === '1',
     signupEnabled: usesSupabase || process.env.RADAR_ALLOW_LOCAL_SIGNUP !== 'false',
     recoveryEnabled: usesSupabase,
     largeCloudUploads: Boolean(process.env.VERCEL) && usesSupabase,
@@ -2710,6 +2715,7 @@ handlers['PATCH /api/hazards/:hazardId/actions/:actionId'] = async (ctx) => {
 export async function maintenanceTick() {
   await materializeAlerts();
   await drainDeliveryJobs();
+  await drainSosSms();
   return inspectionReminders();
 }
 
@@ -2948,6 +2954,11 @@ handlers['POST /api/scans/:id/submit'] = async (ctx) => {
     await db
       .prepare('UPDATE scan_observations SET hazard_id = ? WHERE id = ?')
       .run(hazardId, obs.id);
+    if (obs.mapped_x != null && obs.mapped_y != null)
+      await db
+        .prepare('UPDATE hazards SET pin_x=?,pin_y=? WHERE id=?')
+        .run(obs.mapped_x, obs.mapped_y, hazardId);
+    await db.prepare('UPDATE hazards SET category=? WHERE id=?').run(obs.category??'other',hazardId);
     created.push({ id: hazardId, ref });
   }
 
@@ -3884,6 +3895,7 @@ handlers['POST /api/sos'] = async (ctx) => {
     `${user.name} raised an SOS at ${location}.`,
     '/incidents',
   );
+  await queueSosSms(incidentId);
   await audit(user.id, 'sos.create', 'incident', incidentId, { ref, kind, location });
 
   return json(ctx.res, 201, {
@@ -4032,6 +4044,21 @@ Object.assign(
     finiteNumber,
   }),
 );
+Object.assign(
+  handlers,
+  advancedHandlers({
+    requireUser,
+    requirePermission,
+    readJson,
+    json,
+    HttpError,
+    camel,
+    camelAll,
+    str,
+    oneOf,
+    finiteNumber,
+  }),
+);
 async function checkAuthRate(req, email) {
   const address = process.env.VERCEL
     ? String(req.headers['x-vercel-forwarded-for'] ?? req.socket.remoteAddress)
@@ -4101,6 +4128,7 @@ export async function handleApi(req, res) {
     const control =
       url.pathname.startsWith('/api/workspaces') ||
       url.pathname === '/api/notifications/sms-status' ||
+      url.pathname === '/api/device/occupancy' ||
       (url.pathname.startsWith('/api/auth/') && url.pathname !== '/api/auth/me');
     const active = account?.workspaceId ?? null;
     if (

@@ -1,3 +1,5 @@
+import {lazy,Suspense} from 'react';
+const AdvancedWorkspace=lazy(()=>import('@/components/advanced/AdvancedWorkspace').then(m=>({default:m.AdvancedWorkspace})));
 import { MembershipRequests } from '@/components/forms/MembershipRequests';
 import { SetupReadiness } from '@/components/forms/SetupReadiness';
 import { HazardReviewTools } from '@/components/forms/HazardReviewTools';
@@ -222,6 +224,8 @@ function OperationsContent() {
   useEffect(() => {
     void load();
   }, [load]);
+  const requestedRoomId=params.get('roomId');
+  useEffect(()=>{if(requestedRoomId!==null)setRoomId(requestedRoomId);},[requestedRoomId]);
   const loadRoom = useCallback(async () => {
     if (!roomId) {
       setRecord(null);
@@ -310,6 +314,7 @@ function OperationsContent() {
     { id: 'members', name: 'School members', show: can('admin:users') },
     { id: 'guardians', name: 'Guardian updates', show: user?.role === 'parent' },
     { id: 'settings', name: 'Emergency settings', show: can('admin:users') },
+    {id:'advanced',name:'Advanced tools & testing',show:true},
     { id: 'readiness', name: 'Setup & launch', show: can('admin:users') },
     { id: 'review', name: 'Review patterns', show: can('hazards:read') },
   ].filter((t) => t.show);
@@ -1146,6 +1151,7 @@ function OperationsContent() {
           </section>
         </>
       )}
+      {tab==='advanced'&&<Suspense fallback={<p>Loading advanced tools…</p>}><AdvancedWorkspace/></Suspense>}
       {tab === 'readiness' && can('admin:users') && <SetupReadiness />}
       {tab === 'review' && can('hazards:read') && <HazardReviewTools />}
       {data && tab === 'settings' && can('admin:users') && (

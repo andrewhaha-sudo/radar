@@ -1,4 +1,6 @@
+import {ADVANCED_TABLES,ADVANCED_SCHEMA} from './advanced-schema.mjs';
 export const FEATURE_TABLES = [
+  ...ADVANCED_TABLES,
   'workspace_members',
   'school_join_requests',
   'upload_receipts',
@@ -46,4 +48,4 @@ CREATE TABLE IF NOT EXISTS outbound_deliveries (id INTEGER PRIMARY KEY AUTOINCRE
 CREATE TABLE IF NOT EXISTS school_settings (key TEXT PRIMARY KEY, value TEXT NOT NULL, updated_at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS delivery_jobs (id INTEGER PRIMARY KEY AUTOINCREMENT, alert_id INTEGER NOT NULL REFERENCES alerts(id), user_id INTEGER NOT NULL REFERENCES users(id), state TEXT NOT NULL DEFAULT 'pending', updated_at TEXT NOT NULL, UNIQUE(alert_id,user_id));
 CREATE TABLE IF NOT EXISTS student_guardians (student_id INTEGER NOT NULL REFERENCES users(id), guardian_id INTEGER NOT NULL REFERENCES users(id), approved_by INTEGER NOT NULL REFERENCES users(id), created_at TEXT NOT NULL, PRIMARY KEY(student_id,guardian_id));
-`;
+`+ADVANCED_SCHEMA;

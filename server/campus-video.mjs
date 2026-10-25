@@ -1,4 +1,10 @@
-import { visionModel, visionFailure } from './vision-provider.mjs';
+import {
+  visionFailure,
+  visionProvider,
+  visionApiKey,
+  selectedVisionModel,
+  requestVision,
+} from './vision-provider.mjs';
 import { db, nowIso } from './db.mjs';
 import { audit } from './auth.mjs';
 
@@ -22,20 +28,14 @@ export function validateVideoFrames(frames) {
 }
 export async function suggestCampusBuildings(
   frames,
-  { apiKey = process.env.RADAR_VISION_API_KEY, request = fetch } = {},
+  { apiKey = visionApiKey(), request = fetch } = {},
 ) {
   if (process.env.RADAR_TEST_LAB === '1')
     throw new Error('External AI is disabled in training. Use manual building labels.');
   if (!apiKey) throw new Error('Configure the vision provider, or use manual building labels.');
-  const response = await request('https://api.openai.com/v1/responses', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-    },
-    signal: AbortSignal.timeout(60000),
-    body: JSON.stringify({
-      model: visionModel(),
+  const response = await requestVision(
+    {
+      model: selectedVisionModel(),
       input: [
         {
           role: 'user',
@@ -77,8 +77,9 @@ export async function suggestCampusBuildings(
           },
         },
       },
-    }),
-  });
+    },
+    { apiKey, request },
+  );
   if (!response.ok) throw await visionFailure(response);
   const data = await response.json();
   const raw =
@@ -115,7 +116,8 @@ export function campusVideoHandlers(h) {
       const user = await requireUser(ctx.req);
       requirePermission(user, 'buildings:read');
       return json(ctx.res, 200, {
-        configured: Boolean(process.env.RADAR_VISION_API_KEY),
+        configured: Boolean(visionApiKey()),
+        provider: visionProvider(),
         training: process.env.RADAR_TEST_LAB === '1',
       });
     },

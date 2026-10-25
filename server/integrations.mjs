@@ -1,8 +1,14 @@
-import { visionModel, visionFailure } from './vision-provider.mjs';
+import {
+  visionModel,
+  visionFailure,
+  visionApiKey,
+  selectedVisionModel,
+  requestVision,
+} from './vision-provider.mjs';
 export async function analyzeVisibleHazards(
   images,
   {
-    apiKey = process.env.RADAR_VISION_API_KEY,
+    apiKey = visionApiKey(),
     request = fetch,
     model = process.env.RADAR_VISION_MODEL,
     calibratedImageIndexes = [],
@@ -11,15 +17,9 @@ export async function analyzeVisibleHazards(
   if (process.env.RADAR_TEST_LAB === '1')
     throw new Error('External vision calls are disabled in the training environment.');
   if (!apiKey) throw new Error('The vision provider is not configured.');
-  const response = await request('https://api.openai.com/v1/responses', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-    },
-    signal: AbortSignal.timeout(60000),
-    body: JSON.stringify({
-      model: visionModel(model),
+  const response = await requestVision(
+    {
+      model: model ? visionModel(model) : selectedVisionModel(),
       input: [
         {
           role: 'user',
@@ -102,8 +102,9 @@ export async function analyzeVisibleHazards(
           },
         },
       },
-    }),
-  });
+    },
+    { apiKey, request },
+  );
   if (!response.ok) throw await visionFailure(response);
   const payload = await response.json();
   const text =

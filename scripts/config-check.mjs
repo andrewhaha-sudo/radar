@@ -1,4 +1,4 @@
-import { visionModel, visionFailure } from '../server/vision-provider.mjs';
+import { selectedVisionModel, visionFailure, visionProvider } from '../server/vision-provider.mjs';
 const groups = {
   Supabase: [
     'SUPABASE_URL',
@@ -7,7 +7,7 @@ const groups = {
     'SUPABASE_SERVICE_ROLE_KEY',
     'RADAR_ADMIN_EMAIL',
   ],
-  Vision: ['RADAR_VISION_API_KEY'],
+  Vision: [visionProvider() === 'gemini' ? 'RADAR_GEMINI_API_KEY' : 'RADAR_VISION_API_KEY'],
   Push: ['RADAR_VAPID_PUBLIC_KEY', 'RADAR_VAPID_PRIVATE_KEY', 'RADAR_VAPID_SUBJECT'],
   SMS: ['RADAR_TWILIO_SID', 'RADAR_TWILIO_TOKEN', 'RADAR_TWILIO_FROM'],
   Scheduler: ['CRON_SECRET', 'RADAR_PUBLIC_URL'],
@@ -24,9 +24,14 @@ if (process.argv.includes('--live')) {
   for (const [name, key, url, headers] of [
     [
       'Vision',
-      'RADAR_VISION_API_KEY',
-      `https://api.openai.com/v1/models/${encodeURIComponent(visionModel())}`,
-      () => ({ Authorization: `Bearer ${process.env.RADAR_VISION_API_KEY}` }),
+      visionProvider() === 'gemini' ? 'RADAR_GEMINI_API_KEY' : 'RADAR_VISION_API_KEY',
+      visionProvider() === 'gemini'
+        ? `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(selectedVisionModel())}`
+        : `https://api.openai.com/v1/models/${encodeURIComponent(selectedVisionModel())}`,
+      () =>
+        visionProvider() === 'gemini'
+          ? { 'x-goog-api-key': process.env.RADAR_GEMINI_API_KEY }
+          : { Authorization: `Bearer ${process.env.RADAR_VISION_API_KEY}` },
     ],
     [
       'SMS',

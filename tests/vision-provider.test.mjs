@@ -47,3 +47,81 @@ test('campus requests use explicit high image detail and accept higher-quality f
     /Vision model/,
   );
 });
+
+test('Gemini handles building and room analysis using its own key, native image parts and validated suggestions', async () => {
+  const previous = process.env.RADAR_VISION_PROVIDER;
+  const previousKey = process.env.RADAR_GEMINI_API_KEY;
+  process.env.RADAR_GEMINI_API_KEY = 'gemini-test-private';
+  process.env.RADAR_VISION_PROVIDER = 'gemini';
+  try {
+    const { analyzeVisibleHazards } = await import('../server/integrations.mjs');
+    let calls = 0;
+    const request = async (url, options) => {
+      calls++;
+      assert.match(url, /^https:\/\/generativelanguage.googleapis.com\/v1beta\/models\/gemini-/);
+      assert.equal(options.headers['x-goog-api-key'], 'gemini-test-private');
+      assert.equal(options.headers.Authorization, undefined);
+      assert.ok(!url.includes('gemini-test-private'));
+      const body = JSON.parse(options.body);
+      assert.equal(body.contents[0].parts[1].inlineData.mimeType, 'image/jpeg');
+      assert.ok(body.generationConfig.responseJsonSchema);
+      const result =
+        calls === 1
+          ? { candidates: [{ frameIndex: 0, x: 0.4, y: 0.4, description: 'Visible building' }] }
+          : {
+              findings: [
+                {
+                  title: 'Visible obstruction',
+                  description: 'Review exit area',
+                  severity: 'medium',
+                  category: 'blocked_exit',
+                  confidence: 0.6,
+                  imageIndex: null,
+                  imagePoint: null,
+                },
+              ],
+            };
+      return new Response(
+        JSON.stringify({
+          candidates: [{ content: { parts: [{ text: JSON.stringify(result) }] } }],
+        }),
+      );
+    };
+    const frames = [{ time: 0, image: 'data:image/jpeg;base64,YWJj' }];
+    assert.equal((await suggestCampusBuildings(frames, { request }))[0].buildingId, null);
+    assert.equal(
+      (
+        await analyzeVisibleHazards([frames[0].image], { apiKey: 'gemini-test-private', request })
+      )[0].category,
+      'blocked_exit',
+    );
+    assert.equal(calls, 2);
+    let limited = 0;
+    await assert.rejects(
+      () =>
+        suggestCampusBuildings(frames, {
+          apiKey: 'gemini-test-private',
+          request: async () => {
+            limited++;
+            return new Response('{}', { status: 429 });
+          },
+        }),
+      /Gemini.*429/,
+    );
+    assert.equal(limited, 1, 'quota failure must not trigger OpenAI fallback');
+    await assert.rejects(
+      () =>
+        suggestCampusBuildings(frames, {
+          apiKey: 'gemini-test-private',
+          request: async () =>
+            new Response(JSON.stringify({ promptFeedback: { blockReason: 'SAFETY' } })),
+        }),
+      /no usable analysis/,
+    );
+  } finally {
+    if (previousKey === undefined) delete process.env.RADAR_GEMINI_API_KEY;
+    else process.env.RADAR_GEMINI_API_KEY = previousKey;
+    if (previous === undefined) delete process.env.RADAR_VISION_PROVIDER;
+    else process.env.RADAR_VISION_PROVIDER = previous;
+  }
+});

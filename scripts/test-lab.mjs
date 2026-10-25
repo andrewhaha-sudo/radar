@@ -24,6 +24,7 @@ for (const key of Object.keys(variables))
     key.startsWith('RADAR_VAPID_') ||
     key.startsWith('RADAR_TURN_') ||
     key === 'RADAR_VISION_API_KEY' ||
+    key.startsWith('RADAR_GEMINI_') ||
     key === 'CRON_SECRET'
   )
     delete variables[key];

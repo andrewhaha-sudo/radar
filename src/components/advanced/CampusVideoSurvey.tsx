@@ -31,7 +31,11 @@ export function CampusVideoSurvey({ buildings, rooms }: { buildings: Row[]; room
     [surveys, setSurveys] = useState<Row[]>([]),
     [route, setRoute] = useState<Row | null>(null),
     [accessible, setAccessible] = useState(false),
-    [provider, setProvider] = useState<{ configured: boolean; training: boolean } | null>(null);
+    [provider, setProvider] = useState<{
+      configured: boolean;
+      training: boolean;
+      provider?: string;
+    } | null>(null);
   async function load() {
     try {
       setSurveys((await api.get<Row>('/api/advanced/video-surveys')).surveys);
@@ -42,7 +46,9 @@ export function CampusVideoSurvey({ buildings, rooms }: { buildings: Row[]; room
   useEffect(() => {
     void load();
     api
-      .get<{ configured: boolean; training: boolean }>('/api/advanced/video-provider')
+      .get<{ configured: boolean; training: boolean; provider?: string }>(
+        '/api/advanced/video-provider',
+      )
       .then(setProvider)
       .catch(() => {});
     return () => {
@@ -117,6 +123,14 @@ export function CampusVideoSurvey({ buildings, rooms }: { buildings: Row[]; room
         JPEG frames can be sent to AI with your permission and saved to this school. Review for
         faces, student details and other private information before sharing.
       </p>
+      {provider && (
+        <p>
+          Selected vision provider:{' '}
+          <strong>{provider.provider === 'gemini' ? 'Google Gemini' : 'OpenAI'}</strong>.{' '}
+          {provider.provider === 'gemini' &&
+            'Free-tier eligibility, quotas and data-use terms are set by Google. Avoid sharing student faces or private records.'}
+        </p>
+      )}
       {provider && (!provider.configured || provider.training) && (
         <div role="status" className="ops-card">
           <h3>
@@ -126,9 +140,10 @@ export function CampusVideoSurvey({ buildings, rooms }: { buildings: Row[]; room
           </h3>
           <p>
             For local Node.js, run <code>npm run setup:integrations</code> in your project terminal,
-            enter your OpenAI API key at “Vision API key”, then restart <code>npm run dev</code>. On
-            Vercel, set the server variable <code>RADAR_VISION_API_KEY</code> and redeploy. Your
-            Supabase key cannot enable vision. Keep the private key out of chat.
+            select openai or gemini at “Vision provider”, enter its corresponding API key, then
+            restart <code>npm run dev</code>. On Vercel, set <code>RADAR_VISION_PROVIDER</code> and
+            the matching server API key, then redeploy. Your Supabase key cannot enable vision. Keep
+            the private key out of chat.
           </p>
           <p>
             You can number buildings now: capture a frame, click each building in the image, then

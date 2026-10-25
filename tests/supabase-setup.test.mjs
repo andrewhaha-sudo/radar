@@ -88,8 +88,11 @@ test('optional provider wizard preserves configuration and never echoes private 
     fs.copyFileSync(path.join(ROOT, '.env.example'), path.join(temp, '.env.example'));
     fs.writeFileSync(path.join(temp, '.env'), 'UNRELATED_SETTING=preserved\n');
     const inputs = [
+      ['Vision provider', 'gemini'],
       ['Vision API key', 'fake-test-vision-private'],
       ['Vision model', 'gpt-4.1-mini'],
+      ['Gemini API key', 'fake-test-gemini-private'],
+      ['Gemini model', 'gemini-2.5-flash'],
       ['Push VAPID public key', ''],
       ['Push VAPID private key', ''],
       ['VAPID contact subject', ''],
@@ -118,8 +121,11 @@ test('optional provider wizard preserves configuration and never echoes private 
     const values = parseEnv(fs.readFileSync(path.join(temp, '.env'), 'utf8'));
     assert.equal(values.UNRELATED_SETTING, 'preserved');
     assert.equal(values.RADAR_VISION_API_KEY, 'fake-test-vision-private');
+    assert.equal(values.RADAR_VISION_PROVIDER, 'gemini');
+    assert.equal(values.RADAR_GEMINI_API_KEY, 'fake-test-gemini-private');
     assert.equal(fs.statSync(path.join(temp, '.env')).mode & 0o777, 0o600);
     assert.ok(!output.includes('fake-test-vision-private'));
+    assert.ok(!output.includes('fake-test-gemini-private'));
     assert.ok(!output.includes('fake-test-sms-private'));
     assert.equal(fs.readdirSync(temp).filter((name) => name.startsWith('.env.backup-')).length, 1);
   } finally {

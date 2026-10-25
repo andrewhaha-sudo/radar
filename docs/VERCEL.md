@@ -52,7 +52,7 @@ Open **Campus operations → Setup & launch** to inspect database, location, acc
 
 Set private optional variables from `.env.example` in Vercel and redeploy. Instructions are in [RADAR-2-FEATURES.md](RADAR-2-FEATURES.md).
 
-- AI needs a funded/authorized OpenAI key and explicit inspector consent for actual inspection images. Test with permitted non-sensitive photos; proposals need human review.
+- AI needs an authorized OpenAI or Google Gemini API key and explicit inspector consent for actual inspection images. Test with permitted non-sensitive photos; proposals need human review.
 - Browser push needs a VAPID pair, HTTPS/PWA support and individual subscriptions. Test on real intended devices. It does not guarantee delivery.
 - SMS needs a configured/funded Twilio sender and consented recipients. Configure a signed status callback through `RADAR_PUBLIC_URL`. Accepted/queued SMS is not confirmed device delivery.
 - 3D views need real self-contained GLB models; 360 views need actual panoramas. First-person movement requires verified metric spawn coordinates. Optional GLB object-name mappings connect registered rooms and floor groups; upload these under the model’s optional settings. No interiors or emergency telemetry are generated.
@@ -80,3 +80,5 @@ The repository does not install a paid plan, create provider accounts, send live
 ## Optional advanced services
 
 The advanced tools use the same private database/Storage configuration. Configure vision, VAPID, Twilio and optional TLS TURN REST settings as server variables only; see [Testing and configuration](TESTING-AND-CONFIGURATION.md). Campus video analysis uploads only bounded selected JPEG frames, not a full video; it does not require hosting large videos in the Vercel function. Saved reviewed surveys are school-scoped. Configure scheduled maintenance for queued alert/SOS SMS work, and inspect actual provider receipts. Do not turn on training mode in a production deployment.
+
+For Gemini set `RADAR_VISION_PROVIDER=gemini`, private `RADAR_GEMINI_API_KEY`, and `RADAR_GEMINI_MODEL` to an available image-capable model. Redeploy after changes. Free-tier availability/limits are controlled by Google; see the testing/configuration guide.

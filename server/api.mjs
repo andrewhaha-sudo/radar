@@ -1,3 +1,4 @@
+import { visionApiKey, visionProvider, selectedVisionModel } from './vision-provider.mjs';
 import { queueSosSms, drainSosSms } from './emergency-delivery.mjs';
 import { advancedHandlers } from './advanced.mjs';
 import { productHandlers } from './product.mjs';
@@ -2723,16 +2724,14 @@ export async function maintenanceTick() {
 
 handlers['GET /api/ai/status'] = async (ctx) => {
   await requireUser(ctx.req);
-  // Honest capability reporting: no vision model is configured in this build.
+  // Configuration presence does not prove a successful provider analysis.
   return json(ctx.res, 200, {
-    configured: Boolean(process.env.RADAR_VISION_API_KEY),
-    provider: process.env.RADAR_VISION_API_KEY ? 'OpenAI' : null,
-    model: process.env.RADAR_VISION_API_KEY
-      ? (process.env.RADAR_VISION_MODEL ?? 'gpt-4.1-mini')
-      : null,
+    configured: Boolean(visionApiKey()) && process.env.RADAR_TEST_LAB !== '1',
+    provider: visionApiKey() ? (visionProvider() === 'gemini' ? 'Google Gemini' : 'OpenAI') : null,
+    model: visionApiKey() ? selectedVisionModel() : null,
     checkedAt: nowIso(),
-    message: process.env.RADAR_VISION_API_KEY
-      ? 'A vision provider is configured but must be verified by a successful photo analysis. All suggestions require human review; reported confidence is not a safety certification.'
+    message: visionApiKey()
+      ? `${visionProvider() === 'gemini' ? 'Google Gemini' : 'OpenAI'} is selected. Service access needs a successful photo analysis. Review the provider’s data-use terms before sending school photos. All suggestions require human review.`
       : 'No vision model is configured. Suggestions are disabled; observations you add are recorded as manual findings and still require verification.',
   });
 };

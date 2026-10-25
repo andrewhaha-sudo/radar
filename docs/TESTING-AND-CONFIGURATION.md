@@ -111,3 +111,19 @@ Stop writes for a consistent application snapshot. Integrity/foreign-key checks 
 HTTP 404 can mean the configured OpenAI model is unavailable to the API project. The app now distinguishes model access, authentication, quota and unsupported requests without exposing provider response bodies. Run `npm run setup:integrations`, explicitly enter `gpt-4.1-mini` for **Vision model** (Enter preserves an existing setting), then restart the server. If that model is unavailable to your project, use an image-capable Responses API model you can access. `npm run check:vision` performs a read-only check of the configured model ID; it sends no images and does not prove analysis quality. On Vercel update `RADAR_VISION_MODEL` and redeploy.
 
 New video captures use JPEG quality 0.9 at up to 1920 pixels on the longest edge. For detailed images the dimensions are reduced to stay below 300,000 encoded characters per frame, keeping six frames under the 2 MiB JSON request limit. AI requests explicitly ask for high image detail. Re-select the original video and capture/save/publish a new survey to replace older compressed images. Source motion blur, low resolution and distant buildings cannot be recovered by dashboard zoom.
+
+## Google Gemini alternative
+
+ChatGPT subscriptions do not include API usage. RADAR now supports **Google Gemini** for both campus building suggestions and room hazard suggestions. Eligible Google accounts/regions/models may have a free API tier. Availability, rate limits and data-use terms are controlled by Google; RADAR does not promise unlimited free analysis.
+
+1. Create a Gemini API key privately at https://aistudio.google.com/apikey. Check free-tier eligibility and the data-use terms for your project before uploading school imagery. Avoid identifiable student images and private records.
+2. Run `npm run setup:integrations`. Enter **gemini** at **Vision provider**. Keep/skip the OpenAI fields with Enter. Enter the Google key at **Gemini API key** and a supported image-capable model ID at **Gemini model** (initial default `gemini-2.5-flash`; model availability may change).
+3. Run `npm run check:vision` for a read-only model-access check. Restart `npm run dev`. On Vercel set the three server variables below and redeploy.
+
+```dotenv
+RADAR_VISION_PROVIDER=gemini
+RADAR_GEMINI_API_KEY=
+RADAR_GEMINI_MODEL=gemini-2.5-flash
+```
+
+The Google key must never be committed, sent in chat or placed in a `VITE_` variable. The old OpenAI key is not used while Gemini is selected. Gemini failures do not automatically fall back to OpenAI or generate manual findings disguised as AI output. Training mode blocks both providers. `check:vision` checks access but does not verify free quota, billing or detection quality. Mock tests cover both analysis workflows, native request formatting, validated outputs, blocked responses and quota failure without fallback; no live Gemini account was supplied for verification.

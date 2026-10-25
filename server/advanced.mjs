@@ -1,3 +1,4 @@
+import { visionApiKey } from './vision-provider.mjs';
 import { campusVideoHandlers } from './campus-video.mjs';
 import { drainDeliveryJobs } from './delivery.mjs';
 import { drainSosSms } from './emergency-delivery.mjs';
@@ -713,7 +714,7 @@ export function advancedHandlers(h) {
       checks: {
         database: database.ok === 1,
         https: process.env.RADAR_PUBLIC_URL?.startsWith('https://') ?? false,
-        visionConfigured: Boolean(process.env.RADAR_VISION_API_KEY),
+        visionConfigured: Boolean(visionApiKey()),
         pushConfigured: channels.push.configured,
         smsConfigured: channels.sms.configured,
         schedulerConfigured: Boolean(process.env.CRON_SECRET),

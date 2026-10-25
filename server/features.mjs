@@ -1,3 +1,4 @@
+import { visionApiKey, visionProvider } from './vision-provider.mjs';
 import { csvCell } from './advanced-utils.mjs';
 import { projectPoint } from './advanced-utils.mjs';
 import { grantSchoolMembership } from './memberships.mjs';
@@ -1106,7 +1107,7 @@ export function featureHandlers(h) {
   routes['POST /api/scans/:id/analyze'] = async (ctx) => {
     const user = await requireUser(ctx.req);
     requirePermission(user, 'scan:write');
-    if (!process.env.RADAR_VISION_API_KEY)
+    if (!visionApiKey())
       throw new HttpError(503, 'A vision provider has not been configured.');
     const id = Number(ctx.params.id);
     const scan = await db.prepare('SELECT * FROM scans WHERE id=?').get(id);
@@ -1197,7 +1198,7 @@ export function featureHandlers(h) {
     await db.prepare('UPDATE scans SET no_findings_confirmed=0 WHERE id=?').run(id);
     await audit(user.id, 'scan.ai.request', 'scan', id, {
       added,
-      provider: 'OpenAI',
+      provider: visionProvider(),
       reviewRequired: true,
     });
     return json(ctx.res, 200, {

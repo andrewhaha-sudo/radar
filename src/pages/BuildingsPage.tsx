@@ -1,4 +1,5 @@
 'use client';
+import {SchoolLocation} from '@/components/map/SchoolLocation';
 
 import { CampusSetup } from '@/components/forms/CampusSetup';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -194,6 +195,7 @@ export function BuildingsPage() {
         </div>
       </div>
 
+      {can('admin:users') && <SchoolLocation/>}
       {can('admin:users') && <CampusSetup buildings={data?.buildings ?? []} floors={data?.floors ?? []} onSaved={load} />}
 
       {error ? (

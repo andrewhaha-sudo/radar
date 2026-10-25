@@ -41,6 +41,7 @@ const noIdentity = new Set([
   'location_reports',
   'school_settings',
   'student_guardians',
+  'auth_rate_limits',
 ]);
 pg.types.setTypeParser(20, Number);
 pg.types.setTypeParser(1700, Number);
@@ -63,7 +64,7 @@ export function postgresPool() {
     pool = new pg.Pool({
       connectionString: url.toString(),
       ssl: { rejectUnauthorized: true },
-      max: 8,
+      max: process.env.VERCEL ? 2 : 8,
       connectionTimeoutMillis: 15000,
       idleTimeoutMillis: 30000,
     });

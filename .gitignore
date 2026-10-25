@@ -38,3 +38,6 @@ server/uploads/
 
 # Private local data snapshots
 .backups/
+
+# Local Vercel project metadata and generated deployment environment files
+.vercel/

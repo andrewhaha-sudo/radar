@@ -1,3 +1,4 @@
+import { grantSchoolMembership } from './memberships.mjs';
 import { channelStatus, validPush, verifySmsSignature, drainDeliveryJobs } from './delivery.mjs';
 import { runInWorkspace } from './workspaces.mjs';
 import { planEvacuation, meters } from './routing.mjs';
@@ -209,9 +210,8 @@ export function featureHandlers(h) {
         .all(id),
     );
     const base =
-      process.env.NODE_ENV === 'production'
-        ? (process.env.RADAR_PUBLIC_URL ?? `https://${ctx.req.headers.host}`)
-        : `http://${ctx.req.headers.host}`;
+      process.env.RADAR_PUBLIC_URL ||
+      `${ctx.req.socket.encrypted || process.env.VERCEL ? 'https' : 'http'}://${ctx.req.headers.host}`;
     const url = new URL(
       `/operations?tab=rooms&roomId=${id}&school=${currentDatabaseContext()?.workspaceId ?? 'original'}`,
       base,
@@ -317,6 +317,43 @@ export function featureHandlers(h) {
         },
       };
     }
+    if (kind === 'model' && body.mapping) {
+      const context = await roomContext(id);
+      const mapping = { floors: [], rooms: [] };
+      const names = new Set();
+      for (const kind of ['floors', 'rooms']) {
+        const entries = body.mapping[kind] ?? [];
+        if (!Array.isArray(entries) || entries.length > 200)
+          throw new HttpError(400, 'Use at most 200 mapped objects per kind.');
+        for (const entry of entries) {
+          const node = text(entry.node, 'Model object name', 150);
+          if (names.has(node)) throw new HttpError(400, 'Each model object name must be unique.');
+          names.add(node);
+          if (kind === 'rooms') {
+            const mapped = await roomContext(
+              finiteNumber(entry.roomId, 'Mapped room ID', 1, 2147483647, true),
+            );
+            if (!mapped || mapped.buildingId !== context.buildingId)
+              throw new HttpError(400, 'Mapped rooms must belong to this building.');
+            mapping.rooms.push({
+              node,
+              roomId: mapped.id,
+              label: `${mapped.code} ${mapped.roomName}`,
+            });
+          } else {
+            const floor = await db
+              .prepare('SELECT * FROM floors WHERE id=? AND building_id=?')
+              .get(
+                finiteNumber(entry.floorId, 'Mapped floor ID', 1, 2147483647, true),
+                context.buildingId,
+              );
+            if (!floor) throw new HttpError(400, 'Mapped floors must belong to this building.');
+            mapping.floors.push({ node, floorId: floor.id, label: floor.name });
+          }
+        }
+      }
+      metadata = { ...metadata, mapping };
+    }
     const result = await db
       .prepare(
         'INSERT INTO room_assets(room_id,kind,url,title,metadata,created_by,created_at) VALUES (?,?,?,?,?,?,?)',
@@ -389,7 +426,7 @@ export function featureHandlers(h) {
     admin(user);
     return json(ctx.res, 200, {
       members: camelAll(
-        await db.prepare('SELECT id,email,name,role FROM users ORDER BY name').all(),
+        await db.prepare('SELECT id,email,name,role,active FROM users ORDER BY name').all(),
       ),
     });
   };
@@ -414,26 +451,7 @@ export function featureHandlers(h) {
     const owner = await workspaceRecord(scope);
     if (owner.owner_user_id === target.id)
       throw new HttpError(400, 'The workspace owner remains an administrator.');
-    await db
-      .prepare(
-        'INSERT INTO users(id,email,password_hash,name,role,title,phone,school_id,grade,section) VALUES (?,?,?,?,?,?,?,1,?,?) ON CONFLICT(id) DO UPDATE SET role=excluded.role,active=1',
-      )
-      .run(
-        target.id,
-        target.email,
-        target.password_hash,
-        target.name,
-        role,
-        target.title,
-        target.phone,
-        target.grade,
-        target.section,
-      );
-    await coreDb
-      .prepare(
-        'INSERT INTO workspace_members(workspace_id,user_id,role,active) VALUES (?,?,?,1) ON CONFLICT(workspace_id,user_id) DO UPDATE SET role=excluded.role,active=1',
-      )
-      .run(scope, target.id, role);
+    await grantSchoolMembership(scope, target, role);
     await audit(user.id, 'membership.add', 'user', target.id, { role });
     return json(ctx.res, 201, { ok: true });
   };
@@ -451,6 +469,11 @@ export function featureHandlers(h) {
       .run(scope, id);
     await db.prepare('UPDATE users SET active=0,sms_consent=0 WHERE id=?').run(id);
     await db.prepare('DELETE FROM push_subscriptions WHERE user_id=?').run(id);
+    await coreDb
+      .prepare(
+        "UPDATE school_join_requests SET state='revoked',decision_note='School access was revoked. Contact school staff before requesting access again.',updated_at=? WHERE workspace_id=? AND user_id=?",
+      )
+      .run(nowIso(), scope, id);
     await audit(user.id, 'membership.revoke', 'user', id, {});
     return json(ctx.res, 200, { ok: true });
   };

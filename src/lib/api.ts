@@ -82,6 +82,7 @@ export const api = {
     file: File,
     signal?: AbortSignal,
   ): Promise<{ url: string; mime: string; bytes: number }> {
+    if(file.size>3*1024*1024){const configuration=await request<{largeCloudUploads?:boolean}>('/api/auth/config');if(configuration.largeCloudUploads){const receipt=await request<{receiptId:number;projectUrl:string;publishableKey:string;bucket:string;path:string;token:string}>('/api/uploads/sign',{method:'POST',body:{mime:file.type||'application/octet-stream',bytes:file.size}});const {createClient}=await import('@supabase/supabase-js');const client=createClient(receipt.projectUrl,receipt.publishableKey,{auth:{persistSession:false,autoRefreshToken:false}});const {error}=await client.storage.from(receipt.bucket).uploadToSignedUrl(receipt.path,receipt.token,file,{contentType:file.type||'application/octet-stream'});if(error)throw new Error('The private cloud upload failed. Please try again.');return request<{url:string;mime:string;bytes:number}>('/api/uploads/complete',{method:'POST',body:{receiptId:receipt.receiptId}});}}
     const res = await fetch('/api/uploads', {
       method: 'POST',
       credentials: 'same-origin',

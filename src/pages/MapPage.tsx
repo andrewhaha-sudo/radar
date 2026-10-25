@@ -291,7 +291,7 @@ export function MapPage() {
         fullscreen ? 'fixed inset-0 z-[60]' : 'h-[calc(100svh-4rem)] min-h-[520px]',
       )}
     >
-      {data?.school.lat == null && data && <p role="status" className="border-b border-border bg-card px-4 py-2 text-xs text-muted-foreground">Camarines Norte overview. Add the first building with its actual coordinates to set the campus map location.</p>}
+      {data?.school.lat == null && data && <p role="status" className="border-b border-border bg-card px-4 py-2 text-xs text-muted-foreground">Camarines Norte overview. An administrator can set the school location in Buildings & rooms, then add each building’s actual coordinates.</p>}
       <div className="map-all-search"><CampusSearch onSelect={result=>{if(result.lat!=null&&result.lng!=null)setFlyTarget([result.lat,result.lng]);if(result.kind==='room'){if(can('buildings:read')){setFocusedRoomId(result.id);setSelectedBuildingId(result.buildingId??null);}else navigate(`/operations?tab=reports&roomId=${result.id}`);}else if(result.kind==='building'&&can('buildings:read')){setFocusedRoomId(null);setSelectedBuildingId(result.id);}}}/></div>
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-2 border-b border-border bg-card px-3 py-2 md:px-4">

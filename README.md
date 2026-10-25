@@ -58,6 +58,10 @@ Permissions are enforced by the API, not just hidden in the UI.
   HttpOnly session cookies, server-side RBAC and an append-only audit log
 - Service worker for the production app shell; explicit Cache API data pack for offline reads
 
+## Publish on Vercel
+
+Use [the Vercel guide](docs/VERCEL.md) to deploy the frontend and Node API with Supabase persistence. New users can register with Gmail or another valid email, select a school and request access. Administrators approve school roles and set a verified campus location in **Buildings & rooms**. The **Campus operations → Setup & launch** checklist shows actual prerequisites.
+
 ## Getting started
 
 Requirements: Node.js 24+ and npm.

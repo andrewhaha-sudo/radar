@@ -693,6 +693,208 @@ test('optional delivery failure does not suppress in-app alerts and concurrent o
     400,
   );
 });
+test('school location editing is admin-only, validated, persisted and independent of building coordinates', async () => {
+  const record = assertOK(await api(admin, `/api/rooms/${roomId}/record`));
+  const before = assertOK(await api(admin, '/api/map')).buildings[0];
+  assert.equal(
+    (
+      await api(student, '/api/school/location', {
+        method: 'PATCH',
+        body: { lat: 14.12, lng: 122.95, verified: true, source: 'Fixture survey' },
+      })
+    ).status,
+    403,
+  );
+  assert.equal(
+    (
+      await api(admin, '/api/school/location', {
+        method: 'PATCH',
+        body: { lat: 999, lng: 122.95, verified: true, source: 'Fixture survey' },
+      })
+    ).status,
+    400,
+  );
+  assert.equal(
+    (
+      await api(admin, '/api/school/location', {
+        method: 'PATCH',
+        body: { lat: 14.11, lng: 122.94, source: 'Fixture survey' },
+      })
+    ).status,
+    400,
+  );
+  assertOK(
+    await api(admin, '/api/school/location', {
+      method: 'PATCH',
+      body: { lat: 14.11, lng: 122.94, verified: true, source: 'Fixture approved survey' },
+    }),
+  );
+  const school = assertOK(await api(admin, '/api/auth/me')).school;
+  assert.equal(school.lat, 14.11);
+  assert.equal(school.locationSource, 'Fixture approved survey');
+  assert.ok(school.locationUpdatedAt);
+  const after = assertOK(await api(admin, '/api/map')).buildings[0];
+  assert.equal(after.lat, before.lat);
+  assert.equal(after.lng, before.lng);
+  assert.equal(record.context.buildingName, after.name);
+});
+test('Gmail registration never grants staff privileges and school requests require scoped administrator approval', async () => {
+  assert.equal(assertOK(await api(null, '/api/auth/config')).signupEnabled, true);
+  assert.equal(
+    (
+      await post(null, '/api/auth/signup', {
+        email: 'invalid@@gmail.com',
+        password: 'SomePassword123!',
+        name: 'Fixture',
+      })
+    ).status,
+    400,
+  );
+  assertOK(
+    await post(null, '/api/auth/signup', {
+      email: 'new.fixture@gmail.com',
+      password: 'SomePassword123!',
+      name: 'Gmail fixture',
+      role: 'admin',
+    }),
+    201,
+  );
+  assert.equal(
+    (
+      await post(null, '/api/auth/signup', {
+        email: 'NEW.FIXTURE@gmail.com',
+        password: 'SomePassword123!',
+        name: 'Again',
+      })
+    ).status,
+    409,
+  );
+  const gmail = await login('new.fixture@gmail.com', 'SomePassword123!');
+  assert.equal(assertOK(await api(gmail, '/api/auth/me')).user.role, 'student');
+  assert.equal((await post(gmail, `/api/schools/${SCHOOL}/join`, { role: 'admin' })).status, 400);
+  assertOK(
+    await post(gmail, `/api/schools/${SCHOOL}/join`, { role: 'teacher', note: 'Fixture request' }),
+    201,
+  );
+  assert.equal(
+    assertOK(await post(gmail, `/api/schools/${SCHOOL}/join`, { role: 'teacher' })).request.state,
+    'pending',
+  );
+  assert.equal((await api(gmail, '/api/membership/requests')).status, 403);
+  const request = assertOK(await api(admin, '/api/membership/requests')).requests.find(
+    (r) => r.email === 'new.fixture@gmail.com',
+  );
+  assert.ok(request);
+  assert.equal(
+    (
+      await post(gmail, `/api/membership/requests/${request.id}/decision`, {
+        state: 'approved',
+        role: 'admin',
+      })
+    ).status,
+    403,
+  );
+  assert.equal(
+    (
+      await post(admin, `/api/membership/requests/${request.id}/decision`, {
+        state: 'approved',
+        role: 'admin',
+      })
+    ).status,
+    400,
+  );
+  assertOK(
+    await post(admin, `/api/membership/requests/${request.id}/decision`, {
+      state: 'approved',
+      role: 'teacher',
+    }),
+  );
+  assert.equal(
+    (
+      await post(admin, `/api/membership/requests/${request.id}/decision`, {
+        state: 'approved',
+        role: 'teacher',
+      })
+    ).status,
+    409,
+  );
+  await select(gmail, SCHOOL);
+  assert.equal(assertOK(await api(gmail, '/api/auth/me')).user.role, 'teacher');
+  assert.equal((await api(gmail, '/api/setup/readiness')).status, 403);
+  assertOK(await api(admin, `/api/members/${request.userId}`, { method: 'DELETE' }));
+  assert.equal((await api(gmail, '/api/operations')).status, 403);
+});
+test('setup readiness distinguishes local records from unconfigured services and threshold suggestions require verified hazards', async () => {
+  const readiness = assertOK(await api(admin, '/api/setup/readiness'));
+  assert.equal(readiness.checks.find((c) => c.id === 'location').state, 'ready');
+  assert.equal(readiness.checks.find((c) => c.id === 'vision').state, 'missing');
+  assert.equal(readiness.checks.find((c) => c.id === 'push').state, 'missing');
+  assert.equal((await api(student, '/api/escalation/rules')).status, 403);
+  const id1 = assertOK(
+    await post(admin, '/api/hazards', {
+      title: 'Fixture obstruction doorway',
+      severity: 'high',
+      roomId,
+      category: 'blocked_exit',
+    }),
+    201,
+  ).hazard.id;
+  const id2 = assertOK(
+    await post(admin, '/api/hazards', {
+      title: 'Fixture obstruction doorway',
+      severity: 'high',
+      roomId,
+      category: 'blocked_exit',
+    }),
+    201,
+  ).hazard.id;
+  const duplicates = assertOK(await api(admin, `/api/hazards/${id1}/duplicates`));
+  assert.ok(duplicates.matches.some((row) => row.id === id2 && row.similarity >= 90));
+  assert.equal((await api(student, `/api/hazards/${id1}/duplicates`)).status, 403);
+  assertOK(
+    await post(admin, '/api/escalation/rules', { enabled: true, threshold: 2, severity: 'high' }),
+  );
+  assert.equal(assertOK(await api(admin, '/api/escalation/suggestions')).suggestions.length, 0);
+  for (const id of [id1, id2])
+    assertOK(
+      await api(admin, `/api/hazards/${id}`, { method: 'PATCH', body: { status: 'verified' } }),
+    );
+  assert.equal(assertOK(await api(admin, '/api/escalation/suggestions')).suggestions[0].count, 2);
+  const alerts = assertOK(await api(admin, '/api/alerts'));
+  assert.ok(!alerts.items.some((row) => row.title === 'Fixture obstruction doorway'));
+});
+test('prepared model mappings reject cross-building room links and retain genuine floor and room records', async () => {
+  const record = assertOK(await api(admin, `/api/rooms/${roomId}/record`));
+  const model = record.assets.find((a) => a.kind === 'model');
+  assertOK(
+    await post(admin, `/api/rooms/${roomId}/assets`, {
+      kind: 'model',
+      url: model.url,
+      title: 'Fixture mapped model',
+      mapping: {
+        floors: [{ node: 'FloorObject', floorId: record.room.floorId }],
+        rooms: [{ node: 'RoomObject', roomId }],
+      },
+    }),
+    201,
+  );
+  const updated = assertOK(await api(admin, `/api/rooms/${roomId}/record`));
+  const metadata = JSON.parse(
+    updated.assets.find((a) => a.title === 'Fixture mapped model').metadata,
+  );
+  assert.equal(metadata.mapping.rooms[0].label, `${record.room.code} ${record.room.name}`);
+  assert.equal(
+    (
+      await post(admin, `/api/rooms/${roomId}/assets`, {
+        kind: 'model',
+        url: model.url,
+        title: 'Invalid mapping',
+        mapping: { rooms: [{ node: 'Nonexistent', roomId: 999999 }] },
+      })
+    ).status,
+    400,
+  );
+});
 test('revoking school membership removes access while retaining historical attendance', async () => {
   const id = users.find((u) => u.role === 'student').id;
   assertOK(await api(admin, `/api/members/${id}`, { method: 'DELETE' }));

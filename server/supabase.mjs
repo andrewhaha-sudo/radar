@@ -112,7 +112,7 @@ export async function cloudRequestPasswordReset(email) {
   const { error } = await client().auth.resetPasswordForEmail(email, {
     redirectTo: new URL(
       '/reset-password',
-      process.env.RADAR_PUBLIC_URL ?? 'http://localhost:5173',
+      process.env.RADAR_PUBLIC_URL || 'http://localhost:5173',
     ).toString(),
   });
   if (error) throw new Error('The password reset email could not be requested. Try again later.');
@@ -132,4 +132,32 @@ export async function cloudUpdatePassword(accessToken, password) {
     throw new Error(
       'This recovery link is invalid or expired. Request a new password reset email.',
     );
+}
+
+export async function cloudSignedUpload(workspaceId, name) {
+  const service = await storageClient();
+  const key = `${workspaceId ? `schools/${workspaceId}` : 'original'}/${name}`;
+  const { data, error } = await service.storage
+    .from(BUCKET)
+    .createSignedUploadUrl(key, { upsert: false });
+  if (error) throw new Error('Could not authorize the private upload.');
+  return {
+    path: key,
+    token: data.token,
+    bucket: BUCKET,
+    projectUrl: process.env.SUPABASE_URL,
+    publishableKey: process.env.SUPABASE_PUBLISHABLE_KEY,
+  };
+}
+export async function cloudSignedDownload(workspaceId, name) {
+  const service = await storageClient();
+  const key = `${workspaceId ? `schools/${workspaceId}` : 'original'}/${name}`;
+  const { data, error } = await service.storage.from(BUCKET).createSignedUrl(key, 60);
+  if (error) throw new Error('Could not authorize file download.');
+  return data.signedUrl;
+}
+export async function cloudRemoveUpload(workspaceId, name) {
+  const service = await storageClient();
+  const key = `${workspaceId ? `schools/${workspaceId}` : 'original'}/${name}`;
+  await service.storage.from(BUCKET).remove([key]);
 }

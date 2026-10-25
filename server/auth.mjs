@@ -1,5 +1,5 @@
 import crypto from 'node:crypto';
-import { db, nowIso } from './db.mjs';
+import { db, coreDb, currentDatabaseContext, nowIso } from './db.mjs';
 
 const SESSION_DAYS = 7;
 export const COOKIE_NAME = 'radar_session';
@@ -35,7 +35,7 @@ export function createSession(userId) {
   const token = crypto.randomBytes(32).toString('hex');
   const created = new Date();
   const expires = new Date(created.getTime() + SESSION_DAYS * 24 * 60 * 60 * 1000);
-  db.prepare('INSERT INTO sessions (token, user_id, created_at, expires_at) VALUES (?, ?, ?, ?)').run(
+  coreDb.prepare('INSERT INTO sessions (token, user_id, created_at, expires_at) VALUES (?, ?, ?, ?)').run(
     token,
     userId,
     created.toISOString(),
@@ -46,7 +46,7 @@ export function createSession(userId) {
 
 export function destroySession(token) {
   if (!token) return;
-  db.prepare('DELETE FROM sessions WHERE token = ?').run(token);
+  coreDb.prepare('DELETE FROM sessions WHERE token = ?').run(token);
 }
 
 export function parseCookies(header = '') {
@@ -73,9 +73,9 @@ export function getUserFromRequest(req) {
   const token = parseCookies(req.headers.cookie)[COOKIE_NAME];
   if (!token) return null;
 
-  const row = db
+  let row = coreDb
     .prepare(
-      `SELECT s.token, s.expires_at, u.id, u.email, u.name, u.role, u.title, u.phone, u.school_id, u.grade
+      `SELECT s.token, s.expires_at, s.workspace_id, u.id, u.email, u.name, u.role, u.title, u.phone, u.school_id, u.grade
        FROM sessions s JOIN users u ON u.id = s.user_id
        WHERE s.token = ?`,
     )
@@ -86,7 +86,14 @@ export function getUserFromRequest(req) {
     destroySession(token);
     return null;
   }
+  const context = currentDatabaseContext();
+  if (context?.workspaceId) {
+    const member = db.prepare('SELECT * FROM users WHERE id = ?').get(row.id);
+    if (!member) return null;
+    row = { ...row, ...member };
+  }
   return {
+    workspaceId: row.workspace_id ?? null,
     id: row.id,
     email: row.email,
     name: row.name,

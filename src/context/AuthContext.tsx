@@ -9,11 +9,13 @@ import {
   useState,
 } from 'react';
 import { api, ApiError } from '@/lib/api';
+import { setWorkspaceScope } from '@/lib/workspace';
 import type { School, User } from '@/lib/types';
 
 interface AuthContextValue {
   user: User | null;
   school: School | null;
+  activeWorkspaceId: string | null;
   loading: boolean;
   error: string | null;
   login: (email: string, password: string) => Promise<User>;
@@ -27,13 +29,16 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [activeWorkspaceId, setActiveWorkspaceId] = useState<string | null>(null);
   const [school, setSchool] = useState<School | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
     try {
-      const data = await api.get<{ user: User; school: School }>('/api/auth/me');
+      const data = await api.get<{ user: User; school: School; activeWorkspaceId: string | null }>('/api/auth/me');
+      setWorkspaceScope(data.activeWorkspaceId, data.user.id);
+      setActiveWorkspaceId(data.activeWorkspaceId);
       setUser(data.user);
       setSchool(data.school);
       setError(null);
@@ -41,6 +46,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (err instanceof ApiError && err.status === 401) {
         setUser(null);
         setSchool(null);
+        setActiveWorkspaceId(null);
+        setWorkspaceScope(null);
       } else {
         setError(err instanceof Error ? err.message : 'Could not reach the server.');
       }
@@ -55,7 +62,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = useCallback(async (email: string, password: string) => {
     setError(null);
-    const data = await api.post<{ user: User; school: School }>('/api/auth/login', { email, password });
+    const data = await api.post<{ user: User; school: School; activeWorkspaceId: string | null }>('/api/auth/login', { email, password });
+    setWorkspaceScope(data.activeWorkspaceId, data.user.id);
+    setActiveWorkspaceId(data.activeWorkspaceId);
     setUser(data.user);
     setSchool(data.school);
     return data.user;
@@ -67,6 +76,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setUser(null);
       setSchool(null);
+      setActiveWorkspaceId(null);
+      setWorkspaceScope(null);
     }
   }, []);
 
@@ -84,8 +95,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   const value = useMemo(
-    () => ({ user, school, loading, error, login, logout, refresh, updateProfile, can }),
-    [user, school, loading, error, login, logout, refresh, updateProfile, can],
+    () => ({ user, school, activeWorkspaceId, loading, error, login, logout, refresh, updateProfile, can }),
+    [user, school, activeWorkspaceId, loading, error, login, logout, refresh, updateProfile, can],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

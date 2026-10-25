@@ -110,11 +110,16 @@ function ProtectedLayout() {
   return <AppLayout />;
 }
 
+function ScopedOfflineProvider({children}: {children: React.ReactNode}) {
+  const { user, activeWorkspaceId } = useAuth();
+  return <OfflineProvider key={`${user?.id ?? 'guest'}:${activeWorkspaceId ?? 'default'}`}>{children}</OfflineProvider>;
+}
+
 export default function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <OfflineProvider>
+        <ScopedOfflineProvider>
           <BrowserRouter>
             <Routes>
               <Route path="/login" element={<LoginPage />} />
@@ -228,7 +233,7 @@ export default function App() {
               </Route>
             </Routes>
           </BrowserRouter>
-        </OfflineProvider>
+        </ScopedOfflineProvider>
       </AuthProvider>
     </ThemeProvider>
   );

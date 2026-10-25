@@ -1,3 +1,4 @@
+import { workspaceHeaders } from './workspace';
 /**
  * Thin typed client for the RADAR API.
  * Every request carries the session cookie; errors are surfaced as ApiError.
@@ -27,7 +28,7 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
   const res = await fetch(path, {
     method,
     credentials: 'same-origin',
-    headers: body === undefined ? undefined : { 'Content-Type': 'application/json' },
+    headers: { ...workspaceHeaders(), ...(body === undefined ? {} : { 'Content-Type': 'application/json' }) },
     body: body === undefined ? undefined : JSON.stringify(body),
     signal,
   });

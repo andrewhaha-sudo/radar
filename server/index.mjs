@@ -3,6 +3,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { handleApi } from './api.mjs';
+import { workspaceRecord, workspaceUploads } from './workspaces.mjs';
+import { getUserFromRequest } from './auth.mjs';
 import { UPLOAD_DIR } from './db.mjs';
 import './seed.mjs';
 
@@ -93,7 +95,19 @@ const server = http.createServer(async (req, res) => {
   }
 
   if (url.pathname === '/uploads' || url.pathname.startsWith('/uploads/')) {
-    const filePath = safeJoin(UPLOAD_DIR, url.pathname.replace(/^\/uploads/, ''));
+    let uploadRoot = UPLOAD_DIR;
+    let uploadPath = url.pathname.replace(/^\/uploads/, '');
+    const workspaceMatch = /^\/uploads\/workspaces\/(\d{6})\/([^/]+)$/.exec(url.pathname);
+    if (url.pathname.startsWith('/uploads/workspaces/')) {
+      const user = getUserFromRequest(req);
+      const record = workspaceMatch && workspaceRecord(workspaceMatch[1]);
+      if (!user || !record || record.owner_user_id !== user.id) {
+        res.writeHead(403); return res.end('School workspace access denied.');
+      }
+      uploadRoot = workspaceUploads(workspaceMatch[1]);
+      uploadPath = '/' + workspaceMatch[2];
+    }
+    const filePath = safeJoin(uploadRoot, uploadPath);
     if (!filePath || !fs.existsSync(filePath) || !fs.statSync(filePath).isFile()) {
       res.writeHead(404, { 'Content-Type': 'text/plain' });
       return res.end('Not found');
@@ -101,7 +115,7 @@ const server = http.createServer(async (req, res) => {
     const ext = path.extname(filePath).toLowerCase();
     res.writeHead(200, {
       'Content-Type': MIME[ext] ?? 'application/octet-stream',
-      'Cache-Control': 'public, max-age=31536000, immutable',
+      'Cache-Control': workspaceMatch ? 'private, no-store' : 'public, max-age=31536000, immutable',
       'Content-Security-Policy': "default-src 'none'; img-src 'self'; style-src 'unsafe-inline'",
     });
     return fs.createReadStream(filePath).pipe(res);

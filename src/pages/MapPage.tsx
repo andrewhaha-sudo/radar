@@ -264,7 +264,7 @@ export function MapPage() {
     setFlyTarget([lat, lng]);
   };
 
-  const center = data?.school ? ([data.school.lat, data.school.lng] as [number, number]) : ([14.1145, 122.9550] as [number, number]);
+  const center = data?.school ? ([data.school.lat ?? 14.15, data.school.lng ?? 122.75] as [number, number]) : ([14.1145, 122.9550] as [number, number]);
   const selectedHazard = filteredHazards.find((h) => h.id === selectedHazardId) ?? null;
 
   return (
@@ -274,6 +274,7 @@ export function MapPage() {
         fullscreen ? 'fixed inset-0 z-[60]' : 'h-[calc(100svh-4rem)] min-h-[520px]',
       )}
     >
+      {data?.school.lat == null && data && <p role="status" className="border-b border-border bg-card px-4 py-2 text-xs text-muted-foreground">Camarines Norte overview. Add the first building with its actual coordinates to set the campus map location.</p>}
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-2 border-b border-border bg-card px-3 py-2 md:px-4">
         <div className="relative min-w-[180px] flex-1 md:max-w-sm">
@@ -348,7 +349,7 @@ export function MapPage() {
 
         <MapContainer
           center={center}
-          zoom={17}
+          zoom={data?.school.lat == null ? 10 : 17}
           minZoom={14}
           maxZoom={20}
           scrollWheelZoom

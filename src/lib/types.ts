@@ -7,8 +7,9 @@ export interface School {
   id: number;
   name: string;
   address: string;
-  lat: number;
-  lng: number;
+  lat: number | null;
+  lng: number | null;
+  locationVerified?: boolean;
   timezone: string;
 }
 

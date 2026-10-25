@@ -197,10 +197,11 @@ export function EvacuationPage() {
     }
   };
 
-  const center: [number, number] = data ? [data.school.lat, data.school.lng] : [41.8787, -87.6295];
+  const center: [number, number] = data ? [data.school.lat ?? 14.15, data.school.lng ?? 122.75] : [41.8787, -87.6295];
 
   return (
     <div className="stack-page space-y-5">
+      {data && data.school.lat == null && <p role="status" className="text-xs text-muted-foreground">Camarines Norte overview. This school has no recorded map location or approved evacuation routes yet.</p>}
       <PageHeader
         eyebrow="Evacuation & assembly"
         title="Every route, every assembly area"
@@ -310,7 +311,7 @@ export function EvacuationPage() {
               <div className="h-[420px] w-full">
                 <MapContainer
                   center={center}
-                  zoom={17}
+                  zoom={data?.school.lat == null ? 10 : 17}
                   scrollWheelZoom
                   className="h-full w-full"
                   attributionControl={false}

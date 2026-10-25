@@ -1,7 +1,8 @@
 import fs from 'node:fs';
+import { workspaceRecord, workspaceSchool, createWorkspace, runInWorkspace } from './workspaces.mjs';
 import path from 'node:path';
 import crypto from 'node:crypto';
-import { db, UPLOAD_DIR, nowIso } from './db.mjs';
+import { db, coreDb, currentDatabaseContext, UPLOAD_DIR, nowIso } from './db.mjs';
 import {
   audit,
   can,
@@ -140,7 +141,10 @@ function csv(value) {
 
 function getSchool(user) {
   const id = user.schoolId ?? 1;
-  return camel(db.prepare('SELECT * FROM schools WHERE id = ?').get(id));
+  const school = camel(db.prepare('SELECT * FROM schools WHERE id = ?').get(id));
+  if (school) school.locationVerified = Boolean(school.locationVerified);
+  if (school && !school.locationVerified) { school.lat = null; school.lng = null; }
+  return school;
 }
 
 function roomContext(roomId) {
@@ -508,7 +512,7 @@ handlers['POST /api/auth/login'] = async (ctx) => {
     phone: row.phone,
     schoolId: row.school_id,
   };
-  return json(ctx.res, 200, { user: publicUser(user), school: getSchool(user) });
+  return json(ctx.res, 200, { user: publicUser(user), school: getSchool(user), activeWorkspaceId: user.workspaceId ?? null });
 };
 
 handlers['POST /api/auth/logout'] = async (ctx) => {
@@ -523,7 +527,37 @@ handlers['POST /api/auth/logout'] = async (ctx) => {
 
 handlers['GET /api/auth/me'] = async (ctx) => {
   const user = requireUser(ctx.req);
-  return json(ctx.res, 200, { user: publicUser(user), school: getSchool(user) });
+  return json(ctx.res, 200, { user: publicUser(user), school: getSchool(user), activeWorkspaceId: user.workspaceId ?? null });
+};
+
+/* ---- School workspaces: control endpoints always use the account database. ---- */
+handlers['GET /api/workspaces'] = async (ctx) => {
+  const user = requireUser(ctx.req);
+  const workspaces = coreDb.prepare('SELECT beis_id, created_at FROM school_workspaces WHERE owner_user_id = ? ORDER BY created_at').all(user.id);
+  return json(ctx.res, 200, { workspaces: workspaces.map(w => ({ beisId: w.beis_id, createdAt: w.created_at })), activeWorkspaceId: user.workspaceId });
+};
+handlers['POST /api/workspaces'] = async (ctx) => {
+  const user = requireUser(ctx.req);
+  requirePermission(user, 'admin:users');
+  const body = await readJson(ctx.req);
+  const id = String(body.beisId ?? '');
+  if (!workspaceSchool(id)) throw new HttpError(400, 'Choose a school from the Camarines Norte directory.');
+  const existing = workspaceRecord(id);
+  if (existing && existing.owner_user_id !== user.id) throw new HttpError(403, 'This school workspace belongs to another administrator.');
+  createWorkspace(id, user);
+  return json(ctx.res, existing ? 200 : 201, { beisId: id });
+};
+handlers['POST /api/workspaces/select'] = async (ctx) => {
+  const user = requireUser(ctx.req);
+  const body = await readJson(ctx.req);
+  const id = body.beisId == null ? null : String(body.beisId);
+  if (id !== null) {
+    const record = workspaceRecord(id);
+    if (!record) throw new HttpError(404, 'Create this school workspace first.');
+    if (record.owner_user_id !== user.id) throw new HttpError(403, 'You do not have access to this school workspace.');
+  }
+  coreDb.prepare('UPDATE sessions SET workspace_id = ? WHERE token = ?').run(id, user.sessionToken);
+  return json(ctx.res, 200, { activeWorkspaceId: id });
 };
 
 /* ---- Dashboard ---- */
@@ -1222,6 +1256,65 @@ handlers['GET /api/map'] = async (ctx) => {
 };
 
 /* ---- Buildings / floors / rooms ---- */
+
+function workspaceUploadUrl(url) {
+  const id = currentDatabaseContext()?.workspaceId;
+  const prefix = id ? `/uploads/workspaces/${id}/` : '/uploads/';
+  return url.startsWith(prefix) && /^[A-Za-z0-9_.-]+$/.test(url.slice(prefix.length));
+}
+function requiredText(value, field, max = 120) {
+  const result = str(value, max, field);
+  if (!result) throw new HttpError(400, `${field} is required.`);
+  return result;
+}
+function finiteNumber(value, field, min, max, integer = false) {
+  if (value === '' || value == null || typeof value === 'boolean') throw new HttpError(400, `${field} is required.`);
+  const result = Number(value);
+  if (!Number.isFinite(result) || result < min || result > max || (integer && !Number.isInteger(result))) throw new HttpError(400, `${field} must be ${integer ? 'an integer' : 'a number'} between ${min} and ${max}.`);
+  return result;
+}
+handlers['POST /api/buildings'] = async (ctx) => {
+  const user = requireUser(ctx.req);
+  requirePermission(user, 'admin:users');
+  const body = await readJson(ctx.req);
+  const name = requiredText(body.name, 'Building name');
+  const code = requiredText(body.code, 'Building code', 30);
+  const lat = finiteNumber(body.lat, 'Latitude', -90, 90);
+  const lng = finiteNumber(body.lng, 'Longitude', -180, 180);
+  if (db.prepare('SELECT id FROM buildings WHERE school_id = ? AND lower(code) = lower(?)').get(user.schoolId, code)) throw new HttpError(409, 'A building with that code already exists.');
+  const id = Number(db.prepare('INSERT INTO buildings(school_id,code,name,description,lat,lng,address) VALUES (?,?,?,?,?,?,?)').run(user.schoolId,code,name,str(body.description),lat,lng,str(body.address)).lastInsertRowid);
+  db.prepare('UPDATE schools SET lat = ?, lng = ?, location_verified = 1 WHERE id = ? AND location_verified = 0').run(lat,lng,user.schoolId);
+  audit(user.id, 'building.create', 'building', id, {name, code});
+  return json(ctx.res, 201, { building: camel(db.prepare('SELECT * FROM buildings WHERE id = ?').get(id)) });
+};
+handlers['POST /api/buildings/:id/floors'] = async (ctx) => {
+  const user = requireUser(ctx.req);
+  requirePermission(user, 'admin:users');
+  const buildingId = Number(ctx.params.id);
+  if (!db.prepare('SELECT id FROM buildings WHERE id = ? AND school_id = ?').get(buildingId,user.schoolId)) throw new HttpError(404, 'Building not found.');
+  const body = await readJson(ctx.req);
+  const name = requiredText(body.name,'Floor name');
+  const level = finiteNumber(body.level,'Floor level',-10,150,true);
+  if (db.prepare('SELECT id FROM floors WHERE building_id = ? AND level = ?').get(buildingId,level)) throw new HttpError(409, 'That floor level already exists in this building.');
+  const id = Number(db.prepare('INSERT INTO floors(building_id,level,name) VALUES (?,?,?)').run(buildingId,level,name).lastInsertRowid);
+  audit(user.id,'floor.create','floor',id,{buildingId,name,level});
+  return json(ctx.res,201,{floor:camel(db.prepare('SELECT * FROM floors WHERE id = ?').get(id))});
+};
+handlers['POST /api/floors/:id/rooms'] = async (ctx) => {
+  const user = requireUser(ctx.req);
+  requirePermission(user, 'admin:users');
+  const floorId = Number(ctx.params.id);
+  if (!db.prepare('SELECT f.id FROM floors f JOIN buildings b ON b.id = f.building_id WHERE f.id = ? AND b.school_id = ?').get(floorId,user.schoolId)) throw new HttpError(404, 'Floor not found.');
+  const body = await readJson(ctx.req);
+  const name = requiredText(body.name,'Room name');
+  const code = requiredText(body.code,'Room code',30);
+  const type = oneOf(body.type ?? 'classroom',['classroom','laboratory','office','gymnasium','library','cafeteria','circulation','service','restroom'],'Room type');
+  const capacity = finiteNumber(body.capacity ?? 30,'Capacity',0,100000,true);
+  if (db.prepare('SELECT id FROM rooms WHERE floor_id = ? AND lower(code) = lower(?)').get(floorId,code)) throw new HttpError(409, 'A room with that code already exists on this floor.');
+  const id = Number(db.prepare('INSERT INTO rooms(floor_id,code,name,type,capacity) VALUES (?,?,?,?,?)').run(floorId,code,name,type,capacity).lastInsertRowid);
+  audit(user.id,'room.create','room',id,{floorId,name,code});
+  return json(ctx.res,201,{room:camel(db.prepare('SELECT * FROM rooms WHERE id = ?').get(id))});
+};
 
 handlers['GET /api/buildings'] = async (ctx) => {
   const user = requireUser(ctx.req);
@@ -1922,7 +2015,7 @@ handlers['POST /api/hazards/:id/evidence'] = async (ctx) => {
   if (!hazardBaseRow(id)) throw new HttpError(404, 'Hazard not found.');
   const body = await readJson(ctx.req);
   const url = str(body.url, 500, 'url');
-  if (!url.startsWith('/uploads/')) throw new HttpError(400, 'Evidence must reference an uploaded file.');
+  if (!workspaceUploadUrl(url)) throw new HttpError(400, 'Evidence must reference an uploaded file.');
   const caption = str(body.caption, 300, 'caption');
   const at = nowIso();
   const evidenceId = Number(
@@ -2090,7 +2183,7 @@ handlers['POST /api/scans/:id/photos'] = async (ctx) => {
   if (scan.status === 'submitted') throw new HttpError(409, 'This scan has already been submitted.');
   const body = await readJson(ctx.req);
   const url = str(body.url, 500, 'url');
-  if (!url.startsWith('/uploads/')) throw new HttpError(400, 'Photo must reference an uploaded file.');
+  if (!workspaceUploadUrl(url)) throw new HttpError(400, 'Photo must reference an uploaded file.');
   const caption = str(body.caption ?? '', 300, 'caption');
   const at = nowIso();
   const photoId = Number(
@@ -2214,9 +2307,10 @@ handlers['POST /api/uploads'] = async (ctx) => {
   if (buf.length === 0) throw new HttpError(400, 'The uploaded file is empty.');
 
   const name = `${Date.now()}-${crypto.randomBytes(8).toString('hex')}${allowed[mime]}`;
-  fs.writeFileSync(path.join(UPLOAD_DIR, name), buf);
+  const scope = currentDatabaseContext();
+  fs.writeFileSync(path.join(scope?.uploadDir ?? UPLOAD_DIR, name), buf);
   audit(user.id, 'upload.create', 'upload', name, { mime, bytes: buf.length });
-  return json(ctx.res, 201, { url: `/uploads/${name}`, mime, bytes: buf.length });
+  return json(ctx.res, 201, { url: currentDatabaseContext()?.workspaceId ? `/uploads/workspaces/${currentDatabaseContext().workspaceId}/${name}` : `/uploads/${name}`, mime, bytes: buf.length });
 };
 
 /* ---- Notifications ---- */
@@ -3070,7 +3164,22 @@ export async function handleApi(req, res) {
 
   try {
     if (!match) throw new HttpError(404, 'Endpoint not found.');
-    await match.route.handler({ req, res, params: match.params, url });
+    const account = getUserFromRequest(req);
+    const control = url.pathname.startsWith('/api/workspaces') || (url.pathname.startsWith('/api/auth/') && url.pathname !== '/api/auth/me');
+    const active = account?.workspaceId ?? null;
+    // Reject writes from a stale tab instead of applying them to a newly selected school.
+    if (!control && !['GET', 'HEAD', 'OPTIONS'].includes(req.method) && (req.headers['x-radar-workspace'] ?? '') !== (active ?? '')) {
+      throw new HttpError(409, 'The school workspace changed. Refresh this page before saving.');
+    }
+    if (!control && url.pathname !== '/api/auth/me' && ('x-radar-workspace' in req.headers || url.searchParams.has('workspace')) && (req.headers['x-radar-workspace'] ?? url.searchParams.get('workspace') ?? '') !== (active ?? '')) throw new HttpError(409, 'The school workspace changed. Refresh this page.');
+    const invoke = () => match.route.handler({ req, res, params: match.params, url });
+    if (active && !control) {
+      const record = workspaceRecord(active);
+      if (!record || record.owner_user_id !== account.id) throw new HttpError(403, 'School workspace access denied.');
+      await runInWorkspace(active, invoke);
+    } else {
+      await invoke();
+    }
   } catch (error) {
     if (res.headersSent) return;
     if (error instanceof HttpError) {

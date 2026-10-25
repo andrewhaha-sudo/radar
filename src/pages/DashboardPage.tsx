@@ -9,7 +9,7 @@ import { relativeTime, SEVERITY_META } from '@/components/ui/hazard-bits';
 import type { DashboardPayload, MapPayload, AlertsPayload } from '@/lib/types';
 
 export function DashboardPage() {
-  const { user, school, can } = useAuth();
+  const { user, school, can, activeWorkspaceId } = useAuth();
   const navigate = useNavigate();
   const [today] = useState(() => new Date().toISOString());
   const [data, setData] = useState<DashboardPayload>();
@@ -48,6 +48,7 @@ export function DashboardPage() {
       <button className="command-icon-button" onClick={() => void load()} disabled={loading} aria-label="Refresh dashboard"><RefreshCw size={17} className={loading ? 'animate-spin' : ''}/></button>
     </div>
     {error && <div role="alert" className="command-error">{error}<button onClick={() => void load()}>Try again</button></div>}
+    {activeWorkspaceId && k?.totalRooms === 0 && <section className="command-panel workspace-onboarding"><div><h2>Set up your school campus</h2><p>Your workspace is empty. Add the school’s real buildings, floors, and rooms to begin inspections. Campus coordinates have not been recorded yet.</p></div><button className="command-action blue" onClick={() => navigate('/buildings')}>Add buildings &amp; rooms <ArrowRight size={16}/></button></section>}
     <div className="command-stats" aria-busy={loading}>
       <Metric icon={Building2} title="Total Rooms" value={k?.totalRooms} hint="Across your campus" tone="blue" onClick={() => navigate('/map')}/>
       {can('scan:read') && <Metric icon={ScanEye} title="Scanned Rooms" value={k?.roomsScanned} hint={`${k?.roomCoverage ?? 0}% complete`} tone="green" onClick={() => navigate('/scan')}/>}
@@ -58,12 +59,13 @@ export function DashboardPage() {
     <div className="command-main-grid">
       <section className="command-panel command-map-panel"><PanelTitle title="Campus Map" action="Full map" onClick={() => navigate('/map')}/>
         <div className="command-map">
-          {map && <MapContainer center={[map.school.lat, map.school.lng]} zoom={17} scrollWheelZoom={false} style={{background: 'var(--muted)'}}>
+          {map && <MapContainer center={[map.school.lat ?? 14.15, map.school.lng ?? 122.75]} zoom={map.school.lat == null ? 10 : 17} scrollWheelZoom={false} style={{background: 'var(--muted)'}}>
             <TileLayer eventHandlers={{tileerror: () => setTileError(true), tileload: () => setTileError(false)}} key={String(satellite)} url={satellite ? 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}' : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'} attribution={satellite ? 'Imagery © Esri, Maxar, Earthstar Geographics' : '© OpenStreetMap contributors'}/>
             {buildings && map.buildings.map(b => <CircleMarker key={b.id} center={[b.lat,b.lng]} radius={10} pathOptions={{color:'#a6e5ff',fillColor:'#007bff',fillOpacity:1,weight:2}}><Popup><strong>{b.name}</strong><p>{b.roomCount} rooms · {b.floorCount} floors</p><button onClick={() => navigate('/map')}>Explore building →</button></Popup></CircleMarker>)}
             {hazards && map.hazards.map(h => { const b = map.buildings.find(b => b.id === h.buildingId); return b && <CircleMarker key={h.id} center={[b.lat,b.lng]} radius={6} pathOptions={{color:'#fff',fillColor:SEVERITY_META[h.severity].hex,fillOpacity:1,weight:1}}><Popup><strong>{h.title}</strong><p>{h.severity} · {h.buildingName}</p><button onClick={() => navigate(`/hazards?open=${h.id}`)}>View finding →</button></Popup></CircleMarker>; })}
           </MapContainer>}
           <div className="command-map-tools"><div className="command-segment">{['Map','Satellite'].map((label,i) => <button key={label} className={satellite === Boolean(i) ? 'selected' : ''} onClick={() => { setTileError(false); setSatellite(Boolean(i)); }}>{label}</button>)}</div><div className="command-layer-panel"><h3><Layers size={14}/> Map Layers</h3><label><Building2 size={14}/> Buildings<input type="checkbox" checked={buildings} onChange={e => setBuildings(e.target.checked)}/></label><label><AlertTriangle size={14}/> Hazard Markers<input type="checkbox" checked={hazards} onChange={e => setHazards(e.target.checked)}/></label><button onClick={() => navigate('/map')}>All map layers <ArrowRight size={13}/></button></div></div>
+          {map?.school.lat == null && <div className="workspace-location-notice">Camarines Norte overview · School location not set</div>}
           {tileError && <div role="status" className="command-tile-status">Basemap unavailable. Campus markers remain interactive. Try another map layer.</div>}
           <div className="command-map-legend">{['low','medium','high','critical','info'].map(s => <span key={s}><i style={{background:SEVERITY_META[s as keyof typeof SEVERITY_META].hex}}/>{s}</span>)}</div>
           {!map && <div className="command-map-loading">{loading ? 'Loading campus map…' : 'Campus map unavailable'}</div>}

@@ -1,3 +1,4 @@
+import { workspaceHeaders, workspaceStorageKey } from './workspace';
 /**
  * Offline support for RADAR.
  *
@@ -50,29 +51,29 @@ function safeParse<T>(raw: string | null, fallback: T): T {
 
 export function readOutbox(): OutboxItem[] {
   if (typeof window === 'undefined') return [];
-  return safeParse<OutboxItem[]>(window.localStorage.getItem(OUTBOX_KEY), []);
+  return safeParse<OutboxItem[]>(window.localStorage.getItem(workspaceStorageKey(OUTBOX_KEY)), []);
 }
 
 export function writeOutbox(items: OutboxItem[]) {
   if (typeof window === 'undefined') return;
-  window.localStorage.setItem(OUTBOX_KEY, JSON.stringify(items));
+  window.localStorage.setItem(workspaceStorageKey(OUTBOX_KEY), JSON.stringify(items));
 }
 
 export function readDataPackMeta(): DataPackMeta | null {
   if (typeof window === 'undefined') return null;
-  return safeParse<DataPackMeta | null>(window.localStorage.getItem(DATA_PACK_META_KEY), null);
+  return safeParse<DataPackMeta | null>(window.localStorage.getItem(workspaceStorageKey(DATA_PACK_META_KEY)), null);
 }
 
 export function writeDataPackMeta(meta: DataPackMeta) {
   if (typeof window === 'undefined') return;
-  window.localStorage.setItem(DATA_PACK_META_KEY, JSON.stringify(meta));
+  window.localStorage.setItem(workspaceStorageKey(DATA_PACK_META_KEY), JSON.stringify(meta));
 }
 
 /** Read one JSON document out of the data-pack cache. */
 export async function readDataPackDocument<T>(path: string): Promise<T | null> {
   if (typeof window === 'undefined' || !('caches' in window)) return null;
   try {
-    const cache = await window.caches.open(DATA_PACK_CACHE);
+    const cache = await window.caches.open(workspaceStorageKey(DATA_PACK_CACHE));
     const response = await cache.match(path);
     if (!response) return null;
     return (await response.json()) as T;
@@ -89,13 +90,13 @@ export async function saveDataPack(): Promise<DataPackMeta> {
   if (typeof window === 'undefined' || !('caches' in window)) {
     throw new Error('This browser does not expose the Cache API, so an offline data pack cannot be stored.');
   }
-  const cache = await window.caches.open(DATA_PACK_CACHE);
+  const cache = await window.caches.open(workspaceStorageKey(DATA_PACK_CACHE));
   const results = await Promise.all(
     DATA_PACK_ENDPOINTS.map(async (endpoint) => {
       try {
         const response = await fetch(endpoint.path, {
           credentials: 'same-origin',
-          headers: { Accept: 'application/json' },
+          headers: { ...workspaceHeaders(), Accept: 'application/json' },
         });
         if (!response.ok) {
           throw new Error(`Server returned ${response.status}`);
@@ -145,8 +146,8 @@ export async function saveDataPack(): Promise<DataPackMeta> {
 
 export async function clearDataPack() {
   if (typeof window === 'undefined' || !('caches' in window)) return;
-  await window.caches.delete(DATA_PACK_CACHE).catch(() => undefined);
-  window.localStorage.removeItem(DATA_PACK_META_KEY);
+  await window.caches.delete(workspaceStorageKey(DATA_PACK_CACHE)).catch(() => undefined);
+  window.localStorage.removeItem(workspaceStorageKey(DATA_PACK_META_KEY));
 }
 
 export function formatBytes(bytes: number) {

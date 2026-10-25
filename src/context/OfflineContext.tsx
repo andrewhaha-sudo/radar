@@ -9,6 +9,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import { workspaceHeaders } from '@/lib/workspace';
 import { readOutbox, writeOutbox, type OutboxItem } from '@/lib/offline';
 
 interface OfflineContextValue {
@@ -96,7 +97,7 @@ export function OfflineProvider({ children }: { children: React.ReactNode }) {
         const response = await fetch(item.path, {
           method: item.method,
           credentials: 'same-origin',
-          headers: item.body === undefined ? undefined : { 'Content-Type': 'application/json' },
+          headers: { ...workspaceHeaders(), ...(item.body === undefined ? {} : { 'Content-Type': 'application/json' }) },
           body: item.body === undefined ? undefined : JSON.stringify(item.body),
         });
         if (!response.ok) {

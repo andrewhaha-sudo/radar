@@ -1,3 +1,4 @@
+import { AsyncLocalStorage } from 'node:async_hooks';
 import { DatabaseSync } from 'node:sqlite';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -25,7 +26,20 @@ if (!fs.existsSync(DB_PATH) && fs.existsSync(LEGACY_DB_PATH)) {
   console.log('[radar] migrated legacy hazardlink.db to radar.db');
 }
 
-export const db = new DatabaseSync(DB_PATH);
+const databaseContext = new AsyncLocalStorage();
+export const coreDb = new DatabaseSync(DB_PATH);
+export function currentDatabaseContext() { return databaseContext.getStore(); }
+export function withDatabase(context, callback) { return databaseContext.run(context, callback); }
+// Existing handlers use the database bound to this request, including asynchronous writes.
+export const db = new Proxy({}, {
+  get(_target, property) {
+    const connection = currentDatabaseContext()?.db ?? coreDb;
+    const value = connection[property];
+    return typeof value === 'function' ? value.bind(connection) : value;
+  },
+});
+
+export function initializeDatabase(db) {
 
 db.exec('PRAGMA journal_mode = WAL;');
 db.exec('PRAGMA foreign_keys = ON;');
@@ -369,6 +383,7 @@ function ensureColumn(table, column, definition) {
   }
 }
 
+ensureColumn('schools', 'location_verified', 'INTEGER NOT NULL DEFAULT 1');
 ensureColumn('users', 'grade', 'TEXT');
 ensureColumn('users', 'section', 'TEXT');
 ensureColumn('buildings', 'status', "TEXT NOT NULL DEFAULT 'operational'");
@@ -386,6 +401,16 @@ ensureColumn('evacuation_routes', 'updated_at', 'TEXT');
 ensureColumn('assembly_points', 'status', "TEXT NOT NULL DEFAULT 'open'");
 ensureColumn('assembly_points', 'accessible', 'INTEGER NOT NULL DEFAULT 1');
 ensureColumn('assembly_points', 'updated_at', 'TEXT');
+
+}
+initializeDatabase(coreDb);
+coreDb.exec(`CREATE TABLE IF NOT EXISTS school_workspaces (
+  beis_id TEXT PRIMARY KEY,
+  owner_user_id INTEGER NOT NULL REFERENCES users(id),
+  created_at TEXT NOT NULL
+)`);
+const sessionColumns = coreDb.prepare('PRAGMA table_info(sessions)').all();
+if (!sessionColumns.some(c => c.name === 'workspace_id')) coreDb.exec('ALTER TABLE sessions ADD COLUMN workspace_id TEXT');
 
 export function nowIso() {
   return new Date().toISOString();

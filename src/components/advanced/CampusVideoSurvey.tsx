@@ -31,6 +31,8 @@ export function CampusVideoSurvey({ buildings, rooms }: { buildings: Row[]; room
     [surveys, setSurveys] = useState<Row[]>([]),
     [route, setRoute] = useState<Row | null>(null),
     [accessible, setAccessible] = useState(false),
+    [analysisScope, setAnalysisScope] = useState('current'),
+    [analyzing, setAnalyzing] = useState(false),
     [provider, setProvider] = useState<{
       configured: boolean;
       training: boolean;
@@ -274,19 +276,57 @@ export function CampusVideoSurvey({ buildings, rooms }: { buildings: Row[]; room
             />{' '}
             I have permission to send these selected frames to the configured AI provider.
           </label>
+          <label>
+            Views to analyze
+            <select
+              disabled={busy}
+              value={analysisScope}
+              onChange={(e) => setAnalysisScope(e.target.value)}
+            >
+              <option value="current">Current view — smaller request</option>
+              <option value="all">All captured views — may take longer</option>
+            </select>
+          </label>
+          <p>
+            Analysis replaces draft labels only for the chosen view(s). Other views remain
+            available. Start with one view if the provider is slow.
+          </p>
+          {analyzing && (
+            <p role="status">
+              Waiting for vision analysis. The default waiting limit is two minutes. No automatic
+              retries are sent.
+            </p>
+          )}
           <button
             disabled={
               busy || !consent || !can('scan:write') || !provider?.configured || provider?.training
             }
             onClick={() =>
               void action(async () => {
-                const r = await api.post<Row>('/api/advanced/video-surveys/analyze', {
-                  frames,
-                  consent,
-                });
-                setCandidates(r.candidates);
-                setReviewed(false);
-                setNotice('AI suggestions are drafts. Review identities and duplicate views.');
+                const view = selected,
+                  current = analysisScope === 'current';
+                setAnalyzing(true);
+                try {
+                  const r = await api.post<Row>('/api/advanced/video-surveys/analyze', {
+                    frames: current ? [frames[view]] : frames,
+                    consent,
+                  });
+                  setCandidates((previous) =>
+                    current
+                      ? [
+                          ...previous.filter((candidate) => candidate.frameIndex !== view),
+                          ...r.candidates.map((candidate: Candidate) => ({
+                            ...candidate,
+                            frameIndex: view,
+                          })),
+                        ]
+                      : r.candidates,
+                  );
+                  setReviewed(false);
+                  setNotice('AI suggestions are drafts. Review identities and duplicate views.');
+                } finally {
+                  setAnalyzing(false);
+                }
               })
             }
           >

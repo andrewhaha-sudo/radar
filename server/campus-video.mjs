@@ -191,7 +191,7 @@ export function campusVideoHandlers(h) {
         });
         return json(ctx.res, 200, { candidates });
       } catch (e) {
-        throw new HttpError(400, e.message);
+        throw new HttpError(e.code === 'VISION_TIMEOUT' ? 504 : 400, e.message);
       }
     },
     'POST /api/advanced/video-surveys': async (ctx) => {

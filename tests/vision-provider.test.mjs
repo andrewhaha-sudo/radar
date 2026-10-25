@@ -171,3 +171,51 @@ test('model access check refuses metadata-only HTTP 200 when generateContent is 
     assert.ok(!result.stdout.includes('private-fake-fixture'));
   }
 });
+
+test('analysis timeout is bounded, defaults to two minutes, and rejects unsafe configuration', async () => {
+  const { visionTimeoutMs } = await import('../server/vision-provider.mjs');
+  assert.equal(visionTimeoutMs(''), 120000);
+  assert.equal(visionTimeoutMs('240000'), 240000);
+  for (const value of ['NaN', '0', '4999', '240001'])
+    assert.throws(() => visionTimeoutMs(value), /between/);
+});
+
+test('provider and response-body timeouts keep actionable errors and never retry the request', async () => {
+  const { requestVision } = await import('../server/vision-provider.mjs');
+  const original = process.env.RADAR_VISION_PROVIDER;
+  process.env.RADAR_VISION_PROVIDER = 'openai';
+  try {
+    for (const bodyTimeout of [false, true]) {
+      let calls = 0;
+      await assert.rejects(
+        () =>
+          requestVision(
+            { model: 'test', input: [] },
+            {
+              apiKey: 'private-fixture',
+              request: async (_url, options) => {
+                calls++;
+                assert.ok(options.signal instanceof AbortSignal);
+                const timeout = () => {
+                  throw new DOMException(
+                    'The operation was aborted due to timeout',
+                    'TimeoutError',
+                  );
+                };
+                if (!bodyTimeout) timeout();
+                return { ok: true, status: 200, json: async () => timeout() };
+              },
+            },
+          ),
+        (error) =>
+          error.code === 'VISION_TIMEOUT' &&
+          /current view/.test(error.message) &&
+          /No automatic retry/.test(error.message),
+      );
+      assert.equal(calls, 1);
+    }
+  } finally {
+    if (original === undefined) delete process.env.RADAR_VISION_PROVIDER;
+    else process.env.RADAR_VISION_PROVIDER = original;
+  }
+});

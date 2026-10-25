@@ -1161,7 +1161,7 @@ export function featureHandlers(h) {
         ).filter((index) => index != null),
       });
     } catch (error) {
-      throw new HttpError(502, error.message);
+      throw new HttpError(error.code === 'VISION_TIMEOUT' ? 504 : 502, error.message);
     }
     let added = 0;
     for (const f of findings) {

@@ -16,16 +16,43 @@ export function selectedVisionModel() {
     ? visionModel(String(process.env.RADAR_GEMINI_MODEL || '').trim() || 'gemini-2.5-flash')
     : visionModel();
 }
-export async function requestVision(payload, { apiKey = visionApiKey(), request = fetch } = {}) {
+export function visionTimeoutMs(value = process.env.RADAR_VISION_TIMEOUT_MS) {
+  const milliseconds = value === undefined || value === '' ? 120000 : Number(value);
+  if (!Number.isInteger(milliseconds) || milliseconds < 5000 || milliseconds > 240000)
+    throw new Error('RADAR_VISION_TIMEOUT_MS must be between 5000 and 240000 milliseconds.');
+  return milliseconds;
+}
+export async function requestVision(payload, options = {}) {
+  try {
+    return await performVisionRequest(payload, options);
+  } catch (error) {
+    if (
+      ['TimeoutError', 'AbortError'].includes(error?.name) ||
+      ['UND_ERR_HEADERS_TIMEOUT', 'UND_ERR_BODY_TIMEOUT'].includes(error?.cause?.code)
+    ) {
+      const timeout = new Error(
+        'Vision analysis timed out before a completed response was received. Try analyzing only the current view, or wait before trying again. Your frames and existing labels are unchanged. No automatic retry was sent.',
+      );
+      timeout.code = 'VISION_TIMEOUT';
+      throw timeout;
+    }
+    throw error;
+  }
+}
+async function performVisionRequest(payload, { apiKey = visionApiKey(), request = fetch } = {}) {
   if (process.env.RADAR_TEST_LAB === '1') throw new Error('External AI is disabled in training.');
   if (!apiKey) throw new Error('Configure the selected vision provider API key.');
-  if (visionProvider() === 'openai')
-    return request('https://api.openai.com/v1/responses', {
+  if (visionProvider() === 'openai') {
+    const response = await request('https://api.openai.com/v1/responses', {
       method: 'POST',
       headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-      signal: AbortSignal.timeout(60000),
+      signal: AbortSignal.timeout(visionTimeoutMs()),
       body: JSON.stringify(payload),
     });
+    if (!response.ok) return response;
+    const data = await response.json();
+    return { ok: true, status: response.status, json: async () => data };
+  }
   const parts = payload.input
     .flatMap((message) => message.content)
     .map((part) => {
@@ -42,7 +69,7 @@ export async function requestVision(payload, { apiKey = visionApiKey(), request 
     {
       method: 'POST',
       headers: { 'x-goog-api-key': apiKey, 'Content-Type': 'application/json' },
-      signal: AbortSignal.timeout(60000),
+      signal: AbortSignal.timeout(visionTimeoutMs()),
       body: JSON.stringify({
         contents: [{ role: 'user', parts }],
         generationConfig: {

@@ -1,3 +1,6 @@
+import { FEATURE_SCHEMA } from './feature-schema.mjs';
+import { PostgresDatabase } from './postgres.mjs';
+import { AsyncLocalStorage } from 'node:async_hooks';
 import { DatabaseSync } from 'node:sqlite';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -5,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export const SERVER_ROOT = __dirname;
+export const usesPostgres = process.env.RADAR_DATABASE_DRIVER === 'postgres';
 // RADAR_DB_DIR lets tests and multi-instance deployments use an isolated data
 // directory without touching the school's live database.
 export const DATA_DIR = process.env.RADAR_DB_DIR
@@ -12,26 +16,62 @@ export const DATA_DIR = process.env.RADAR_DB_DIR
   : path.join(__dirname, 'data');
 export const UPLOAD_DIR = path.join(__dirname, 'uploads');
 
-fs.mkdirSync(DATA_DIR, { recursive: true });
-fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+if (!usesPostgres) {
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+  fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+}
 
 const DB_PATH = path.join(DATA_DIR, 'radar.db');
 const LEGACY_DB_PATH = path.join(DATA_DIR, 'hazardlink.db');
 
 // Forward-compatible rename: if a pre-RADAR database exists and no RADAR
 // database has been created yet, copy it rather than silently starting empty.
-if (!fs.existsSync(DB_PATH) && fs.existsSync(LEGACY_DB_PATH)) {
+if (!usesPostgres && !fs.existsSync(DB_PATH) && fs.existsSync(LEGACY_DB_PATH)) {
   fs.copyFileSync(LEGACY_DB_PATH, DB_PATH);
   console.log('[radar] migrated legacy hazardlink.db to radar.db');
 }
 
-export const db = new DatabaseSync(DB_PATH);
+const databaseContext = new AsyncLocalStorage();
+let transport;
+if (process.env.RADAR_PGLITE_TEST_DIR) {
+  if (process.env.NODE_ENV !== 'test') throw new Error('PGlite is available only in tests.');
+  const { PGlite } = await import('@electric-sql/pglite');
+  transport = new PGlite(process.env.RADAR_PGLITE_TEST_DIR);
+}
+export const coreDb = usesPostgres
+  ? new PostgresDatabase('radar_main', transport)
+  : new DatabaseSync(DB_PATH);
+export function newSchoolDatabase(id, file) {
+  return usesPostgres
+    ? new PostgresDatabase(`radar_school_${id}`, transport)
+    : new DatabaseSync(file);
+}
+export function currentDatabaseContext() {
+  return databaseContext.getStore();
+}
+export function withDatabase(context, callback) {
+  return databaseContext.run(context, callback);
+}
+// Existing handlers use the database bound to this request, including asynchronous writes.
+export const db = new Proxy(
+  {},
+  {
+    get(_target, property) {
+      const connection = currentDatabaseContext()?.db ?? coreDb;
+      const value = connection[property];
+      return typeof value === 'function' ? value.bind(connection) : value;
+    },
+  },
+);
 
-db.exec('PRAGMA journal_mode = WAL;');
-db.exec('PRAGMA foreign_keys = ON;');
-db.exec('PRAGMA busy_timeout = 5000;');
+export async function initializeDatabase(db) {
+  if (db.dialect === 'postgres') await db.initializeNamespace();
 
-db.exec(`
+  await db.exec('PRAGMA journal_mode = WAL;');
+  await db.exec('PRAGMA foreign_keys = ON;');
+  await db.exec('PRAGMA busy_timeout = 5000;');
+
+  await db.exec(`
 CREATE TABLE IF NOT EXISTS schools (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT NOT NULL,
@@ -358,34 +398,91 @@ CREATE INDEX IF NOT EXISTS idx_events_hazard ON hazard_events(hazard_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id);
 `);
 
-/* ------------------------------------------------------------------ */
-/* Forward-only migrations for databases created by earlier versions.  */
-/* ------------------------------------------------------------------ */
+  /* ------------------------------------------------------------------ */
+  /* Forward-only migrations for databases created by earlier versions.  */
+  /* ------------------------------------------------------------------ */
 
-function ensureColumn(table, column, definition) {
-  const columns = db.prepare(`PRAGMA table_info(${table})`).all();
-  if (!columns.some((c) => c.name === column)) {
-    db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+  async function ensureColumn(table, column, definition) {
+    const columns = await db.prepare(`PRAGMA table_info(${table})`).all();
+    if (!columns.some((c) => c.name === column)) {
+      await db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+    }
   }
-}
 
-ensureColumn('users', 'grade', 'TEXT');
-ensureColumn('users', 'section', 'TEXT');
-ensureColumn('buildings', 'status', "TEXT NOT NULL DEFAULT 'operational'");
-ensureColumn('safety_equipment', 'quantity', 'INTEGER NOT NULL DEFAULT 1');
-ensureColumn('safety_equipment', 'expires_at', 'TEXT');
-ensureColumn('safety_equipment', 'department', "TEXT NOT NULL DEFAULT ''");
-ensureColumn('safety_equipment', 'location_note', "TEXT NOT NULL DEFAULT ''");
-ensureColumn('evacuation_routes', 'accessible', 'INTEGER NOT NULL DEFAULT 0');
-ensureColumn('evacuation_routes', 'status', "TEXT NOT NULL DEFAULT 'open'");
-ensureColumn('evacuation_routes', 'distance_m', 'INTEGER NOT NULL DEFAULT 0');
-ensureColumn('evacuation_routes', 'walk_minutes', 'INTEGER NOT NULL DEFAULT 0');
-ensureColumn('evacuation_routes', 'assembly_point_id', 'INTEGER');
-ensureColumn('evacuation_routes', 'scenario', "TEXT NOT NULL DEFAULT 'general'");
-ensureColumn('evacuation_routes', 'updated_at', 'TEXT');
-ensureColumn('assembly_points', 'status', "TEXT NOT NULL DEFAULT 'open'");
-ensureColumn('assembly_points', 'accessible', 'INTEGER NOT NULL DEFAULT 1');
-ensureColumn('assembly_points', 'updated_at', 'TEXT');
+  await ensureColumn('schools', 'location_verified', 'INTEGER NOT NULL DEFAULT 1');
+  await ensureColumn('users', 'supabase_auth_id', 'TEXT');
+  await db.exec(
+    'CREATE UNIQUE INDEX IF NOT EXISTS idx_users_supabase_auth_id ON users(supabase_auth_id)',
+  );
+
+  await ensureColumn('users', 'grade', 'TEXT');
+  await ensureColumn('users', 'section', 'TEXT');
+  await ensureColumn('buildings', 'status', "TEXT NOT NULL DEFAULT 'operational'");
+  await ensureColumn('safety_equipment', 'quantity', 'INTEGER NOT NULL DEFAULT 1');
+  await ensureColumn('safety_equipment', 'expires_at', 'TEXT');
+  await ensureColumn('safety_equipment', 'department', "TEXT NOT NULL DEFAULT ''");
+  await ensureColumn('safety_equipment', 'location_note', "TEXT NOT NULL DEFAULT ''");
+  await ensureColumn('evacuation_routes', 'accessible', 'INTEGER NOT NULL DEFAULT 0');
+  await ensureColumn('evacuation_routes', 'status', "TEXT NOT NULL DEFAULT 'open'");
+  await ensureColumn('evacuation_routes', 'distance_m', 'INTEGER NOT NULL DEFAULT 0');
+  await ensureColumn('evacuation_routes', 'walk_minutes', 'INTEGER NOT NULL DEFAULT 0');
+  await ensureColumn('evacuation_routes', 'assembly_point_id', 'INTEGER');
+  await ensureColumn('evacuation_routes', 'scenario', "TEXT NOT NULL DEFAULT 'general'");
+  await ensureColumn('evacuation_routes', 'updated_at', 'TEXT');
+  await ensureColumn('assembly_points', 'status', "TEXT NOT NULL DEFAULT 'open'");
+  await ensureColumn('assembly_points', 'accessible', 'INTEGER NOT NULL DEFAULT 1');
+  await ensureColumn('assembly_points', 'updated_at', 'TEXT');
+  await db.exec(FEATURE_SCHEMA);
+  await ensureColumn('rooms', 'width_m', 'REAL');
+  await ensureColumn('rooms', 'length_m', 'REAL');
+  await ensureColumn('rooms', 'intended_use', "TEXT NOT NULL DEFAULT ''");
+  await ensureColumn('rooms', 'department', "TEXT NOT NULL DEFAULT ''");
+  await ensureColumn('rooms', 'emergency_contact', "TEXT NOT NULL DEFAULT ''");
+  await ensureColumn('floors', 'plan_image', "TEXT NOT NULL DEFAULT ''");
+  await ensureColumn('floors', 'plan_source', "TEXT NOT NULL DEFAULT ''");
+  await ensureColumn('floors', 'plan_verified', 'INTEGER NOT NULL DEFAULT 0');
+  await ensureColumn('hazards', 'pin_x', 'REAL');
+  await ensureColumn('hazards', 'pin_y', 'REAL');
+  await ensureColumn('hazards', 'anonymous', 'INTEGER NOT NULL DEFAULT 0');
+  await ensureColumn('hazards', 'category', "TEXT NOT NULL DEFAULT 'other'");
+  await ensureColumn('scan_observations', 'confidence', 'REAL');
+  await ensureColumn('scans', 'client_request_id', 'TEXT');
+  await ensureColumn('hazards', 'client_request_id', 'TEXT');
+  await db.exec(
+    'CREATE UNIQUE INDEX IF NOT EXISTS idx_scan_request ON scans(inspector_id,client_request_id)',
+  );
+  await db.exec(
+    'CREATE UNIQUE INDEX IF NOT EXISTS idx_report_request ON hazards(reported_by,client_request_id)',
+  );
+  await ensureColumn('scans', 'no_findings_confirmed', 'INTEGER NOT NULL DEFAULT 0');
+  await ensureColumn('scans', 'inspection_checklist', "TEXT NOT NULL DEFAULT '{}'");
+  await ensureColumn('advisories', 'details', "TEXT NOT NULL DEFAULT '{}'");
+  await ensureColumn('evacuation_routes', 'verified', 'INTEGER NOT NULL DEFAULT 0');
+  await ensureColumn('evacuation_routes', 'source', "TEXT NOT NULL DEFAULT ''");
+  await ensureColumn('evacuation_routes', 'one_way', 'INTEGER NOT NULL DEFAULT 0');
+  await ensureColumn('safety_equipment', 'low_stock_threshold', 'INTEGER NOT NULL DEFAULT 0');
+  await ensureColumn('users', 'active', 'INTEGER NOT NULL DEFAULT 1');
+  await ensureColumn('alerts', 'send_push', 'INTEGER NOT NULL DEFAULT 0');
+  await ensureColumn('alerts', 'send_sms', 'INTEGER NOT NULL DEFAULT 0');
+  await ensureColumn('alerts', 'target_label', "TEXT NOT NULL DEFAULT ''");
+  await ensureColumn('alerts', 'suspension_reason', "TEXT NOT NULL DEFAULT ''");
+  await ensureColumn('alerts', 'resume_at', 'TEXT');
+  await ensureColumn('alerts', 'target_kind', "TEXT NOT NULL DEFAULT ''");
+  await ensureColumn('alerts', 'target_value', "TEXT NOT NULL DEFAULT ''");
+  await ensureColumn('users', 'sms_consent', 'INTEGER NOT NULL DEFAULT 0');
+  if (db.dialect === 'postgres') await db.protectTables();
+}
+await initializeDatabase(coreDb);
+await coreDb.exec(`CREATE TABLE IF NOT EXISTS school_workspaces (
+  beis_id TEXT PRIMARY KEY,
+  owner_user_id INTEGER NOT NULL REFERENCES users(id),
+  created_at TEXT NOT NULL
+)`);
+const sessionColumns = await coreDb.prepare('PRAGMA table_info(sessions)').all();
+if (!sessionColumns.some((c) => c.name === 'workspace_id'))
+  await coreDb.exec('ALTER TABLE sessions ADD COLUMN workspace_id TEXT');
+
+if (coreDb.dialect === 'postgres') await coreDb.protectTables();
 
 export function nowIso() {
   return new Date().toISOString();

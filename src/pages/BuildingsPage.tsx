@@ -1,5 +1,6 @@
 'use client';
 
+import { CampusSetup } from '@/components/forms/CampusSetup';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
@@ -192,6 +193,8 @@ export function BuildingsPage() {
           </Button>
         </div>
       </div>
+
+      {can('admin:users') && <CampusSetup buildings={data?.buildings ?? []} floors={data?.floors ?? []} onSaved={load} />}
 
       {error ? (
         <div className="rounded-xl border border-danger/30 bg-danger/10 p-6 text-center">

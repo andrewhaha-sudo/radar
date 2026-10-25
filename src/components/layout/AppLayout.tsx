@@ -3,6 +3,7 @@
 import { Suspense, useState, useCallback, useEffect } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { WifiOff, Send } from 'lucide-react';
+import { SchoolDirectoryProvider, SchoolWorkspaceBoundary } from '@/components/layout/SchoolDirectory';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { TopNav } from '@/components/layout/TopNav';
 import { useOffline } from '@/context/OfflineContext';
@@ -38,7 +39,7 @@ export function AppLayout() {
   }, [location.pathname]);
 
   return (
-    <>
+    <SchoolDirectoryProvider>
       <a
         href="#main-content"
         className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground"
@@ -77,11 +78,11 @@ export function AppLayout() {
 
           <main id="main-content" className="page-enter flex-1" role="main" key={location.pathname}>
             <Suspense fallback={<RouteFallback />}>
-              <Outlet />
+              <SchoolWorkspaceBoundary><Outlet /></SchoolWorkspaceBoundary>
             </Suspense>
           </main>
         </div>
       </div>
-    </>
+    </SchoolDirectoryProvider>
   );
 }

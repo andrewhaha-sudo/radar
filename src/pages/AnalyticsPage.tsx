@@ -1,5 +1,7 @@
 'use client';
 
+import { workspaceUrl } from '@/lib/workspace';
+
 import { useCallback, useEffect, useState } from 'react';
 import {
   Area,
@@ -117,7 +119,7 @@ export function AnalyticsPage() {
             </Button>
             {EXPORTS.filter((item) => can(item.permission)).map((item) => (
               <Button key={item.dataset} variant="outline" size="sm" asChild>
-                <a href={`/api/analytics/export?dataset=${item.dataset}`}>
+                <a href={workspaceUrl(`/api/analytics/export?dataset=${item.dataset}`)}>
                   <Download className="h-4 w-4" /> {item.label}
                 </a>
               </Button>
@@ -537,7 +539,7 @@ export function AnalyticsPage() {
                   return allowed ? (
                     <a
                       key={item.dataset}
-                      href={`/api/analytics/export?dataset=${item.dataset}`}
+                      href={workspaceUrl(`/api/analytics/export?dataset=${item.dataset}`)}
                       className="flex items-center justify-between rounded-lg border border-border bg-background/60 px-3 py-2 text-xs font-medium transition-colors hover:border-accent-border hover:bg-accent"
                     >
                       <span className="inline-flex items-center gap-1.5">

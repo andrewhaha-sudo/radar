@@ -1,5 +1,7 @@
 'use client';
 
+import { workspaceUrl } from '@/lib/workspace';
+
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Accessibility,
@@ -282,7 +284,7 @@ export function ResourcesPage() {
     return rooms.filter((room) => room.buildingId === Number(form.buildingId));
   }, [rooms, form.buildingId]);
 
-  const exportHref = '/api/analytics/export?dataset=resources';
+  const exportHref = workspaceUrl('/api/analytics/export?dataset=resources');
 
   return (
     <div className="stack-page space-y-5">

@@ -1,0 +1,3395 @@
+[
+  {
+    "id": "112130",
+    "name": "A. Pabico Abordo Elementary School",
+    "municipality": "DAET (Capital)",
+    "barangay": "BORABOD",
+    "address": "Purok 2",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "402766",
+    "name": "ACLC College of Daet",
+    "municipality": "DAET (Capital)",
+    "barangay": "BARANGAY VI (POB.)",
+    "address": "2nd floor guinhawa building, j. lukban street",
+    "sector": "Private",
+    "offering": "Purely SHS"
+  },
+  {
+    "id": "409756",
+    "name": "ADR Bicol International Technological College, Inc.",
+    "municipality": "LABO",
+    "barangay": "MALASUGUI",
+    "address": "P-4",
+    "sector": "Private",
+    "offering": "Purely SHS"
+  },
+  {
+    "id": "112197",
+    "name": "Agapito Racelis Elementary School",
+    "municipality": "LABO",
+    "barangay": "EXCIBAN",
+    "address": "-",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112131",
+    "name": "Alawihao Elementary School",
+    "municipality": "DAET (Capital)",
+    "barangay": "ALAWIHAO",
+    "address": "Purok 2, Alawihao",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "309613",
+    "name": "Alawihao High School",
+    "municipality": "DAET (Capital)",
+    "barangay": "ALAWIHAO",
+    "address": "Purok 6 UP Phase I",
+    "sector": "Public",
+    "offering": "JHS with SHS"
+  },
+  {
+    "id": "112241",
+    "name": "Alfonso Dasco Elementary School",
+    "municipality": "PARACALE",
+    "barangay": "CASALUGAN",
+    "address": "-P-2 Brgy. Casalugan",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "433026",
+    "name": "Ananda Marga Special Academic Institution AMSAI (UNLAD BATA)",
+    "municipality": "JOSE PANGANIBAN",
+    "barangay": "SAN RAFAEL",
+    "address": "Tumbaga",
+    "sector": "Private",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112082",
+    "name": "Angas Elementary School",
+    "municipality": "BASUD",
+    "barangay": "ANGAS",
+    "address": "",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "305770",
+    "name": "Aniceta De Lara Pimentel High School",
+    "municipality": "LABO",
+    "barangay": "SAN ANTONIO",
+    "address": "San Antonio",
+    "sector": "Public",
+    "offering": "Purely JHS"
+  },
+  {
+    "id": "173019",
+    "name": "Anita V. Romero",
+    "municipality": "DAET (Capital)",
+    "barangay": "MAGANG",
+    "address": "P-6 Brgy. Magang, Daet Camarines Norte",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "409246",
+    "name": "Asian Technological Skills Institute, Inc.",
+    "municipality": "DAET (Capital)",
+    "barangay": "BARANGAY III (POB.)",
+    "address": "J. Lukban Cor. MD, Camarines Sts. Brgy. III",
+    "sector": "Private",
+    "offering": "Purely SHS"
+  },
+  {
+    "id": "403650",
+    "name": "Ave Maria Children Center",
+    "municipality": "JOSE PANGANIBAN",
+    "barangay": "NORTH POBLACION",
+    "address": "Rizal Ave. North Poblacion, Jose Panganiban",
+    "sector": "Private",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112132",
+    "name": "Awitan Elementary School",
+    "municipality": "DAET (Capital)",
+    "barangay": "AWITAN",
+    "address": "P-3",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112278",
+    "name": "BASIAD ELEMENTARY SCHOOL",
+    "municipality": "SANTA ELENA",
+    "barangay": "BASIAD",
+    "address": "PUROK 1",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112176",
+    "name": "Baay Elementary School",
+    "municipality": "LABO",
+    "barangay": "BAAY",
+    "address": "-Baay",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112133",
+    "name": "Bagasbas Elementary School",
+    "municipality": "DAET (Capital)",
+    "barangay": "BAGASBAS",
+    "address": "Purok 1",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "301886",
+    "name": "Bagong Silang I High School",
+    "municipality": "LABO",
+    "barangay": "BAGONG SILANG I",
+    "address": "Sitio Magtaganki, Bagong Silang 1, Labo, Camarines Norte",
+    "sector": "Public",
+    "offering": "JHS with SHS"
+  },
+  {
+    "id": "112199",
+    "name": "Bagong Silang II Elementary School",
+    "municipality": "LABO",
+    "barangay": "BAGONG SILANG II",
+    "address": "Brgy. Bagong Silang II, Labo, Camarines Norte",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "301887",
+    "name": "Bagong Silang II High School",
+    "municipality": "LABO",
+    "barangay": "BAGONG SILANG II",
+    "address": "Sitio Binutas",
+    "sector": "Public",
+    "offering": "JHS with SHS"
+  },
+  {
+    "id": "112200",
+    "name": "Bagong Silang III Elementary School",
+    "municipality": "LABO",
+    "barangay": "BAGONG SILANG III (SILANG)",
+    "address": "Purok 1, Brgy. Bagong Silang 3, Labo, Camarines Norte",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "173017",
+    "name": "Bagumbayan Elementary School",
+    "municipality": "PARACALE",
+    "barangay": "BAGUMBAYAN",
+    "address": "-P.7-A brgy. Bagumbayan",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112083",
+    "name": "Balce Elementary School",
+    "municipality": "BASUD",
+    "barangay": "CAAYUNAN",
+    "address": "",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112298",
+    "name": "Banocboc Elementary School",
+    "municipality": "VINZONS",
+    "barangay": "BANOCBOC",
+    "address": "",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "433006",
+    "name": "Basud Advent Institute of Camarines Norte, Inc.",
+    "municipality": "BASUD",
+    "barangay": "POBLACION 2",
+    "address": "National Road",
+    "sector": "Private",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112084",
+    "name": "Basud CS",
+    "municipality": "BASUD",
+    "barangay": "POBLACION 2",
+    "address": "Sumil St.",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "301889",
+    "name": "Basud National High School",
+    "municipality": "BASUD",
+    "barangay": "POBLACION 1",
+    "address": "Esperanza St., Poblacion 1",
+    "sector": "Public",
+    "offering": "JHS with SHS"
+  },
+  {
+    "id": "408463",
+    "name": "Basud Parochial School, Inc.",
+    "municipality": "BASUD",
+    "barangay": "POBLACION 1",
+    "address": "San Rafael St. Poblacion 1, Basud, Camarines Norte",
+    "sector": "Private",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112242",
+    "name": "Batobalani Elementary School",
+    "municipality": "PARACALE",
+    "barangay": "BATOBALANI",
+    "address": "P-4",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "301890",
+    "name": "Batobalani National High School",
+    "municipality": "PARACALE",
+    "barangay": "BATOBALANI",
+    "address": "Purok 3, Batobalani, Paracale, Camarines Norte",
+    "sector": "Public",
+    "offering": "JHS with SHS"
+  },
+  {
+    "id": "112177",
+    "name": "Bautista Elementary School",
+    "municipality": "LABO",
+    "barangay": "BAUTISTA",
+    "address": "Brgy. Bautista, Labo,C. Norte",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112201",
+    "name": "Bayabas Elementary School",
+    "municipality": "LABO",
+    "barangay": "BAYABAS",
+    "address": "-Bayabas, Labo Camarines",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112178",
+    "name": "Bayanbayan Elementary School",
+    "municipality": "LABO",
+    "barangay": "BAYAN-BAYAN",
+    "address": "-purok 2 bayanbayan labo cam.norte",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112261",
+    "name": "Bernardo Olis Elementary School",
+    "municipality": "SAN VICENTE",
+    "barangay": "FABRICA",
+    "address": "-",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112085",
+    "name": "Briñas Elementary School",
+    "municipality": "BASUD",
+    "barangay": "TAISAN",
+    "address": "purok 4",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112279",
+    "name": "Bulala Elementary School",
+    "municipality": "SANTA ELENA",
+    "barangay": "BULALA",
+    "address": "Purok 2, Brgy. Bulala, Sta Elena, Camarines Norte",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "309616",
+    "name": "Bulala High School",
+    "municipality": "SANTA ELENA",
+    "barangay": "BULALA",
+    "address": "Purok 1, Bulala, Sta. Elena, Camarines Norte",
+    "sector": "Public",
+    "offering": "JHS with SHS"
+  },
+  {
+    "id": "112179",
+    "name": "Bulhao Elementary School",
+    "municipality": "LABO",
+    "barangay": "BULHAO",
+    "address": "Purok 2",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112141",
+    "name": "CALASGASAN Elementary School",
+    "municipality": "DAET (Capital)",
+    "barangay": "CALASGASAN",
+    "address": "-Purok 4",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112086",
+    "name": "Caayunan Elementary School",
+    "municipality": "BASUD",
+    "barangay": "CAAYUNAN",
+    "address": "",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "173003",
+    "name": "Cabanbanan Elementary School",
+    "municipality": "SAN VICENTE",
+    "barangay": "CABANBANAN",
+    "address": "-",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112299",
+    "name": "Cagbalogo Elementary School",
+    "municipality": "VINZONS",
+    "barangay": "CAGBALOGO",
+    "address": "Cagbalogo Vinzons Cams. Norte",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "173004",
+    "name": "Cahabaan Elementary School",
+    "municipality": "TALISAY",
+    "barangay": "CAHABAAN",
+    "address": "-Purok 2 Brgy. Cahabaan",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "403628",
+    "name": "Calabaca Academy",
+    "municipality": "CAPALONGA",
+    "barangay": "CALABACA",
+    "address": "calabaca",
+    "sector": "Private",
+    "offering": "Purely JHS"
+  },
+  {
+    "id": "501738",
+    "name": "Calabaca Integrated School",
+    "municipality": "CAPALONGA",
+    "barangay": "CALABACA",
+    "address": "Purok 5, Calabaca, Capalonga, Camarines Norte",
+    "sector": "Public",
+    "offering": "ES and JHS (K to 10)"
+  },
+  {
+    "id": "500908",
+    "name": "Calabasa Integrated School",
+    "municipality": "LABO",
+    "barangay": "CALABASA",
+    "address": "-Barangay Calabasa",
+    "sector": "Public",
+    "offering": "ES and JHS (K to 10)"
+  },
+  {
+    "id": "112243",
+    "name": "Calaburnay Elementary School",
+    "municipality": "PARACALE",
+    "barangay": "CALABURNAY",
+    "address": "Purok Ipil Ipil, Calaburnay, Paracale,CN",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112300",
+    "name": "Calangcawan Norte Elementary School",
+    "municipality": "VINZONS",
+    "barangay": "CALANGCAWAN NORTE",
+    "address": "Calangcawan Norte Vinzons",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112301",
+    "name": "Calangcawan Sur Elementary School",
+    "municipality": "VINZONS",
+    "barangay": "CALANGCAWAN SUR",
+    "address": "Lubhag,Calangcawan Sur",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112149",
+    "name": "Calero Elementary School",
+    "municipality": "JOSE PANGANIBAN",
+    "barangay": "CALERO",
+    "address": "-Purok 1, Calero",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112150",
+    "name": "Calogcog Elementary School",
+    "municipality": "JOSE PANGANIBAN",
+    "barangay": "LUKLUKAN NORTE",
+    "address": "P-6 Luklukan Norte Jose Panganiban, Camarines Norte",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112109",
+    "name": "Camacho Aler Elementary School",
+    "municipality": "CAPALONGA",
+    "barangay": "SAN ANTONIO",
+    "address": "San Antonio",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "403633",
+    "name": "Camarines Norte Chung Hua High School Foundation Inc.",
+    "municipality": "DAET (Capital)",
+    "barangay": "BARANGAY IV (POB.)",
+    "address": "ZABALA STREET",
+    "sector": "Private",
+    "offering": "All Offering (K to 12)"
+  },
+  {
+    "id": "403657",
+    "name": "Camarines Norte College",
+    "municipality": "LABO",
+    "barangay": "ANAHAW (POB.)",
+    "address": "Maharlika Highway",
+    "sector": "Private",
+    "offering": "JHS with SHS"
+  },
+  {
+    "id": "301891",
+    "name": "Camarines Norte High School",
+    "municipality": "DAET (Capital)",
+    "barangay": "CAMAMBUGAN",
+    "address": "Purok 2",
+    "sector": "Public",
+    "offering": "JHS with SHS"
+  },
+  {
+    "id": "409757",
+    "name": "Camarines Norte International School, Inc.",
+    "municipality": "LABO",
+    "barangay": "MASALONG",
+    "address": "Maharlika Highway, P-1",
+    "sector": "Private",
+    "offering": "Purely SHS"
+  },
+  {
+    "id": "309622",
+    "name": "Camarines Norte NHS-Annex",
+    "municipality": "DAET (Capital)",
+    "barangay": "CAMAMBUGAN",
+    "address": "Camambugan",
+    "sector": "Public",
+    "offering": "Purely SHS"
+  },
+  {
+    "id": "402774",
+    "name": "Camarines Norte School of Law",
+    "municipality": "TALISAY",
+    "barangay": "ITOMANG",
+    "address": "Brgy. Itomang Talisay, Camarines Norte",
+    "sector": "Private",
+    "offering": "Purely SHS"
+  },
+  {
+    "id": "600054",
+    "name": "Camarines Norte State College",
+    "municipality": "DAET (Capital)",
+    "barangay": "BARANGAY II (POB.)",
+    "address": "J. Lukban Extension",
+    "sector": "SUCs/LUCs",
+    "offering": "All Offering (K to 12)"
+  },
+  {
+    "id": "112244",
+    "name": "Capacuan Elementary School",
+    "municipality": "PARACALE",
+    "barangay": "CAPACUAN",
+    "address": "",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112110",
+    "name": "Capalonga CS",
+    "municipality": "CAPALONGA",
+    "barangay": "POBLACION",
+    "address": "Quezon Street",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "403629",
+    "name": "Capalonga Institute Inc.",
+    "municipality": "CAPALONGA",
+    "barangay": "POBLACION",
+    "address": "Vinzons St.",
+    "sector": "Private",
+    "offering": "JHS with SHS"
+  },
+  {
+    "id": "403630",
+    "name": "Capalonga Parochial High School",
+    "municipality": "CAPALONGA",
+    "barangay": "POBLACION",
+    "address": "Lopez Jaena Street",
+    "sector": "Private",
+    "offering": "All Offering (K to 12)"
+  },
+  {
+    "id": "403631",
+    "name": "Capalonga SDA Multigrade School",
+    "municipality": "CAPALONGA",
+    "barangay": "CATIOAN",
+    "address": "Purok 3",
+    "sector": "Private",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "309603",
+    "name": "Caringo High School",
+    "municipality": "MERCEDES",
+    "barangay": "CARINGO",
+    "address": "Purok 5",
+    "sector": "Public",
+    "offering": "JHS with SHS"
+  },
+  {
+    "id": "112111",
+    "name": "Casiano Florendo Elementary School",
+    "municipality": "CAPALONGA",
+    "barangay": "MACTANG",
+    "address": "P-1",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112113",
+    "name": "Catalino Gonzales Elementary School",
+    "municipality": "CAPALONGA",
+    "barangay": "CAMAGSAAN",
+    "address": "Purok IV, Barangay Camagsaan",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112222",
+    "name": "Cayucyucan Elementary School",
+    "municipality": "MERCEDES",
+    "barangay": "CAYUCYUCAN",
+    "address": "Purok 4, Cayucyucan, Mercedes, Cam. Norte",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "433025",
+    "name": "Christian Foundational Learning Center",
+    "municipality": "BASUD",
+    "barangay": "POBLACION 1",
+    "address": "#055 Del Rosario St.,",
+    "sector": "Private",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112234",
+    "name": "Claro E. Ibasco Elementary School",
+    "municipality": "MERCEDES",
+    "barangay": "MATOOGTOOG",
+    "address": "-Brgy. Matoogtoog, Mercedes,Cam. Norte",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112205",
+    "name": "Claudio Villagen Elementary School",
+    "municipality": "LABO",
+    "barangay": "TALOBATIB",
+    "address": "",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112215",
+    "name": "Cleofas R. Dando Elementary School",
+    "municipality": "LABO",
+    "barangay": "MALANGCAO-BASUD",
+    "address": "-Malangao Basud, Labo, Camarines Norte",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112142",
+    "name": "Cobangbang Elementary School",
+    "municipality": "DAET (Capital)",
+    "barangay": "COBANGBANG (CARUMPIT)",
+    "address": "PUROK 2- COBANGBANG DAET,CAMARINES NORTE",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "501271",
+    "name": "Colasi Integrated School",
+    "municipality": "MERCEDES",
+    "barangay": "COLASI",
+    "address": "PUROK 1",
+    "sector": "Public",
+    "offering": "ES and JHS (K to 10)"
+  },
+  {
+    "id": "112170",
+    "name": "Cresencia B. Enverga Elementary School",
+    "municipality": "JOSE PANGANIBAN",
+    "barangay": "SANTA CRUZ",
+    "address": "-P 1 Sta Cruz",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112160",
+    "name": "D. Albonia Elementary School",
+    "municipality": "JOSE PANGANIBAN",
+    "barangay": "TAMISAN",
+    "address": "Purok 1",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "301892",
+    "name": "D. Q. Liwag National High School",
+    "municipality": "VINZONS",
+    "barangay": "SANTO DOMINGO",
+    "address": "Lico I, Purok 3",
+    "sector": "Public",
+    "offering": "JHS with SHS"
+  },
+  {
+    "id": "112134",
+    "name": "Daet Elementary School",
+    "municipality": "DAET (Capital)",
+    "barangay": "BARANGAY VII (POB.)",
+    "address": "Governor Panotes Avenue",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "433001",
+    "name": "Daet SDA Multigrade School",
+    "municipality": "DAET (Capital)",
+    "barangay": "GUBAT",
+    "address": "Roseville-3 Subd.",
+    "sector": "Private",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112245",
+    "name": "Dagang Elementary School",
+    "municipality": "PARACALE",
+    "barangay": "DAGANG",
+    "address": "Purok 2",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112206",
+    "name": "Daguit Elementary School",
+    "municipality": "LABO",
+    "barangay": "DAGUIT",
+    "address": "purok 3 brgy daguit labo cam .norte",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "301893",
+    "name": "Daguit National High School",
+    "municipality": "LABO",
+    "barangay": "DAGUIT",
+    "address": "Barangay Daguit, Labo, Camarines Norte",
+    "sector": "Public",
+    "offering": "JHS with SHS"
+  },
+  {
+    "id": "112161",
+    "name": "Dahican Elementary School",
+    "municipality": "JOSE PANGANIBAN",
+    "barangay": "DAHICAN",
+    "address": "Purok 2 Brgy. Dahican Jose Panganiban Cam. Norte",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112246",
+    "name": "Dalnac Elementary School",
+    "municipality": "PARACALE",
+    "barangay": "DALNAC",
+    "address": "Purok 2",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "173013",
+    "name": "Dancalan Elementary School",
+    "municipality": "PARACALE",
+    "barangay": "DANCALAN",
+    "address": "Purok 2, Dancalan, Paracale, Camarines Norte",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "301897",
+    "name": "Delia Diezmo High School",
+    "municipality": "CAPALONGA",
+    "barangay": "ITOK",
+    "address": "Purok 1, Itok, Capalonga",
+    "sector": "Public",
+    "offering": "JHS with SHS"
+  },
+  {
+    "id": "112114",
+    "name": "Diezmo-Urena Elementary School",
+    "municipality": "CAPALONGA",
+    "barangay": "ITOK",
+    "address": "BRGY. IITOK CAPALONGA CAMS.NORTE",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "403643",
+    "name": "Dionedas Special School of Daet Inc.",
+    "municipality": "DAET (Capital)",
+    "barangay": "BARANGAY V (POB.)",
+    "address": "Baldovino St. Purok 4 Brgy V-Daet,Camarines Norte",
+    "sector": "Private",
+    "offering": "ES and JHS (K to 10)"
+  },
+  {
+    "id": "112135",
+    "name": "Dogongan Elementary School",
+    "municipality": "DAET (Capital)",
+    "barangay": "DOGONGAN",
+    "address": "Purok 3 Dogongan, Daet, Cam Norte",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "309611",
+    "name": "Dominador Narido High School",
+    "municipality": "BASUD",
+    "barangay": "TAISAN",
+    "address": "Purok 2, Taisan",
+    "sector": "Public",
+    "offering": "JHS with SHS"
+  },
+  {
+    "id": "173001",
+    "name": "Don Emiliano L. Pabico Elementary School",
+    "municipality": "DAET (Capital)",
+    "barangay": "LAG-ON",
+    "address": "P-2 Brgy. Lag-on",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112087",
+    "name": "Don Juan Pimentel Elementary School",
+    "municipality": "BASUD",
+    "barangay": "BACTAS",
+    "address": "Purok 2 Bactas",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112180",
+    "name": "Don Miguel Lukban Elementary School",
+    "municipality": "LABO",
+    "barangay": "MABILO II",
+    "address": "Purok 6",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112302",
+    "name": "Don Miguel Lukban Elementary School",
+    "municipality": "VINZONS",
+    "barangay": "MANLUCUGAN",
+    "address": "Purok 2",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112144",
+    "name": "Don S. Carranceja MS",
+    "municipality": "DAET (Capital)",
+    "barangay": "BIBIRAO",
+    "address": "Purok 3",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "173008",
+    "name": "Don Tomas Elementary School",
+    "municipality": "SANTA ELENA",
+    "barangay": "DON TOMAS",
+    "address": "Centro Don Tomas",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "500156",
+    "name": "Dumagmang Integrated School",
+    "municipality": "LABO",
+    "barangay": "DUMAGMANG",
+    "address": "Purok 1 Bgry. Dumagmang Labo Camarines Norte",
+    "sector": "Public",
+    "offering": "All Offering (K to 12)"
+  },
+  {
+    "id": "112280",
+    "name": "Dygico Elementary School",
+    "municipality": "SANTA ELENA",
+    "barangay": "SAN VICENTE",
+    "address": "",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112181",
+    "name": "E. Obmana Elementary School",
+    "municipality": "LABO",
+    "barangay": "SANTA CRUZ",
+    "address": "-Purok 1, Barangay Sta. Cruz, Labo, Camarines Norte",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "301888",
+    "name": "E.P. Borja High School",
+    "municipality": "SANTA ELENA",
+    "barangay": "BASIAD",
+    "address": "Purok 2",
+    "sector": "Public",
+    "offering": "JHS with SHS"
+  },
+  {
+    "id": "112281",
+    "name": "Earth'S Bounty Elementary School",
+    "municipality": "SANTA ELENA",
+    "barangay": "BASIAD",
+    "address": "sitio cambulong",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112303",
+    "name": "El Trino P. Zenarosa Elementary School",
+    "municipality": "VINZONS",
+    "barangay": "SABANG",
+    "address": "Bry Sabang, Vinzons, Camarines Norte",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112115",
+    "name": "Esturas-Nabata Elementary School",
+    "municipality": "CAPALONGA",
+    "barangay": "CATIOAN",
+    "address": "Vinzons Avenue",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "309604",
+    "name": "Eugenia Morana - Quintela Memorial High School",
+    "municipality": "VINZONS",
+    "barangay": "BANOCBOC",
+    "address": "Banocboc",
+    "sector": "Public",
+    "offering": "JHS with SHS"
+  },
+  {
+    "id": "112145",
+    "name": "F. Baldovino Elementary School",
+    "municipality": "DAET (Capital)",
+    "barangay": "CAMAMBUGAN",
+    "address": "P2",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112204",
+    "name": "F. Caudilla E/S",
+    "municipality": "LABO",
+    "barangay": "TIGBINAN",
+    "address": "Purok 2, Tigbinan, Labo, Camarines Norte",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112289",
+    "name": "F. David Elementary School",
+    "municipality": "TALISAY",
+    "barangay": "BINANUAAN",
+    "address": "-Purok 1",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112224",
+    "name": "F. P. Ibasco Elementary School",
+    "municipality": "MERCEDES",
+    "barangay": "CARINGO",
+    "address": "Barangay Caringo",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "309605",
+    "name": "Fabrica High School",
+    "municipality": "SAN VICENTE",
+    "barangay": "FABRICA",
+    "address": "Purok 3",
+    "sector": "Public",
+    "offering": "JHS with SHS"
+  },
+  {
+    "id": "112208",
+    "name": "Felix Asis Elementary School",
+    "municipality": "LABO",
+    "barangay": "BAGONG SILANG I",
+    "address": "Purok 2 Bagong Silang 1, Labo, Camarines Norte",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112209",
+    "name": "Florence Elementary School",
+    "municipality": "LABO",
+    "barangay": "GUISICAN",
+    "address": "PUROK 2, GUISICAN LABO, CAMARINES NORTE",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112116",
+    "name": "Francisco V. Aler Elementary School",
+    "municipality": "CAPALONGA",
+    "barangay": "VILLA BELEN",
+    "address": "Villa Belen Capalonga Camarines Norte",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "301919",
+    "name": "Froilan D. Lopez High School",
+    "municipality": "SAN VICENTE",
+    "barangay": "MAN-OGOB",
+    "address": "Brgy. Man-ogob",
+    "sector": "Public",
+    "offering": "JHS with SHS"
+  },
+  {
+    "id": "112088",
+    "name": "Fulgueras Elementary School",
+    "municipality": "BASUD",
+    "barangay": "LIDONG",
+    "address": "Lidong",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112182",
+    "name": "Fundado Elementary School",
+    "municipality": "LABO",
+    "barangay": "FUNDADO",
+    "address": "Purok 1,Fundado",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112203",
+    "name": "G. Cale Elementary School",
+    "municipality": "LABO",
+    "barangay": "MAOT",
+    "address": "Barangay Maot",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112183",
+    "name": "G. Palado Sr. Elementary School",
+    "municipality": "LABO",
+    "barangay": "SAN ANTONIO",
+    "address": "Purok 3",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112198",
+    "name": "G. Zabala - B. Placido Elementary School",
+    "municipality": "LABO",
+    "barangay": "ANAMEAM",
+    "address": "-ANAMEAM",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112225",
+    "name": "Gaboc Elementary School",
+    "municipality": "MERCEDES",
+    "barangay": "GABOC",
+    "address": "P-2",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112290",
+    "name": "Gabon Elementary School",
+    "municipality": "TALISAY",
+    "barangay": "GABON",
+    "address": "P-3",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112184",
+    "name": "Gavino Vinzons Elementary School",
+    "municipality": "LABO",
+    "barangay": "IBERICA",
+    "address": "-Purok 2 brgy. Iberica Labo, Camarines Norte",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "309619",
+    "name": "Gawad Kalinga High School",
+    "municipality": "JOSE PANGANIBAN",
+    "barangay": "OSMEÃ‘A",
+    "address": "P2, GK Village, OsmeÃ±a",
+    "sector": "Public",
+    "offering": "JHS with SHS"
+  },
+  {
+    "id": "112146",
+    "name": "Goito Pimentel Elementary School",
+    "municipality": "DAET (Capital)",
+    "barangay": "MAMBALITE",
+    "address": "Mambalite",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "301895",
+    "name": "Gonzales-Azcutia High School",
+    "municipality": "TALISAY",
+    "barangay": "SANTA CRUZ",
+    "address": "Brgy. Sta.Cruz",
+    "sector": "Public",
+    "offering": "JHS with SHS"
+  },
+  {
+    "id": "301896",
+    "name": "Gonzalo Aler National High School",
+    "municipality": "CAPALONGA",
+    "barangay": "ALAYAO",
+    "address": "Purok 6",
+    "sector": "Public",
+    "offering": "JHS with SHS"
+  },
+  {
+    "id": "112305",
+    "name": "Gorgonio Obusan Elementary School",
+    "municipality": "VINZONS",
+    "barangay": "NAPILIHAN",
+    "address": "-P-5",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112304",
+    "name": "Gregorio Jardin Elementary School",
+    "municipality": "VINZONS",
+    "barangay": "SINGI",
+    "address": "-BARANGAY SINGI, VINZONS, CAMARINES NORTE",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112147",
+    "name": "Gregorio Pimentel Memorial School",
+    "municipality": "DAET (Capital)",
+    "barangay": "PAMORANGON",
+    "address": "Nat'l H-way Pamorangon",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112306",
+    "name": "Guinacutan Elementary School",
+    "municipality": "VINZONS",
+    "barangay": "GUINACUTAN",
+    "address": "Purok 5",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112089",
+    "name": "Guinatungan Elementary School",
+    "municipality": "BASUD",
+    "barangay": "GUINATUNGAN",
+    "address": "purok 1",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "173005",
+    "name": "Guitol Elementary School",
+    "municipality": "SANTA ELENA",
+    "barangay": "GUITOL",
+    "address": "Purok 4",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112247",
+    "name": "Gumaus Elementary School",
+    "municipality": "PARACALE",
+    "barangay": "GUMAUS",
+    "address": "P-4, Guinobacan Gumaus Paracale Camarines Norte",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "301911",
+    "name": "Gumaus National High School",
+    "municipality": "PARACALE",
+    "barangay": "GUMAUS",
+    "address": "Purok 4, Gumaus",
+    "sector": "Public",
+    "offering": "JHS with SHS"
+  },
+  {
+    "id": "112226",
+    "name": "Hamoraon Elementary School",
+    "municipality": "MERCEDES",
+    "barangay": "HAMORAON",
+    "address": "Hamoraon, Mercedes, Camarines Norte",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112090",
+    "name": "Hinampacan Elementary School",
+    "municipality": "BASUD",
+    "barangay": "HINAMPACAN",
+    "address": "Hinampacan",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112227",
+    "name": "Hinipaan Elementary School",
+    "municipality": "MERCEDES",
+    "barangay": "HINIPAAN",
+    "address": "Purok 3",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "408885",
+    "name": "Holy Trinity College Seminary",
+    "municipality": "LABO",
+    "barangay": "BAUTISTA",
+    "address": "Purok 3",
+    "sector": "Private",
+    "offering": "Purely SHS"
+  },
+  {
+    "id": "410091",
+    "name": "Hope Science and Technology College Corp.",
+    "municipality": "DAET (Capital)",
+    "barangay": "BARANGAY VIII (POB.)",
+    "address": "St. Niño Commercial Center, Dasmariñas St.",
+    "sector": "Private",
+    "offering": "Purely SHS"
+  },
+  {
+    "id": "433023",
+    "name": "Howard Montessori School",
+    "municipality": "DAET (Capital)",
+    "barangay": "BARANGAY VIII (POB.)",
+    "address": "Suzara St., Brgy. 8, Daet, Camarines Norte",
+    "sector": "Private",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112248",
+    "name": "Igang Elementary School",
+    "municipality": "PARACALE",
+    "barangay": "BATOBALANI",
+    "address": "Purok Igang",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112251",
+    "name": "Ignacio Español Elementary School",
+    "municipality": "PARACALE",
+    "barangay": "MALACBANG",
+    "address": "-purok 2",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112263",
+    "name": "Imelda Elementary School",
+    "municipality": "SAN LORENZO RUIZ (IMELDA)",
+    "barangay": "MATACONG (POB.)",
+    "address": "Purok - 1",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112151",
+    "name": "Jose Panganiban Elementary School",
+    "municipality": "JOSE PANGANIBAN",
+    "barangay": "SOUTH POBLACION",
+    "address": "Rizal Avenue",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "301898",
+    "name": "Jose Panganiban National High School",
+    "municipality": "JOSE PANGANIBAN",
+    "barangay": "PARANG",
+    "address": "-Parang",
+    "sector": "Public",
+    "offering": "JHS with SHS"
+  },
+  {
+    "id": "173009",
+    "name": "Juan A. Amparo Elementary School",
+    "municipality": "SANTA ELENA",
+    "barangay": "KABULUAN",
+    "address": "Purok 4,,Brgy. Kabuluan, Sta. Elena, Camarines Norte",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112307",
+    "name": "Juanita Balon Elementary School",
+    "municipality": "VINZONS",
+    "barangay": "CALANGCAWAN SUR",
+    "address": "Mangcawayan In. Calangcawan Sur",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112112",
+    "name": "Jueves-Talento Elementary School",
+    "municipality": "CAPALONGA",
+    "barangay": "CATABAGUANGAN",
+    "address": "-Catabaguangan,Capalonga Camarines Norte",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "173002",
+    "name": "Julia Abilgos Elementary School",
+    "municipality": "DAET (Capital)",
+    "barangay": "GUBAT",
+    "address": "-Sitio Mandulungan",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "500909",
+    "name": "Kabatuhan Integrated School",
+    "municipality": "LABO",
+    "barangay": "CABATUHAN",
+    "address": "Purok 1",
+    "sector": "Public",
+    "offering": "ES and JHS (K to 10)"
+  },
+  {
+    "id": "112211",
+    "name": "Kabungahan Elementary School",
+    "municipality": "LABO",
+    "barangay": "CABATUHAN",
+    "address": "Sitio Kabungahan, Cabatuhan",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "173010",
+    "name": "Kagtalaba Elementary School",
+    "municipality": "SANTA ELENA",
+    "barangay": "KAGTALABA",
+    "address": "Kagtalaba",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112212",
+    "name": "Kanapawan Elementary School",
+    "municipality": "LABO",
+    "barangay": "CANAPAWAN",
+    "address": "PUROK 2 CANAPAWAN LABO CAMARINES NORTE",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112162",
+    "name": "L. D. Bamba Elementary School",
+    "municipality": "JOSE PANGANIBAN",
+    "barangay": "DAYHAGAN",
+    "address": "Purok 1Brgy. Dayhagan",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112264",
+    "name": "L. Opeda Elementary School",
+    "municipality": "SAN VICENTE",
+    "barangay": "SAN JOSE (IRAYA NORTE)",
+    "address": "0",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112185",
+    "name": "L. Villamonte Elementary School",
+    "municipality": "LABO",
+    "barangay": "BAGACAY",
+    "address": "Purok 6, Bagacay",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "403637",
+    "name": "La Consolacion College",
+    "municipality": "DAET (Capital)",
+    "barangay": "BARANGAY I (POB.)",
+    "address": "F. Pimentel Ave.",
+    "sector": "Private",
+    "offering": "All Offering (K to 12)"
+  },
+  {
+    "id": "112249",
+    "name": "Labnig Elementary School",
+    "municipality": "PARACALE",
+    "barangay": "LABNIG",
+    "address": "Purok 3, Labnig, Paracale, Camarines Norte",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112186",
+    "name": "Labo Elementary school",
+    "municipality": "LABO",
+    "barangay": "SAN FRANCISCO (POB.)",
+    "address": "Burgos Street",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "433010",
+    "name": "Labo Learning Center",
+    "municipality": "LABO",
+    "barangay": "ANAHAW (POB.)",
+    "address": "Raneses Subdivision",
+    "sector": "Private",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "301899",
+    "name": "Labo National High School",
+    "municipality": "LABO",
+    "barangay": "FUNDADO",
+    "address": "Purok1",
+    "sector": "Public",
+    "offering": "JHS with SHS"
+  },
+  {
+    "id": "301894",
+    "name": "Labo Science and Technology High School",
+    "municipality": "LABO",
+    "barangay": "DALAS",
+    "address": "Dalas, Labo, Cam Norte",
+    "sector": "Public",
+    "offering": "JHS with SHS"
+  },
+  {
+    "id": "403642",
+    "name": "Lady of Penafrancia College - Daet",
+    "municipality": "DAET (Capital)",
+    "barangay": "BORABOD",
+    "address": "-",
+    "sector": "Private",
+    "offering": "Purely JHS"
+  },
+  {
+    "id": "112228",
+    "name": "Lalawigan Elementary School",
+    "municipality": "MERCEDES",
+    "barangay": "LALAWIGAN",
+    "address": "-",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "301900",
+    "name": "Lalawigan National High School",
+    "municipality": "MERCEDES",
+    "barangay": "LALAWIGAN",
+    "address": "-Mandao, Lalawigan, Mercedes",
+    "sector": "Public",
+    "offering": "JHS with SHS"
+  },
+  {
+    "id": "433017",
+    "name": "Lamp Foundational Learning Center",
+    "municipality": "LABO",
+    "barangay": "BAGONG SILANG I",
+    "address": "Purok 3",
+    "sector": "Private",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112091",
+    "name": "Langa Elementary School",
+    "municipality": "BASUD",
+    "barangay": "LANGA",
+    "address": "Maharlika Highway",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112229",
+    "name": "Lanot Elementary School",
+    "municipality": "MERCEDES",
+    "barangay": "LANOT",
+    "address": "-PUROK 4",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112163",
+    "name": "Larap Elementary School",
+    "municipality": "JOSE PANGANIBAN",
+    "barangay": "LARAP",
+    "address": "Larap Road, P-2 Barangay Larap, Jose Panganiban, Camarines Norte",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "301901",
+    "name": "Larap National High School",
+    "municipality": "JOSE PANGANIBAN",
+    "barangay": "LARAP",
+    "address": "Purok 2",
+    "sector": "Public",
+    "offering": "JHS with SHS"
+  },
+  {
+    "id": "309607",
+    "name": "Lazaro Cabezudo High School",
+    "municipality": "TALISAY",
+    "barangay": "CALINTAAN",
+    "address": "purok 3 brgy. calintaan, Talisay, Camarines Norte",
+    "sector": "Public",
+    "offering": "JHS with SHS"
+  },
+  {
+    "id": "301917",
+    "name": "Leocadio Alejo Entienza High School, Sta. Elena",
+    "municipality": "SANTA ELENA",
+    "barangay": "TABUGON",
+    "address": "Sitio Lobo",
+    "sector": "Public",
+    "offering": "JHS with SHS"
+  },
+  {
+    "id": "112187",
+    "name": "Litordan Elementary School",
+    "municipality": "LABO",
+    "barangay": "NAPAOD",
+    "address": "Purok 2",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112230",
+    "name": "Lope Manlangit Elementary School",
+    "municipality": "MERCEDES",
+    "barangay": "APUAO",
+    "address": "Barangay Apuao, Mercedes",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "407824",
+    "name": "Lord's Heritage Christian Academy",
+    "municipality": "DAET (Capital)",
+    "barangay": "CAMAMBUGAN",
+    "address": "Diversion Road",
+    "sector": "Private",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112117",
+    "name": "Lukbanan Elementary School",
+    "municipality": "CAPALONGA",
+    "barangay": "LUCBANAN",
+    "address": "-",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112153",
+    "name": "Luna Elementary School",
+    "municipality": "JOSE PANGANIBAN",
+    "barangay": "SANTA ROSA NORTE",
+    "address": "P-7",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "410267",
+    "name": "Lyceum of St. Dominic, Inc.",
+    "municipality": "SANTA ELENA",
+    "barangay": "SANTA ELENA (POB.)",
+    "address": "SOFACOFA Bldg., Purok 7",
+    "sector": "Private",
+    "offering": "Purely SHS"
+  },
+  {
+    "id": "112291",
+    "name": "M. Cacho Elementary School",
+    "municipality": "TALISAY",
+    "barangay": "SAN JOSE",
+    "address": "Purok 2",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112282",
+    "name": "M. Hebrado Elementary School",
+    "municipality": "SANTA ELENA",
+    "barangay": "SAN LORENZO",
+    "address": "Purok 1",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112218",
+    "name": "MALIBAGO ELEMENTARY SCHOOL",
+    "municipality": "LABO",
+    "barangay": "MALIBAGO",
+    "address": "MALIBAGO",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112252",
+    "name": "MAMPUNGO ELEMENTARY SCHOOL",
+    "municipality": "PARACALE",
+    "barangay": "MAMPUNGO",
+    "address": "Purok 1",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "301904",
+    "name": "MATANGO NATIONAL HIGH SCHOOL",
+    "municipality": "VINZONS",
+    "barangay": "MATANGO",
+    "address": "Purok 3",
+    "sector": "Public",
+    "offering": "JHS with SHS"
+  },
+  {
+    "id": "309621",
+    "name": "MAXIMO MANARANG HIGH SCHOOL",
+    "municipality": "PARACALE",
+    "barangay": "CALABURNAY",
+    "address": "Purok 3 (Yakal)",
+    "sector": "Public",
+    "offering": "JHS with SHS"
+  },
+  {
+    "id": "433015",
+    "name": "MCE Academy Inc.",
+    "municipality": "DAET (Capital)",
+    "barangay": "BARANGAY V (POB.)",
+    "address": "2569 J. Pimentel St., Barangay V",
+    "sector": "Private",
+    "offering": "All Offering (K to 12)"
+  },
+  {
+    "id": "112188",
+    "name": "Mabilo Elementary School",
+    "municipality": "LABO",
+    "barangay": "MABILO I",
+    "address": "Purok 2",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "403639",
+    "name": "Mabini College, Inc.",
+    "municipality": "DAET (Capital)",
+    "barangay": "BARANGAY VII (POB.)",
+    "address": "Governor Panotes Avenue",
+    "sector": "Private",
+    "offering": "JHS with SHS"
+  },
+  {
+    "id": "112118",
+    "name": "Mabini Elementary School",
+    "municipality": "CAPALONGA",
+    "barangay": "MABINI",
+    "address": "PUROK 3",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112213",
+    "name": "Macogon Elementary School",
+    "municipality": "LABO",
+    "barangay": "MACOGON",
+    "address": "Purok 4 , Brgy. Macogon",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112250",
+    "name": "Macolabo Elementary School",
+    "municipality": "PARACALE",
+    "barangay": "MACOLABO ISLAND",
+    "address": "-Purok 2 Macolabo,Paracale, Cams. Norte",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "309614",
+    "name": "Magsaysay National High School",
+    "municipality": "CAPALONGA",
+    "barangay": "MAGSAYSAY",
+    "address": "Purok 3",
+    "sector": "Public",
+    "offering": "JHS with SHS"
+  },
+  {
+    "id": "112214",
+    "name": "Mahawan-hawan Elementary School",
+    "municipality": "LABO",
+    "barangay": "MAHAWAN-HAWAN",
+    "address": "Mahawan-hawan,Labo,Camarines Norte",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112265",
+    "name": "Maisog Elementary School",
+    "municipality": "SAN LORENZO RUIZ (IMELDA)",
+    "barangay": "MAISOG",
+    "address": "Baranggay Maisog, SLR, CN",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112189",
+    "name": "Malapat Elementary School",
+    "municipality": "LABO",
+    "barangay": "BAAY",
+    "address": "-Sitio Malapat",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112190",
+    "name": "Malasugui Elementary School",
+    "municipality": "LABO",
+    "barangay": "MALASUGUI",
+    "address": "-Barangay Malasugui, Labo, CamNorte",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112216",
+    "name": "Malatap Elementary School",
+    "municipality": "LABO",
+    "barangay": "MALATAP",
+    "address": "-",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "501259",
+    "name": "Malaya Integrated School",
+    "municipality": "LABO",
+    "barangay": "MALAYA",
+    "address": "Brgy. Malaya, Labo, Camarines Norte",
+    "sector": "Public",
+    "offering": "ES and JHS (K to 10)"
+  },
+  {
+    "id": "112219",
+    "name": "Maligaya Elementary School",
+    "municipality": "LABO",
+    "barangay": "SUBMAKIN",
+    "address": "-",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112231",
+    "name": "Mambungalon Elementary School",
+    "municipality": "MERCEDES",
+    "barangay": "MAMBUNGALON",
+    "address": "-",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112092",
+    "name": "Mampili Elementary School",
+    "municipality": "BASUD",
+    "barangay": "MAMPILI",
+    "address": "-Mampili, Basud, Camarines Norte",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112266",
+    "name": "Mampurog Elementary School",
+    "municipality": "SAN LORENZO RUIZ (IMELDA)",
+    "barangay": "MAMPUROG",
+    "address": "P-6",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "173015",
+    "name": "Mancruz Elementary School",
+    "municipality": "DAET (Capital)",
+    "barangay": "MANCRUZ (MANGCRUZ)",
+    "address": "Sampaguita Street",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112093",
+    "name": "Mandazo Elementary School",
+    "municipality": "BASUD",
+    "barangay": "MANDAZO",
+    "address": "PUROK 1",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112094",
+    "name": "Mangcamagong Elem. School",
+    "municipality": "BASUD",
+    "barangay": "MANGCAMAGONG",
+    "address": "Mangcamagong Road, Basud, Camarines Norte",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112308",
+    "name": "Mangcawayan Island Elementary School",
+    "municipality": "VINZONS",
+    "barangay": "MANGCAWAYAN",
+    "address": "Purok 2",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112309",
+    "name": "Mangcayo Elementary School",
+    "municipality": "VINZONS",
+    "barangay": "MANGCAYO",
+    "address": "Mangcayo Vinzons Cams. Norte",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112232",
+    "name": "Manguisoc Elementary School",
+    "municipality": "MERCEDES",
+    "barangay": "MANGUISOC",
+    "address": "--------",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "301902",
+    "name": "Manguisoc National High School",
+    "municipality": "MERCEDES",
+    "barangay": "MANGUISOC",
+    "address": "-P6, Manguisoc, Mercedes, Cams. Norte",
+    "sector": "Public",
+    "offering": "JHS with SHS"
+  },
+  {
+    "id": "403658",
+    "name": "Manila Bicol South Road Academy.Inc",
+    "municipality": "LABO",
+    "barangay": "BAGONG SILANG I",
+    "address": "Purok I",
+    "sector": "Private",
+    "offering": "JHS with SHS"
+  },
+  {
+    "id": "112267",
+    "name": "Manlimonsito Elementary School",
+    "municipality": "SAN LORENZO RUIZ (IMELDA)",
+    "barangay": "MANLIMONSITO",
+    "address": "Purok 2",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112136",
+    "name": "Mantagbac Elem School",
+    "municipality": "DAET (Capital)",
+    "barangay": "BARANGAY IV (POB.)",
+    "address": "-Purok 9,Brgy.IV,Daet,Cam.Norte",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112119",
+    "name": "Marca-Murillo Elementary School",
+    "municipality": "CAPALONGA",
+    "barangay": "BINAWANGAN",
+    "address": "",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112191",
+    "name": "Marcos Pimentel Elementary School",
+    "municipality": "LABO",
+    "barangay": "MASALONG",
+    "address": "P-6 Masalong",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "403664",
+    "name": "Maria Aurora Academy, Inc.",
+    "municipality": "SANTA ELENA",
+    "barangay": "SANTA ELENA (POB.)",
+    "address": "Purok 11",
+    "sector": "Private",
+    "offering": "JHS with SHS"
+  },
+  {
+    "id": "433002",
+    "name": "Mary's Bright Montessori School",
+    "municipality": "DAET (Capital)",
+    "barangay": "COBANGBANG (CARUMPIT)",
+    "address": "Purok- 2 Cobangbang Daet,Camarines Norte",
+    "sector": "Private",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112233",
+    "name": "Masalongsalong Elementary School",
+    "municipality": "MERCEDES",
+    "barangay": "MASALONGSALONG",
+    "address": "Purok 3",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112310",
+    "name": "Matango Elementary School",
+    "municipality": "VINZONS",
+    "barangay": "MATANGO",
+    "address": "P-2 Matango",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112192",
+    "name": "Matanlang Elementary School",
+    "municipality": "LABO",
+    "barangay": "MATANLANG",
+    "address": "-P-1 Brgy. Matanlang",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112253",
+    "name": "Mateo Era Elementary School",
+    "municipality": "PARACALE",
+    "barangay": "BAKAL",
+    "address": "-P2 Bakal Camarines Norte",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112095",
+    "name": "Matnog Elementary School",
+    "municipality": "BASUD",
+    "barangay": "MATNOG",
+    "address": "purok 2",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "173011",
+    "name": "Maulawin Elementary School",
+    "municipality": "SANTA ELENA",
+    "barangay": "MAULAWIN",
+    "address": "-",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "309602",
+    "name": "Maulawin National High School",
+    "municipality": "SANTA ELENA",
+    "barangay": "MAULAWIN",
+    "address": "Brgy. Maulawin Sta. Elena Camarines Norte",
+    "sector": "Public",
+    "offering": "JHS with SHS"
+  },
+  {
+    "id": "112120",
+    "name": "Melquiades Caldit Elementary School",
+    "municipality": "CAPALONGA",
+    "barangay": "SAN ISIDRO",
+    "address": "Purok I",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112311",
+    "name": "Menandro Guinto Elementary School",
+    "municipality": "VINZONS",
+    "barangay": "SANTO DOMINGO",
+    "address": "-Purok 5 Mantabog",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112235",
+    "name": "Mercedes Elementary School",
+    "municipality": "MERCEDES",
+    "barangay": "BARANGAY V (POB.)",
+    "address": "Eco Avenue",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "301905",
+    "name": "Mercedes High School",
+    "municipality": "MERCEDES",
+    "barangay": "DEL ROSARIO (TAGONGTONG)",
+    "address": "Brgy. Del Rosario",
+    "sector": "Public",
+    "offering": "JHS with SHS"
+  },
+  {
+    "id": "407000",
+    "name": "Microsystems College Foundation Inc",
+    "municipality": "DAET (Capital)",
+    "barangay": "BARANGAY III (POB.)",
+    "address": "Carlos II Street, Brgy. 3 Daet, Camarines Norte",
+    "sector": "Private",
+    "offering": "Purely SHS"
+  },
+  {
+    "id": "433019",
+    "name": "Miracle Life Rhema School, Inc.",
+    "municipality": "LABO",
+    "barangay": "SAN FRANCISCO (POB.)",
+    "address": "Burgos Street",
+    "sector": "Private",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112096",
+    "name": "Mocong Elementary School",
+    "municipality": "BASUD",
+    "barangay": "MOCONG",
+    "address": "",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "433020",
+    "name": "Montessori Children's House of Learning",
+    "municipality": "DAET (Capital)",
+    "barangay": "GAHONON",
+    "address": "Purok 3,",
+    "sector": "Private",
+    "offering": "ES and JHS (K to 10)"
+  },
+  {
+    "id": "500030",
+    "name": "Moreno Integrated School",
+    "municipality": "DAET (Capital)",
+    "barangay": "BARANGAY VIII (POB.)",
+    "address": "-Gov.Panotes Ave.",
+    "sector": "Public",
+    "offering": "All Offering (K to 12)"
+  },
+  {
+    "id": "112164",
+    "name": "Nakalaya Elementary School",
+    "municipality": "JOSE PANGANIBAN",
+    "barangay": "NAKALAYA",
+    "address": "Sitio Dawahan, Nakalaya, Jose Panganiban, Camarines Norte",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112193",
+    "name": "Napaod Elementary School",
+    "municipality": "LABO",
+    "barangay": "BENIT",
+    "address": "p1",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112121",
+    "name": "Necio Olila Elementary School",
+    "municipality": "CAPALONGA",
+    "barangay": "UBANG",
+    "address": "National Road, Ubang, Capalonga, CN",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "403640",
+    "name": "New Eve Learning Center",
+    "municipality": "DAET (Capital)",
+    "barangay": "BARANGAY VII (POB.)",
+    "address": "2706 Fe Martinez St.Daet,Camarines Norte",
+    "sector": "Private",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "409542",
+    "name": "New Life Gospel Academy",
+    "municipality": "LABO",
+    "barangay": "ANAHAW (POB.)",
+    "address": "Labo",
+    "sector": "Private",
+    "offering": "ES and JHS (K to 10)"
+  },
+  {
+    "id": "408886",
+    "name": "Northills College of Asia (NCA), Inc.",
+    "municipality": "LABO",
+    "barangay": "BAUTISTA",
+    "address": "Brgy. Bautista",
+    "sector": "Private",
+    "offering": "JHS with SHS"
+  },
+  {
+    "id": "406547",
+    "name": "Northills College of Asia, Inc.",
+    "municipality": "DAET (Capital)",
+    "barangay": "BARANGAY VI (POB.)",
+    "address": "3/F Guerra Bldg., Gov. Panotes Ave., Daet, Camarines Norte",
+    "sector": "Private",
+    "offering": "Purely SHS"
+  },
+  {
+    "id": "112097",
+    "name": "Oliva Elementary School",
+    "municipality": "BASUD",
+    "barangay": "OLIVA",
+    "address": "Purok 3",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112154",
+    "name": "Osmeña Elementary School",
+    "municipality": "JOSE PANGANIBAN",
+    "barangay": "OSMEÃ‘A",
+    "address": "P-2 Brgy Osmena",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "433022",
+    "name": "Our Lady of Candelaria Parochial School Inc.",
+    "municipality": "PARACALE",
+    "barangay": "BAGUMBAYAN",
+    "address": "Victory Street corner San Jose Street",
+    "sector": "Private",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "403641",
+    "name": "Our Lady of Lourdes College Foundation",
+    "municipality": "DAET (Capital)",
+    "barangay": "LAG-ON",
+    "address": "VINZONS AVENUE",
+    "sector": "Private",
+    "offering": "All Offering (K to 12)"
+  },
+  {
+    "id": "433027",
+    "name": "Our Lady of the Holy Bible Learning Center Incorporated",
+    "municipality": "MERCEDES",
+    "barangay": "BARANGAY II (POB.)",
+    "address": "Vibar Village Mercedes Camarines Norte",
+    "sector": "Private",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112312",
+    "name": "P. Barbin Elementary School",
+    "municipality": "VINZONS",
+    "barangay": "SULA",
+    "address": "-P3 Sula Vinzons Camarines Norte",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "301910",
+    "name": "PARACALE NATIONAL HIGH SCHOOL",
+    "municipality": "PARACALE",
+    "barangay": "BAGUMBAYAN",
+    "address": "Real St.",
+    "sector": "Public",
+    "offering": "JHS with SHS"
+  },
+  {
+    "id": "301907",
+    "name": "Pablo S. Villafuerte High School, Mercedes",
+    "municipality": "MERCEDES",
+    "barangay": "MATOOGTOOG",
+    "address": "San Vicente St. Matoogtoog",
+    "sector": "Public",
+    "offering": "JHS with SHS"
+  },
+  {
+    "id": "173018",
+    "name": "Paciano A. Magana Elementary School",
+    "municipality": "DAET (Capital)",
+    "barangay": "GAHONON",
+    "address": "P-6 Brgy. Gahonon",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "301908",
+    "name": "Pag-Asa High School, Labo",
+    "municipality": "LABO",
+    "barangay": "PAG-ASA",
+    "address": "P-1, Brgy. Pag-asa, Labo, Camarines Norte",
+    "sector": "Public",
+    "offering": "JHS with SHS"
+  },
+  {
+    "id": "112165",
+    "name": "Pag-asa Elementary School",
+    "municipality": "JOSE PANGANIBAN",
+    "barangay": "PAG-ASA",
+    "address": "P3, Pag-asa, Jose Panganiban, Camarines Norte",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "501737",
+    "name": "Pagsangahan Integrated School",
+    "municipality": "BASUD",
+    "barangay": "PAGSANGAHAN",
+    "address": "",
+    "sector": "Public",
+    "offering": "ES and JHS (K to 10)"
+  },
+  {
+    "id": "500635",
+    "name": "Palali Integrated School",
+    "municipality": "LABO",
+    "barangay": "EXCIBAN",
+    "address": "-Sitio Palali",
+    "sector": "Public",
+    "offering": "ES and JHS (K to 10)"
+  },
+  {
+    "id": "173020",
+    "name": "Palanas Elementary School",
+    "municipality": "PARACALE",
+    "barangay": "PALANAS",
+    "address": "Palanas St.",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112236",
+    "name": "Pambuhan Elementary School",
+    "municipality": "MERCEDES",
+    "barangay": "PAMBUHAN",
+    "address": "-",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "301909",
+    "name": "Pambuhan National High School",
+    "municipality": "MERCEDES",
+    "barangay": "PAMBUHAN",
+    "address": "Purok2",
+    "sector": "Public",
+    "offering": "JHS with SHS"
+  },
+  {
+    "id": "112194",
+    "name": "Pampang Elementary School",
+    "municipality": "LABO",
+    "barangay": "PANGPANG",
+    "address": "-Brgy Pangpang",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112138",
+    "name": "Pandan Elementary School",
+    "municipality": "DAET (Capital)",
+    "barangay": "BARANGAY V (POB.)",
+    "address": "-D. Cabanela St.",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112254",
+    "name": "Paracale Central School",
+    "municipality": "PARACALE",
+    "barangay": "POBLACION SUR",
+    "address": "Real Street, Paracale, Camarines Norte",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112155",
+    "name": "Parang Elementary School",
+    "municipality": "JOSE PANGANIBAN",
+    "barangay": "PARANG",
+    "address": "parang jose panganiban",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112221",
+    "name": "Patag Elementary School",
+    "municipality": "LABO",
+    "barangay": "CABATUHAN",
+    "address": "-",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "173006",
+    "name": "Patag Ibaba Elementary School",
+    "municipality": "SANTA ELENA",
+    "barangay": "PATAG IBABA",
+    "address": "Sitio Centro",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "173007",
+    "name": "Patag Ilaya Elementary School",
+    "municipality": "SANTA ELENA",
+    "barangay": "PATAG IRAYA",
+    "address": "Patag Ilaya, Sta. Elena, CN",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112099",
+    "name": "Pedro Rada Elementary School",
+    "municipality": "BASUD",
+    "barangay": "SAN PASCUAL",
+    "address": "Purok 1,San Pascual, Basud, Camarines Norte",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112255",
+    "name": "Pedro V. Moreno Elementary School",
+    "municipality": "PARACALE",
+    "barangay": "MALAGUIT",
+    "address": "-",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112122",
+    "name": "Peter Sawmill Elementary School",
+    "municipality": "CAPALONGA",
+    "barangay": "MAGSAYSAY",
+    "address": "Purok 3",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112256",
+    "name": "Pinagbirayan Elementary School",
+    "municipality": "PARACALE",
+    "barangay": "PINAGBIRAYAN MALAKI",
+    "address": "Purok I, Pinagbirayan Malaki",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112313",
+    "name": "Pinagtigasan Elementary School",
+    "municipality": "VINZONS",
+    "barangay": "PINAGTIGASAN",
+    "address": "Purok 1, Pinagtigasan,Vinzons, Camarines Norte",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112100",
+    "name": "Pinagwarasan Elementary School",
+    "municipality": "BASUD",
+    "barangay": "PINAGWARASAN",
+    "address": "Prk. 2, Pinagwarasan, Basud",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112101",
+    "name": "Plaridel Elementary School",
+    "municipality": "BASUD",
+    "barangay": "PLARIDEL",
+    "address": "-n/a",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "309612",
+    "name": "Porfirio R. Ponayo High School",
+    "municipality": "DAET (Capital)",
+    "barangay": "MAMBALITE",
+    "address": "Bgy. Mambalite",
+    "sector": "Public",
+    "offering": "JHS with SHS"
+  },
+  {
+    "id": "112123",
+    "name": "Portugal Chavez Elementary School",
+    "municipality": "CAPALONGA",
+    "barangay": "DEL PILAR",
+    "address": "Del Pilar Capalonga, Cam. Norte",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112124",
+    "name": "Potenciano Juego Elementary School",
+    "municipality": "CAPALONGA",
+    "barangay": "MATAQUE",
+    "address": "Purok 2",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "433029",
+    "name": "Praise Christian Academy of Camarines Norte Inc.",
+    "municipality": "LABO",
+    "barangay": "ANAHAW (POB.)",
+    "address": "Brgy. Anahaw, Labo, Camarines Norte",
+    "sector": "Private",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112102",
+    "name": "Primo R. Samonte Elementary School",
+    "municipality": "BASUD",
+    "barangay": "LANITON",
+    "address": "-",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112268",
+    "name": "Pulantuna Elementary School",
+    "municipality": "SAN LORENZO RUIZ (IMELDA)",
+    "barangay": "SAN ANTONIO",
+    "address": "Purok 3",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112283",
+    "name": "Pulongguit-Guit Elementary School",
+    "municipality": "SANTA ELENA",
+    "barangay": "POLUNGGUITGUIT",
+    "address": "Sitio Santol",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112237",
+    "name": "Quinapaguian Elementary School",
+    "municipality": "MERCEDES",
+    "barangay": "QUINAPAGUIAN",
+    "address": "Barangay Quinapaguian",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112284",
+    "name": "R. Oquindo Elementary School",
+    "municipality": "SANTA ELENA",
+    "barangay": "POLUNGGUITGUIT",
+    "address": "Sitio Balikyao",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112292",
+    "name": "Ramon Magsaysay Elementary School",
+    "municipality": "TALISAY",
+    "barangay": "POBLACION",
+    "address": "J.Rada Street",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112152",
+    "name": "Regino A. Yet Elementary School",
+    "municipality": "JOSE PANGANIBAN",
+    "barangay": "LUKLUKAN SUR",
+    "address": "P-6 Luklukan Sur, Jose Panganiban, Camarines Norte",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112269",
+    "name": "Resettlement Elementary School",
+    "municipality": "SAN LORENZO RUIZ (IMELDA)",
+    "barangay": "MATACONG (POB.)",
+    "address": "purok 6",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112285",
+    "name": "Rizal Elementary School",
+    "municipality": "SANTA ELENA",
+    "barangay": "RIZAL",
+    "address": "-NA",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "301913",
+    "name": "Rizal National High School",
+    "municipality": "SANTA ELENA",
+    "barangay": "RIZAL",
+    "address": "-Rizal Sta. Elena Cams. Norte",
+    "sector": "Public",
+    "offering": "JHS with SHS"
+  },
+  {
+    "id": "112159",
+    "name": "Roman V. Heraldo Elementary School",
+    "municipality": "JOSE PANGANIBAN",
+    "barangay": "SANTA ROSA SUR",
+    "address": "STA. ROSA SUR",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112257",
+    "name": "S. Basilio Elementary School",
+    "municipality": "PARACALE",
+    "barangay": "TABAS",
+    "address": "0",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112270",
+    "name": "S. DELOS SANTOS Elementary School",
+    "municipality": "SAN LORENZO RUIZ (IMELDA)",
+    "barangay": "DAGOTDOTAN",
+    "address": "-Dagotdotan, San Lorenzo Ruiz",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "301914",
+    "name": "Sabang National High School, Vinzons",
+    "municipality": "VINZONS",
+    "barangay": "SABANG",
+    "address": "Purok 1",
+    "sector": "Public",
+    "offering": "JHS with SHS"
+  },
+  {
+    "id": "112271",
+    "name": "Salvacion (B) Elementary School",
+    "municipality": "SAN LORENZO RUIZ (IMELDA)",
+    "barangay": "DACULANG BOLO",
+    "address": "PUROK 2",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112272",
+    "name": "Salvacion (S) Elementary School",
+    "municipality": "SAN LORENZO RUIZ (IMELDA)",
+    "barangay": "SALVACION",
+    "address": "Purok 2",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112286",
+    "name": "Salvacion Elementary School",
+    "municipality": "SANTA ELENA",
+    "barangay": "SALVACION",
+    "address": "Salvacion",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "305631",
+    "name": "San Antonio High School",
+    "municipality": "CAPALONGA",
+    "barangay": "SAN ANTONIO",
+    "address": "San Antonio",
+    "sector": "Public",
+    "offering": "Purely JHS"
+  },
+  {
+    "id": "112103",
+    "name": "San Felipe Elementary School",
+    "municipality": "BASUD",
+    "barangay": "SAN FELIPE",
+    "address": "Purok 2, San Felipe,BCN",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "301915",
+    "name": "San Felipe National High School",
+    "municipality": "BASUD",
+    "barangay": "SAN FELIPE",
+    "address": "San Felipe National High School",
+    "sector": "Public",
+    "offering": "JHS with SHS"
+  },
+  {
+    "id": "301916",
+    "name": "San Francisco National High School",
+    "municipality": "TALISAY",
+    "barangay": "SAN FRANCISCO",
+    "address": "Purok 6 Barangay San Francisco",
+    "sector": "Public",
+    "offering": "JHS with SHS"
+  },
+  {
+    "id": "112166",
+    "name": "San Isidro Elementary School",
+    "municipality": "JOSE PANGANIBAN",
+    "barangay": "SAN ISIDRO",
+    "address": "P4, Brgy. San Isidro, Jose Panganiban",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112273",
+    "name": "San Isidro Elementary School",
+    "municipality": "SAN LORENZO RUIZ (IMELDA)",
+    "barangay": "SAN ISIDRO",
+    "address": "Purok 2, San Isidro, San Lorenzo Ruiz",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112293",
+    "name": "San Isidro Elementary School",
+    "municipality": "TALISAY",
+    "barangay": "SAN ISIDRO",
+    "address": "Purok-5",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "309606",
+    "name": "San Isidro High School",
+    "municipality": "SAN LORENZO RUIZ (IMELDA)",
+    "barangay": "SAN ISIDRO",
+    "address": "Purok 1",
+    "sector": "Public",
+    "offering": "JHS with SHS"
+  },
+  {
+    "id": "112104",
+    "name": "San Jose Elementary School",
+    "municipality": "BASUD",
+    "barangay": "SAN JOSE",
+    "address": "-n/a",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112167",
+    "name": "San Jose Elementary School",
+    "municipality": "JOSE PANGANIBAN",
+    "barangay": "SAN JOSE",
+    "address": "P2 San Jose, Jose Panganiban, Camarines Norte",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "301903",
+    "name": "San Lorenzo Ruiz National High School",
+    "municipality": "SAN LORENZO RUIZ (IMELDA)",
+    "barangay": "MAMPUROG",
+    "address": "Brgy. Mampurog",
+    "sector": "Public",
+    "offering": "JHS with SHS"
+  },
+  {
+    "id": "112143",
+    "name": "San Luis",
+    "municipality": "DAET (Capital)",
+    "barangay": "BARANGAY II (POB.)",
+    "address": "Vivencio Street",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112168",
+    "name": "San Martin Elementary School",
+    "municipality": "JOSE PANGANIBAN",
+    "barangay": "SAN MARTIN",
+    "address": "-Barangay San Martin",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112156",
+    "name": "San Mauricio Elementary School",
+    "municipality": "JOSE PANGANIBAN",
+    "barangay": "BAGONG BAYAN",
+    "address": "P4 Bagongbayan",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "309618",
+    "name": "San Pedro - Domingo Llarena High School",
+    "municipality": "SANTA ELENA",
+    "barangay": "SAN PEDRO",
+    "address": "Sitio Nagsingi",
+    "sector": "Public",
+    "offering": "JHS with SHS"
+  },
+  {
+    "id": "112169",
+    "name": "San Pedro Elementary School",
+    "municipality": "JOSE PANGANIBAN",
+    "barangay": "SAN PEDRO",
+    "address": "P1 San Pedro",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112287",
+    "name": "San Pedro Elementary School",
+    "municipality": "SANTA ELENA",
+    "barangay": "SAN PEDRO",
+    "address": "",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112157",
+    "name": "San Rafael Elementary School",
+    "municipality": "JOSE PANGANIBAN",
+    "barangay": "SAN RAFAEL",
+    "address": "PUROK 1",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112274",
+    "name": "San Ramon Elementary School",
+    "municipality": "SAN LORENZO RUIZ (IMELDA)",
+    "barangay": "SAN RAMON",
+    "address": "Purok1",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112238",
+    "name": "San Roque Elem Sch",
+    "municipality": "MERCEDES",
+    "barangay": "SAN ROQUE",
+    "address": "-",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112125",
+    "name": "San Roque Elementary School",
+    "municipality": "CAPALONGA",
+    "barangay": "SAN ROQUE",
+    "address": "Purok 1, San Roque, Capalonga, Camarines Norte",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "301918",
+    "name": "San Roque National High School",
+    "municipality": "MERCEDES",
+    "barangay": "DEL ROSARIO (TAGONGTONG)",
+    "address": "del Rosario Street",
+    "sector": "Public",
+    "offering": "JHS with SHS"
+  },
+  {
+    "id": "112275",
+    "name": "San Vicente CS",
+    "municipality": "SAN VICENTE",
+    "barangay": "POBLACION DISTRICT I (SILANGAN/BGY. 1)",
+    "address": "Silangan",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "403662",
+    "name": "San Vicente Parochial School, Inc.",
+    "municipality": "SAN VICENTE",
+    "barangay": "POBLACION DISTRICT I (SILANGAN/BGY. 1)",
+    "address": "P. Moreno St. Silangan, San Vicente, Camarines Norte",
+    "sector": "Private",
+    "offering": "JHS with SHS"
+  },
+  {
+    "id": "309620",
+    "name": "Sarah Jane Ferrer High School",
+    "municipality": "VINZONS",
+    "barangay": "GUINACUTAN",
+    "address": "P3-Guinacutan, Vinzons Camarines Norte",
+    "sector": "Public",
+    "offering": "JHS with SHS"
+  },
+  {
+    "id": "112158",
+    "name": "Segundo Aguirre",
+    "municipality": "JOSE PANGANIBAN",
+    "barangay": "SANTA ROSA NORTE",
+    "address": "-purok 5",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112195",
+    "name": "Severino Francisco Elementary School",
+    "municipality": "LABO",
+    "barangay": "PAG-ASA",
+    "address": "Purok 1",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "433040",
+    "name": "Sola Gracia Christian School",
+    "municipality": "SAN VICENTE",
+    "barangay": "MAN-OGOB",
+    "address": "Purok 7",
+    "sector": "Private",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112126",
+    "name": "Sotero Mago Elementary School",
+    "municipality": "CAPALONGA",
+    "barangay": "TANAWAN",
+    "address": "Purok 2B",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "433009",
+    "name": "Southern Tagalog Rural High School, Inc.",
+    "municipality": "SANTA ELENA",
+    "barangay": "KABULUAN",
+    "address": "kabuluan",
+    "sector": "Private",
+    "offering": "JHS with SHS"
+  },
+  {
+    "id": "407403",
+    "name": "St. Francis Caracciolo Culinary Academy",
+    "municipality": "VINZONS",
+    "barangay": "SANTO DOMINGO",
+    "address": "Km-333 Maharlika Highway, Sto. Domingo, Vinzons, Camarines Norte",
+    "sector": "Private",
+    "offering": "Purely SHS"
+  },
+  {
+    "id": "403667",
+    "name": "St. Francis Parochial School",
+    "municipality": "TALISAY",
+    "barangay": "POBLACION",
+    "address": "Contreras St.,",
+    "sector": "Private",
+    "offering": "JHS with SHS"
+  },
+  {
+    "id": "403660",
+    "name": "St. John The Apostle Academy",
+    "municipality": "LABO",
+    "barangay": "GUMAMELA (POB.)",
+    "address": "Villaflores Street",
+    "sector": "Private",
+    "offering": "All Offering (K to 12)"
+  },
+  {
+    "id": "403644",
+    "name": "St. Luke Christian School & Learning Center",
+    "municipality": "DAET (Capital)",
+    "barangay": "LAG-ON",
+    "address": "2450 Vinzons Avenue, Brgy. Lag-on",
+    "sector": "Private",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "433014",
+    "name": "St. Martin School of Camarines Norte Inc.",
+    "municipality": "LABO",
+    "barangay": "GUMAMELA (POB.)",
+    "address": "Villaflores St.",
+    "sector": "Private",
+    "offering": "ES and JHS (K to 10)"
+  },
+  {
+    "id": "403669",
+    "name": "St. Peter Kiddie School Inc.",
+    "municipality": "VINZONS",
+    "barangay": "BARANGAY II (POB.)",
+    "address": "#66 F.O. BALCE ST.",
+    "sector": "Private",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "403653",
+    "name": "St. Roch Children's Center",
+    "municipality": "JOSE PANGANIBAN",
+    "barangay": "LARAP",
+    "address": "Larap",
+    "sector": "Private",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112258",
+    "name": "Sta. Catalina Elementary School",
+    "municipality": "PARACALE",
+    "barangay": "MANGKASAY",
+    "address": "Purok-1, Mangkasay, Paracale, Camarines norte",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112294",
+    "name": "Sta. Cruz Elementary School",
+    "municipality": "TALISAY",
+    "barangay": "SANTA CRUZ",
+    "address": "P-2, Barangay Sta. Cruz, Talisay, C.N.",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "301920",
+    "name": "Sta. Cruz National High School",
+    "municipality": "JOSE PANGANIBAN",
+    "barangay": "SANTA CRUZ",
+    "address": "-",
+    "sector": "Public",
+    "offering": "JHS with SHS"
+  },
+  {
+    "id": "407656",
+    "name": "Sta. Elena (Cam. Norte) College, Inc.",
+    "municipality": "SANTA ELENA",
+    "barangay": "SANTA ELENA (POB.)",
+    "address": "P-10, Sta. Elena (Poblacion), Sta. Elena, Camarines Norte",
+    "sector": "Private",
+    "offering": "JHS with SHS"
+  },
+  {
+    "id": "433007",
+    "name": "Sta. Elena Adventist Academy,Inc.",
+    "municipality": "SANTA ELENA",
+    "barangay": "SANTA ELENA (POB.)",
+    "address": "P-10",
+    "sector": "Private",
+    "offering": "Purely JHS"
+  },
+  {
+    "id": "403666",
+    "name": "Sta. Elena Adventist Elementary School",
+    "municipality": "SANTA ELENA",
+    "barangay": "SANTA ELENA (POB.)",
+    "address": "P-10",
+    "sector": "Private",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112171",
+    "name": "Sta. Elena Elementary School",
+    "municipality": "JOSE PANGANIBAN",
+    "barangay": "SANTA ELENA",
+    "address": "Sta Elena, Jose Panganiban Camarines Norte",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112295",
+    "name": "Sta. Elena Elementary School",
+    "municipality": "TALISAY",
+    "barangay": "SANTA ELENA",
+    "address": "-Purok 2 Brgy. Sta. Elena",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "408876",
+    "name": "Sta. Elena Institute of Science and Technology Incorporated",
+    "municipality": "SANTA ELENA",
+    "barangay": "SANTA ELENA (POB.)",
+    "address": "P-6",
+    "sector": "Private",
+    "offering": "Purely SHS"
+  },
+  {
+    "id": "500634",
+    "name": "Sta. Elena Integrated School",
+    "municipality": "SANTA ELENA",
+    "barangay": "SANTA ELENA (POB.)",
+    "address": "Purok 7, POBLACION",
+    "sector": "Public",
+    "offering": "All Offering (K to 12)"
+  },
+  {
+    "id": "433041",
+    "name": "Sta. Elena Parochial School, Inc.",
+    "municipality": "SANTA ELENA",
+    "barangay": "SANTA ELENA (POB.)",
+    "address": "Purok 2, Villa Carmen",
+    "sector": "Private",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112172",
+    "name": "Sta. Milagrosa Elementary School",
+    "municipality": "JOSE PANGANIBAN",
+    "barangay": "SANTA MILAGROSA",
+    "address": "Sta.Milagrosa,Jose Panganiban,Camarines Norte",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112314",
+    "name": "Sto. Domingo Elementary School",
+    "municipality": "VINZONS",
+    "barangay": "SANTO DOMINGO",
+    "address": "P3, Lico 1, Sto. Domingo, Vinzons, C.N.",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112127",
+    "name": "TALENTO-ROLL ELEMENTARY SCHOOL",
+    "municipality": "CAPALONGA",
+    "barangay": "ALAYAO",
+    "address": "ALAYAO, CAPALONGA, C. N.",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112105",
+    "name": "Taba-Taba Elementary School",
+    "municipality": "BASUD",
+    "barangay": "TABA-TABA",
+    "address": "purok 1",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "301912",
+    "name": "Tabas National High School",
+    "municipality": "PARACALE",
+    "barangay": "TABAS",
+    "address": "Purok 3",
+    "sector": "Public",
+    "offering": "JHS with SHS"
+  },
+  {
+    "id": "173012",
+    "name": "Tabugon Elementary School",
+    "municipality": "SANTA ELENA",
+    "barangay": "TABUGON",
+    "address": "-Crossing Tabugon",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112106",
+    "name": "Tacad Elementary School",
+    "municipality": "BASUD",
+    "barangay": "TACAD",
+    "address": "Tacad",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112239",
+    "name": "Tagongtong Elementary School",
+    "municipality": "MERCEDES",
+    "barangay": "DEL ROSARIO (TAGONGTONG)",
+    "address": "-Purok 4, Del Rosario, Mercedes, Camarines Norte",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112296",
+    "name": "Talisay Elementary School",
+    "municipality": "TALISAY",
+    "barangay": "POBLACION",
+    "address": "Contreras Street",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "301923",
+    "name": "Talobatib High School",
+    "municipality": "LABO",
+    "barangay": "TALOBATIB",
+    "address": "P-1V",
+    "sector": "Public",
+    "offering": "JHS with SHS"
+  },
+  {
+    "id": "112240",
+    "name": "Tarum Elementary School",
+    "municipality": "MERCEDES",
+    "barangay": "TARUM",
+    "address": "P-3",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112173",
+    "name": "Tawig Elementary School",
+    "municipality": "JOSE PANGANIBAN",
+    "barangay": "SALVACION",
+    "address": "Purok 3",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112259",
+    "name": "Tawig Elementary School",
+    "municipality": "PARACALE",
+    "barangay": "TAWIG",
+    "address": "PUROK 4",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "408869",
+    "name": "The Ripple of Hope Skills and Technology Institute, Inc.",
+    "municipality": "DAET (Capital)",
+    "barangay": "BAGASBAS",
+    "address": "Vinzons Avenue",
+    "sector": "Private",
+    "offering": "Purely SHS"
+  },
+  {
+    "id": "301921",
+    "name": "Tigbinan National High School",
+    "municipality": "LABO",
+    "barangay": "TIGBINAN",
+    "address": "Purok 7",
+    "sector": "Public",
+    "offering": "JHS with SHS"
+  },
+  {
+    "id": "403647",
+    "name": "Today's Kids Learning Center",
+    "municipality": "DAET (Capital)",
+    "barangay": "BARANGAY II (POB.)",
+    "address": "Ofelia St.",
+    "sector": "Private",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112128",
+    "name": "Torres-Talento Elementary School",
+    "municipality": "CAPALONGA",
+    "barangay": "OLD CAMP",
+    "address": "",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112315",
+    "name": "Trino P. Zenarosa Elementary School",
+    "municipality": "VINZONS",
+    "barangay": "AGUIT-IT",
+    "address": "Aguit-it, Vinzons, Camarines Norte",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112107",
+    "name": "Tuaca Elementary School",
+    "municipality": "BASUD",
+    "barangay": "TUACA",
+    "address": "",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "309608",
+    "name": "Tuaca High School",
+    "municipality": "BASUD",
+    "barangay": "TUACA",
+    "address": "-",
+    "sector": "Public",
+    "offering": "JHS with SHS"
+  },
+  {
+    "id": "112260",
+    "name": "Tugos Elementary School",
+    "municipality": "PARACALE",
+    "barangay": "TUGOS",
+    "address": "-P-1 Brgy. Tugos, Paracale, Camarines Norte",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112196",
+    "name": "Tulay Na Lupa Elementary School",
+    "municipality": "LABO",
+    "barangay": "TULAY NA LUPA",
+    "address": "Purok 4",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "301922",
+    "name": "Tulay Na Lupa National High School",
+    "municipality": "LABO",
+    "barangay": "TULAY NA LUPA",
+    "address": "Purok 3, Tulay na Lupa, Labo, Camarines Norte",
+    "sector": "Public",
+    "offering": "JHS with SHS"
+  },
+  {
+    "id": "112139",
+    "name": "UP Alawihao Resettlement Elementary School",
+    "municipality": "DAET (Capital)",
+    "barangay": "ALAWIHAO",
+    "address": "Purok 10",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112140",
+    "name": "UP Teacher's Village Elementary School",
+    "municipality": "DAET (Capital)",
+    "barangay": "ALAWIHAO",
+    "address": "UP Phase II, Alawihao, Daet, Cam. Norte",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112174",
+    "name": "Ulipanan ELementary School",
+    "municipality": "JOSE PANGANIBAN",
+    "barangay": "DAHICAN",
+    "address": "Purok 1, Ulipanan",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112175",
+    "name": "V. Gabo Elementary School",
+    "municipality": "JOSE PANGANIBAN",
+    "barangay": "SANTA CRUZ",
+    "address": "Purok 6, Sitio Pinagkaisahan, Brgy. Sta. Cruz, Jose Panganiban, Cams. Norte",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112276",
+    "name": "V. Orendain Elementary School",
+    "municipality": "SAN VICENTE",
+    "barangay": "CALABAGAS",
+    "address": "-",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112277",
+    "name": "V. Ricafrente Elementary School",
+    "municipality": "SAN VICENTE",
+    "barangay": "ASDUM",
+    "address": "-",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "301924",
+    "name": "Vicente L. Basit Memorial High School",
+    "municipality": "DAET (Capital)",
+    "barangay": "AWITAN",
+    "address": "Purok 1",
+    "sector": "Public",
+    "offering": "JHS with SHS"
+  },
+  {
+    "id": "309610",
+    "name": "Victoria J. Tuacar National High School",
+    "municipality": "CAPALONGA",
+    "barangay": "DEL PILAR",
+    "address": "P-1A",
+    "sector": "Public",
+    "offering": "JHS with SHS"
+  },
+  {
+    "id": "112129",
+    "name": "Villa Aurora Elementary School",
+    "municipality": "CAPALONGA",
+    "barangay": "VILLA AURORA",
+    "address": "Purok 2 Villa Aurora, Capalonga, Camarines Norte",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "173014",
+    "name": "Villa San Isidro Elementary School",
+    "municipality": "SANTA ELENA",
+    "barangay": "VILLA SAN ISIDRO",
+    "address": "Purok 2",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "409247",
+    "name": "Vineyard Asia Technological College, Inc.",
+    "municipality": "DAET (Capital)",
+    "barangay": "CAMAMBUGAN",
+    "address": "Diversion Road",
+    "sector": "Private",
+    "offering": "Purely SHS"
+  },
+  {
+    "id": "433005",
+    "name": "Vinzons Christian Academy",
+    "municipality": "VINZONS",
+    "barangay": "CALANGCAWAN SUR",
+    "address": "purok 2",
+    "sector": "Private",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112316",
+    "name": "Vinzons Pilot Elementary School",
+    "municipality": "VINZONS",
+    "barangay": "BARANGAY I (POB.)",
+    "address": "Sta. Veronica Street",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "301925",
+    "name": "Vinzons Pilot High School",
+    "municipality": "VINZONS",
+    "barangay": "BARANGAY I (POB.)",
+    "address": "Sta. Cruz St.",
+    "sector": "Public",
+    "offering": "JHS with SHS"
+  },
+  {
+    "id": "433021",
+    "name": "Wonderkids Science Montessori School",
+    "municipality": "JOSE PANGANIBAN",
+    "barangay": "SOUTH POBLACION",
+    "address": "191 Rizal Avenue",
+    "sector": "Private",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112148",
+    "name": "ZURBANO ELEMENTARY SCHOOL",
+    "municipality": "DAET (Capital)",
+    "barangay": "BARANGAY I (POB.)",
+    "address": "P-8, MAGALLANES ILAOD, BRY - 1",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "112297",
+    "name": "Zantua-Abordo Elementary School",
+    "municipality": "TALISAY",
+    "barangay": "SAN FRANCISCO",
+    "address": "Purok-2 San Francisco Talisay",
+    "sector": "Public",
+    "offering": "Purely ES"
+  },
+  {
+    "id": "403649",
+    "name": "Zion Christian Academy Foundation, Inc.",
+    "municipality": "DAET (Capital)",
+    "barangay": "CALASGASAN",
+    "address": "P-1",
+    "sector": "Private",
+    "offering": "All Offering (K to 12)"
+  }
+]

@@ -1,8 +1,10 @@
 'use client';
 
+import {CampusSearch} from '@/components/map/CampusSearch';
 import { useEffect, useMemo, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, Polyline, Tooltip, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Polyline, Tooltip, useMap, GeoJSON, CircleMarker } from 'react-leaflet';
 import L from 'leaflet';
+import type {GeoJsonObject} from 'geojson';
 import 'leaflet/dist/leaflet.css';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -161,6 +163,7 @@ export function MapPage() {
   const [basemap, setBasemap] = useState<BasemapId>('auto');
   const [layersOpen, setLayersOpen] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
+  const [focusedRoomId,setFocusedRoomId] = useState<number|null>(null);
   const [selectedBuildingId, setSelectedBuildingId] = useState<number | null>(null);
   const [selectedHazardId, setSelectedHazardId] = useState<number | null>(null);
   const [flyTarget, setFlyTarget] = useState<[number, number] | null>(null);
@@ -173,14 +176,24 @@ export function MapPage() {
     routes: true,
   });
   const [severityFilter, setSeverityFilter] = useState<Set<Severity>>(new Set(SEVERITIES));
+  const [verification,setVerification]=useState('all');
+  const [since,setSince]=useState('');
+  const [category,setCategory]=useState('');
+  const [zones,setZones]=useState<Array<{id:number;name:string;kind:string;source:string;verified:number;geometry:GeoJsonObject}>>([]);
+  const [showZones,setShowZones]=useState(true);
+  const [earthquakes,setEarthquakes]=useState<Array<{id:number;title:string;sourceName:string;publishedAt:string;details:string}>>([]);
+  const [showEarthquakes,setShowEarthquakes]=useState(false);
+  const [fetchedAt,setFetchedAt]=useState('');
   const [hideResolved, setHideResolved] = useState(true);
 
   const load = () => {
     setLoading(true);
     setError(null);
+    api.get<{zones:typeof zones}>('/api/map/zones').then(d=>setZones(d.zones)).catch(()=>setZones([]));
+    api.get<{items:typeof earthquakes}>('/api/advisories').then(d=>setEarthquakes(d.items.filter(e=>e.sourceName==='USGS'&&e.details))).catch(()=>setEarthquakes([]));
     api
       .get<MapPayload>('/api/map')
-      .then((payload) => setData(payload))
+      .then((payload) => {setData(payload);setFetchedAt(new Date().toLocaleString());})
       .catch((err) => setError(errorMessage(err)))
       .finally(() => setLoading(false));
   };
@@ -219,6 +232,10 @@ export function MapPage() {
     if (!data) return [];
     const q = query.trim().toLowerCase();
     return data.hazards.filter((hazard) => {
+      if(verification==='verified'&&!['verified','in_progress'].includes(hazard.status))return false;
+      if(verification==='pending'&&!['new','pending_review'].includes(hazard.status))return false;
+      if(category&&hazard.category!==category)return false;
+      if(since&&hazard.createdAt<new Date(since+'T00:00').toISOString())return false;
       if (!severityFilter.has(hazard.severity)) return false;
       if (hideResolved && hazard.status === 'resolved') return false;
       if (!q) return true;
@@ -226,7 +243,7 @@ export function MapPage() {
         .filter(Boolean)
         .some((value) => String(value).toLowerCase().includes(q));
     });
-  }, [data, severityFilter, hideResolved, query]);
+  }, [data, severityFilter, hideResolved, query,verification,category,since]);
 
   const filteredBuildings = useMemo(() => {
     if (!data) return [];
@@ -264,7 +281,7 @@ export function MapPage() {
     setFlyTarget([lat, lng]);
   };
 
-  const center = data?.school ? ([data.school.lat, data.school.lng] as [number, number]) : ([14.1145, 122.9550] as [number, number]);
+  const center = data?.school ? ([data.school.lat ?? 14.15, data.school.lng ?? 122.75] as [number, number]) : ([14.1145, 122.9550] as [number, number]);
   const selectedHazard = filteredHazards.find((h) => h.id === selectedHazardId) ?? null;
 
   return (
@@ -274,6 +291,8 @@ export function MapPage() {
         fullscreen ? 'fixed inset-0 z-[60]' : 'h-[calc(100svh-4rem)] min-h-[520px]',
       )}
     >
+      {data?.school.lat == null && data && <p role="status" className="border-b border-border bg-card px-4 py-2 text-xs text-muted-foreground">Camarines Norte overview. Add the first building with its actual coordinates to set the campus map location.</p>}
+      <div className="map-all-search"><CampusSearch onSelect={result=>{if(result.lat!=null&&result.lng!=null)setFlyTarget([result.lat,result.lng]);if(result.kind==='room'){if(can('buildings:read')){setFocusedRoomId(result.id);setSelectedBuildingId(result.buildingId??null);}else navigate(`/operations?tab=reports&roomId=${result.id}`);}else if(result.kind==='building'&&can('buildings:read')){setFocusedRoomId(null);setSelectedBuildingId(result.id);}}}/></div>
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-2 border-b border-border bg-card px-3 py-2 md:px-4">
         <div className="relative min-w-[180px] flex-1 md:max-w-sm">
@@ -348,7 +367,7 @@ export function MapPage() {
 
         <MapContainer
           center={center}
-          zoom={17}
+          zoom={data?.school.lat == null ? 10 : 17}
           minZoom={14}
           maxZoom={20}
           scrollWheelZoom
@@ -378,6 +397,8 @@ export function MapPage() {
               </Polyline>
             ))}
 
+          {showZones&&zones.map(z=><GeoJSON key={`${z.id}-${z.verified}-${JSON.stringify(z.geometry)}`} data={z.geometry} style={{color:z.verified?'#ff493b':'#ffad20',weight:2,fillOpacity:.15,dashArray:z.verified?undefined:'5 5'}}><Popup><strong>{z.name}</strong><p>{z.kind} · {z.verified?'Verified source / geometry':'Unverified, provisional'}</p><p>{z.source}</p></Popup></GeoJSON>)}
+          {showEarthquakes&&earthquakes.map(e=>{let point;try{point=JSON.parse(e.details);}catch{return null;}return Number.isFinite(point.lat)&&Number.isFinite(point.lng)?<CircleMarker key={e.id} center={[point.lat,point.lng]} radius={10} pathOptions={{color:'#ffad20'}}><Popup><strong>{e.title}</strong><p>USGS · {e.publishedAt}</p><p>No PEIS intensity or school impact is inferred.</p></Popup></CircleMarker>:null;})}
           {/* Buildings */}
           {layers.buildings &&
             filteredBuildings.map((building) => {
@@ -670,6 +691,7 @@ export function MapPage() {
               </label>
             </div>
 
+            <div className="mt-3 space-y-2 text-[11px]"><label className="block">Verification<select className="w-full rounded border border-border bg-background p-2" value={verification} onChange={e=>setVerification(e.target.value)}><option value="all">All reports (unverified are provisional)</option><option value="verified">Verified / in progress</option><option value="pending">Needs review</option></select></label><label className="block">Hazard type<select className="w-full rounded border border-border bg-background p-2" value={category} onChange={e=>setCategory(e.target.value)}><option value="">All types</option>{['electrical','structural','fire','chemical','slip','blocked_exit','other'].map(c=><option key={c}>{c}</option>)}</select></label><label className="block">Reported since (local date)<input className="w-full rounded border border-border bg-background p-2" type="date" value={since} onChange={e=>setSince(e.target.value)}/></label><label className="block"><input type="checkbox" checked={showZones} onChange={e=>setShowZones(e.target.checked)}/> Registered restriction / geological zones</label><label className="block"><input type="checkbox" checked={showEarthquakes} onChange={e=>setShowEarthquakes(e.target.checked)}/> USGS source event locations</label><p className="text-muted-foreground">Records fetched {fetchedAt||'—'}. Unverified reports are not official clearance decisions.</p></div>
             <button
               onClick={() => {
                 setFlyTarget([center[0], center[1]]);
@@ -751,6 +773,7 @@ export function MapPage() {
 
       <BuildingDrawer
         buildingId={selectedBuildingId}
+        initialRoomId={focusedRoomId}
         onClose={() => setSelectedBuildingId(null)}
         canScan={can('scan:write')}
       />

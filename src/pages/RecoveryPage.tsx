@@ -1,5 +1,7 @@
 'use client';
 
+import { workspaceUrl } from '@/lib/workspace';
+
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   AlertTriangle,
@@ -328,7 +330,7 @@ export function RecoveryPage() {
               <RefreshCw className={cn('h-4 w-4', loading && 'animate-spin')} /> Refresh
             </Button>
             <Button variant="outline" size="sm" asChild>
-              <a href="/api/analytics/export?dataset=hazards">
+              <a href={workspaceUrl('/api/analytics/export?dataset=hazards')}>
                 <Download className="h-4 w-4" /> Hazards CSV
               </a>
             </Button>

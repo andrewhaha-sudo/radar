@@ -50,6 +50,7 @@ const NAV_SECTIONS: Array<{ label: string; items: NavItem[] }> = [
     label: 'Operate',
     items: [
       { title: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+      { title: 'Campus operations', href: '/operations', icon: ClipboardList },
       { title: 'Interactive Map', href: '/map', icon: MapIcon },
       { title: 'Room scanning', href: '/scan', icon: ScanEye, permission: 'scan:read' },
       { title: 'Hazard Reports', href: '/hazards', icon: AlertTriangle, permission: 'hazards:read', badge: 'hazards' },

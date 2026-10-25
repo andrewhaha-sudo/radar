@@ -24,17 +24,22 @@ export function FloorPlan({
   rooms,
   selectedRoomId,
   onSelectRoom,
+  hazards = [],
+  onSelectHazard,
 }: {
   floor: Floor;
   rooms: Room[];
   selectedRoomId: number | null;
   onSelectRoom: (room: Room) => void;
+  hazards?: Array<{id:number;roomId:number|null;pinX?:number|null;pinY?:number|null;severity:string;title:string}>;
+  onSelectHazard?: (id:number)=>void;
 }) {
   const width = floor.planWidth || 1000;
   const height = floor.planHeight || 620;
 
   return (
     <div className="space-y-2">
+      {floor.planImage && <p className="text-[11px] text-muted-foreground">{floor.planVerified?'Registered approved plan':'Unverified plan image'} · {floor.planSource}. Room outlines and hazard pins use maintained floor-plan coordinates.</p>}
       <div className="overflow-hidden rounded-xl border border-border bg-muted/30">
         <svg
           viewBox={`0 0 ${width} ${height}`}
@@ -47,6 +52,7 @@ export function FloorPlan({
               <path d="M 20 0 L 0 0 0 20" fill="none" stroke="var(--border)" strokeOpacity="0.35" strokeWidth="1" />
             </pattern>
           </defs>
+          {floor.planImage && <image href={floor.planImage} width={width} height={height} preserveAspectRatio="none"/>}
           <rect width={width} height={height} fill={`url(#grid-${floor.id})`} />
 
           {rooms.map((room) => {
@@ -121,6 +127,7 @@ export function FloorPlan({
               </g>
             );
           })}
+          {hazards.filter(h=>h.pinX!=null&&h.pinY!=null).map(h=>{const r=rooms.find(r=>r.id===h.roomId);return r?<g key={`pin-${h.id}`} role="button" tabIndex={0} aria-label={`${h.severity} finding: ${h.title}`} onClick={()=>onSelectHazard?.(h.id)} onKeyDown={e=>{if(e.key==='Enter'||e.key===' ')onSelectHazard?.(h.id);}}><circle cx={r.x+h.pinX!*r.width} cy={r.y+h.pinY!*r.height} r={9} fill="#ff314d" stroke="white" strokeWidth={2}/><title>{h.title} · approximate position</title></g>:null;})}
         </svg>
       </div>
 

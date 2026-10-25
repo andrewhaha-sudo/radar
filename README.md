@@ -13,8 +13,11 @@ RADAR is deliberately honest about its limits:
   Observations entered by people require verification.
 - Live disaster feeds are reported as **unconfigured** until a connector is configured.
   Nothing is fabricated to look live.
-- Every number in the interface comes from the school database. There is no demo-data
-  banner, simulated telemetry or generated activity.
+- Numbers come from stored records. Local SQLite initializes a demonstration school;
+  selected Camarines Norte workspaces begin empty and require verified campus records.
+  Hosted mode does not seed demonstration users or school activity.
+
+For the supplied PDF implementation checklist, new operations screens, external-service requirements and known gaps, see [RADAR 2.0 features](docs/RADAR-2-FEATURES.md).
 
 ## Features
 
@@ -24,9 +27,9 @@ RADAR is deliberately honest about its limits:
 | Guided scans | Room-by-room inspections with observations, evidence uploads and review workflow. |
 | Hazard workspace | Severity, verification, ownership, corrective actions, evidence and full history. |
 | Incidents | Open, update and close incidents, with linked hazards and roll call. |
-| Roll call | Class expectations, present/absent counts and drill snapshots. |
+| Roll call | Class expectations, individual rosters/statuses, teacher ownership, authenticated QR check-ins, history and CSV reports. |
 | Alerts | Four-level alerts (green / yellow / orange / red) with delivery and read tracking, plus manual advisories. |
-| Disaster watch | Manual official advisories with freshness states; live feed connectors report unconfigured honestly. |
+| Disaster watch | Source-linked advisories with freshness states and an opt-in USGS earthquake adapter; other unconfigured feeds remain explicit. |
 | Safety check-ins | “I’m safe” / “I need help” status with optional location sharing and staff board. |
 | Evacuation | Route and assembly-point status, accessible alternatives, roll-call snapshot and printable directory. |
 | Resources | AEDs, extinguishers, first aid, eyewash, spill kits, lighting and radios with expiry and last-checked state. |
@@ -51,21 +54,21 @@ Permissions are enforced by the API, not just hidden in the UI.
 - Tailwind CSS v4 (semantic tokens, four themes, light/dark/system modes, custom accent)
 - Leaflet with OpenStreetMap / Esri World Imagery / OpenTopoMap tiles (no API key required)
 - Recharts for analytics
-- Zero-dependency Node.js API (`node:http`, `node:sqlite`) with scrypt password hashing,
+- Node.js API (`node:http`, `node:sqlite`) with optional PostgreSQL/Supabase, scrypt password hashing,
   HttpOnly session cookies, server-side RBAC and an append-only audit log
 - Service worker for the production app shell; explicit Cache API data pack for offline reads
 
 ## Getting started
 
-Requirements: Node.js 22+ (for `node:sqlite`) and npm.
+Requirements: Node.js 24+ and npm.
 
 ```bash
-npm install
+npm ci
 npm run seed      # create server/data/radar.db and seed the demo school
-npm run dev       # API on 127.0.0.1:8787 + Vite on localhost:5173
+npm run dev       # starts matching API + Vite; uses free ports when defaults are busy
 ```
 
-Open <http://localhost:5173>.
+Open the **Local** address printed by this Vite process. Restart after pulling backend updates; an old terminal/tab may still serve an earlier version.
 
 Production build:
 
@@ -146,3 +149,21 @@ public/            Manifest, favicon, service worker
 ## License
 
 Internal school deployment software. Add your organisation's licence before distributing.
+
+## Camarines Norte school workspaces
+
+Sign in as an administrator, click the school selector in the top bar, and choose a school. Click **Create school workspace** to create a separate, empty campus database and open its dashboard. Existing workspaces have an **Open school workspace** button. The selector also lets you return to the original workspace.
+
+On the new dashboard, choose **Add buildings & rooms**. Expand **Add buildings, floors & rooms**, then add a building with its real latitude/longitude, a floor, and rooms. The first building supplies the campus map's initial center. Until then, map views show a labelled Camarines Norte overview; no school coordinates or inspection results are fabricated. Buildings, rooms, hazards, alerts and other operational records are never copied from the demonstration campus.
+
+The directory remains a historical 2020–2021 masterlist, with the source documented in `src/data/README.md`. Creating a workspace is local RADAR setup, not verification of official school affiliation. At present, only the administrator account that creates a workspace can open it; invitations and additional school-member accounts are not implemented.
+
+The original account database stays in `server/data/radar.db` (or `RADAR_DB_DIR/radar.db`). School databases are stored at `RADAR_DB_DIR/workspaces/<BEIS ID>/radar.db`, with each school's uploaded files in that directory's `uploads/` subfolder. Back up the entire data directory, including SQLite WAL files when present, and the original `server/uploads/` directory. Workspace databases are created without demo seeding. Existing original-campus records are retained; schema upgrades add workspace registration, session selection, and school-location metadata automatically on server startup.
+
+Workspace selection belongs to the signed-in session. A request's workspace expectation prevents stale tabs and queued writes from being applied to another school after a switch. Offline data packs and outboxes are separated by account and workspace; older unscoped data packs and queued items are not automatically migrated or replayed. Downloads and uploads use the selected school scope. New workspace uploads require the owner's authenticated session and are not publicly cached.
+
+After updating this code, stop the old development server with Ctrl+C and run `npm run dev` again so the API loads the new routes and migrations. `npm test` includes integration checks for ownership, empty-school creation, campus record creation, isolation, stale requests, uploads, and persistence across server restart.
+
+## Supabase accounts and cloud storage
+
+RADAR can use Supabase Auth, PostgreSQL and private Storage instead of local SQLite/files. See [Supabase connection instructions](docs/SUPABASE.md). Copy `.env.example` to `.env` and configure the server-only database connection, storage key and administrator email before enabling `RADAR_DATABASE_DRIVER=postgres`. Local records are retained and are not automatically migrated or uploaded.

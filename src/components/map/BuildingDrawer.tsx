@@ -59,10 +59,12 @@ export function BuildingDrawer({
   buildingId,
   onClose,
   canScan,
+  initialRoomId,
 }: {
   buildingId: number | null;
   onClose: () => void;
   canScan: boolean;
+  initialRoomId?: number | null;
 }) {
   const navigate = useNavigate();
   const [building, setBuilding] = useState<Building | null>(null);
@@ -95,11 +97,14 @@ export function BuildingDrawer({
 
     api
       .get<{ building: Building; floors: Floor[] }>(`/api/buildings/${buildingId}`)
-      .then((data) => {
+      .then(async (data) => {
         if (cancelled) return;
         setBuilding(data.building);
         setFloors(data.floors);
-        setSelectedFloorId((prev) => prev ?? data.floors[0]?.id ?? null);
+        let floorId=data.floors[0]?.id??null;
+        setFloorData(null);
+        if(initialRoomId){const target=await api.get<RoomPayload>(`/api/rooms/${initialRoomId}`);if(cancelled)return;if(target.context.buildingId!==buildingId)throw new Error('The selected room does not belong to this building.');floorId=target.room.floorId;setSelectedRoomId(target.room.id);setRoomData(target);}
+        setSelectedFloorId(floorId);
       })
       .catch((err) => {
         if (!cancelled) setError(errorMessage(err));
@@ -111,7 +116,7 @@ export function BuildingDrawer({
     return () => {
       cancelled = true;
     };
-  }, [buildingId]);
+  }, [buildingId,initialRoomId]);
 
   useEffect(() => {
     if (!selectedFloorId) {
@@ -270,6 +275,8 @@ export function BuildingDrawer({
                     <>
                       <FloorPlan
                         floor={floorData.floor}
+                  hazards={floorData.hazards}
+                  onSelectHazard={id=>navigate(`/hazards?open=${id}`)}
                         rooms={floorData.rooms}
                         selectedRoomId={selectedRoomId}
                         onSelectRoom={(room) => void loadRoom(room.id)}
@@ -389,6 +396,7 @@ function RoomPanel({
   loading: boolean;
   onBack: () => void;
   canScan: boolean;
+  initialRoomId?: number | null;
   onScan: () => void;
   onHazard: (id: number) => void;
 }) {

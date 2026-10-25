@@ -1,5 +1,6 @@
 'use client';
 
+import { workspaceId } from '@/lib/workspace';
 import { useRef, useState } from 'react';
 import { UploadCloud, Loader2, AlertCircle, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -42,6 +43,7 @@ export function ImageUpload({
     const xhr = new XMLHttpRequest();
     xhr.open('POST', '/api/uploads');
     xhr.withCredentials = true;
+    xhr.setRequestHeader('X-Radar-Workspace', workspaceId());
     xhr.setRequestHeader('Content-Type', file.type);
     xhr.upload.onprogress = (event) => {
       if (event.lengthComputable) {
@@ -135,6 +137,7 @@ export function ImageUpload({
               ref={inputRef}
               type="file"
               accept={ACCEPTED.join(',')}
+              capture="environment"
               className="sr-only"
               disabled={disabled}
               onChange={(e) => {

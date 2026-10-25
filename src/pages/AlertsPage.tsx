@@ -58,6 +58,8 @@ const AUDIENCES: Array<{ id: AlertAudience; label: string }> = [
   { id: 'students', label: 'Students' },
   { id: 'parents', label: 'Parents & guardians' },
   { id: 'grade', label: 'Selected grade' },
+  { id: 'section', label: 'Assigned class / section' },
+  { id: 'building', label: 'Assigned building' },
 ];
 const TABS: Array<{ id: AlertState | 'all'; label: string }> = [
   { id: 'active', label: 'Active' },
@@ -83,6 +85,10 @@ function emptyForm() {
     buildingId: '',
     effectiveAt: localInput(new Date()),
     expiresAt: '',
+    sendPush: false,
+    sendSms: false,
+    suspensionReason: '',
+    resumeAt: '',
   };
 }
 
@@ -92,6 +98,16 @@ export function AlertsPage() {
   const canBuildings = can('buildings:read');
 
   const [data, setData] = useState<AlertsPayload | null>(null);
+  const [targetClasses, setTargetClasses] = useState<
+    Array<{ id: number; name: string; grade: string }>
+  >([]);
+  useEffect(() => {
+    if (canPublish)
+      api
+        .get<{ classes: Array<{ id: number; name: string; grade: string }> }>('/api/rollcall')
+        .then((d) => setTargetClasses(d.classes))
+        .catch(() => {});
+  }, [canPublish]);
   const [buildings, setBuildings] = useState<Building[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -166,6 +182,10 @@ export function AlertsPage() {
     try {
       const payload = await api.post<{ alert: Alert; message: string }>('/api/alerts', {
         level: form.level,
+        sendPush: form.sendPush,
+        sendSms: form.sendSms,
+        suspensionReason: form.suspensionReason,
+        resumeAt: form.resumeAt ? new Date(form.resumeAt).toISOString() : null,
         kind: form.kind,
         title: form.title.trim(),
         body: form.body.trim(),
@@ -295,7 +315,8 @@ export function AlertsPage() {
                     </span>
                     {featured.expiresAt && (
                       <span className="inline-flex items-center gap-1">
-                        <CalendarClock className="h-3 w-3" /> Expires {absoluteTime(featured.expiresAt)}
+                        <CalendarClock className="h-3 w-3" /> Expires{' '}
+                        {absoluteTime(featured.expiresAt)}
                       </span>
                     )}
                     {featured.buildingName && (
@@ -310,8 +331,12 @@ export function AlertsPage() {
                   <div className="shrink-0 rounded-xl border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning lg:max-w-[240px]">
                     <p className="font-semibold">Suspension notice</p>
                     <p className="mt-0.5 leading-snug">
-                      Only school administration can publish a class suspension. Check the effective and
-                      resumption details before sharing externally.
+                      {featured.suspensionReason || featured.body}
+                      <br />
+                      Resumption:{' '}
+                      {featured.resumeAt
+                        ? absoluteTime(featured.resumeAt)
+                        : 'Not announced; await an official update.'}
                     </p>
                   </div>
                 )}
@@ -347,10 +372,14 @@ export function AlertsPage() {
                     >
                       <Icon className="h-4 w-4" aria-hidden="true" />
                     </span>
-                    <span className="text-lg font-semibold tabular-nums">{data.byLevel[level]}</span>
+                    <span className="text-lg font-semibold tabular-nums">
+                      {data.byLevel[level]}
+                    </span>
                   </div>
                   <p className="mt-2 text-xs font-semibold text-foreground">{meta.label}</p>
-                  <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground">{meta.description}</p>
+                  <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground">
+                    {meta.description}
+                  </p>
                 </div>
               );
             })}
@@ -382,7 +411,11 @@ export function AlertsPage() {
 
           <Card hover={false} className="overflow-hidden">
             <div className="flex flex-wrap items-center gap-2 border-b border-border px-3 py-2.5">
-              <div className="flex flex-wrap gap-1" role="tablist" aria-label="Filter announcements">
+              <div
+                className="flex flex-wrap gap-1"
+                role="tablist"
+                aria-label="Filter announcements"
+              >
                 {TABS.map((item) => (
                   <button
                     key={item.id}
@@ -421,7 +454,10 @@ export function AlertsPage() {
             ) : (
               <ul className="divide-y divide-border">
                 {visible.map((item) => (
-                  <li key={item.id} className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-start">
+                  <li
+                    key={item.id}
+                    className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-start"
+                  >
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <AlertLevelBadge level={item.level} showLabel={false} />
@@ -432,7 +468,9 @@ export function AlertsPage() {
                         <Badge variant="outline" className="capitalize">
                           {item.kind}
                         </Badge>
-                        <span className="font-mono text-[10px] text-muted-foreground">{item.ref}</span>
+                        <span className="font-mono text-[10px] text-muted-foreground">
+                          {item.ref}
+                        </span>
                       </div>
                       <p className="mt-1.5 text-sm font-semibold leading-snug">{item.title}</p>
                       {item.body && (
@@ -470,8 +508,8 @@ export function AlertsPage() {
 
           {!canPublish && (
             <p className="rounded-lg border border-border bg-muted/40 px-3 py-2 text-[11px] text-muted-foreground">
-              Only school and system administrators can publish or archive announcements. Your role can read
-              the alert board and receives targeted notifications.
+              Only school and system administrators can publish or archive announcements. Your role
+              can read the alert board and receives targeted notifications.
             </p>
           )}
         </>
@@ -482,8 +520,8 @@ export function AlertsPage() {
           <DialogHeader>
             <DialogTitle>New announcement</DialogTitle>
             <DialogDescription>
-              Alerts are delivered in-app to the selected audience. Email and SMS require a separately
-              configured provider and are not sent by this installation.
+              Alerts are delivered in-app to the selected audience. Email and SMS require a
+              separately configured provider and are not sent by this installation.
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={submit} className="space-y-4">
@@ -517,7 +555,8 @@ export function AlertsPage() {
                 })}
               </div>
               <p className="mt-1.5 text-[11px] text-muted-foreground">
-                {ALERT_LEVEL_META[form.level].description} Colour is always paired with an icon and label.
+                {ALERT_LEVEL_META[form.level].description} Colour is always paired with an icon and
+                label.
               </p>
             </div>
 
@@ -554,6 +593,54 @@ export function AlertsPage() {
               </label>
             </div>
 
+            {['section', 'building'].includes(form.audience) && (
+              <label className="block text-sm">
+                Target school group
+                <select
+                  className="mt-2 w-full rounded border border-border bg-background p-2"
+                  value={form.audienceValue}
+                  onChange={(e) => setForm({ ...form, audienceValue: e.target.value })}
+                >
+                  <option value="">Choose…</option>
+                  {(form.audience === 'section' ? targetClasses : buildings).map((target) => (
+                    <option key={target.id} value={target.id}>
+                      {target.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+            <label className="flex items-center gap-2 text-xs">
+              <input
+                type="checkbox"
+                checked={form.sendPush}
+                onChange={(e) => setForm({ ...form, sendPush: e.target.checked })}
+              />{' '}
+              Also request browser push for consented subscribers
+            </label>
+            <label className="flex items-center gap-2 text-xs">
+              <input
+                type="checkbox"
+                checked={form.sendSms}
+                onChange={(e) => setForm({ ...form, sendSms: e.target.checked })}
+              />{' '}
+              Also request configured SMS for consented recipients (provider fees may apply)
+            </label>
+            {form.kind === 'suspension' && (
+              <>
+                <Input
+                  label="Official suspension reason"
+                  value={form.suspensionReason}
+                  onChange={(e) => setForm({ ...form, suspensionReason: e.target.value })}
+                />
+                <Input
+                  label="Expected resumption (leave blank if not announced)"
+                  type="datetime-local"
+                  value={form.resumeAt}
+                  onChange={(e) => setForm({ ...form, resumeAt: e.target.value })}
+                />
+              </>
+            )}
             {form.audience === 'grade' && (
               <Input
                 label="Grade level"
@@ -617,19 +704,28 @@ export function AlertsPage() {
 
             {form.kind === 'suspension' && (
               <p className="rounded-lg border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning">
-                Class suspensions are official school decisions. Include the reason, effective date and
-                resumption details in the message. Only publish when you are authorized to do so.
+                Class suspensions are official school decisions. Include the reason, effective date
+                and resumption details in the message. Only publish when you are authorized to do
+                so.
               </p>
             )}
 
             {formError && (
-              <p role="alert" className="rounded-lg border border-danger/30 bg-danger/10 px-3 py-2 text-xs text-danger">
+              <p
+                role="alert"
+                className="rounded-lg border border-danger/30 bg-danger/10 px-3 py-2 text-xs text-danger"
+              >
                 {formError}
               </p>
             )}
 
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setComposeOpen(false)} disabled={submitting}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setComposeOpen(false)}
+                disabled={submitting}
+              >
                 Cancel
               </Button>
               <Button type="submit" loading={submitting}>

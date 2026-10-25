@@ -1,5 +1,7 @@
 'use client';
 
+import { InspectionChecklist } from '@/components/forms/InspectionChecklist';
+import { VideoFrames } from '@/components/forms/VideoFrames';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
@@ -230,7 +232,7 @@ export function ScanPage() {
   const accepted = observations.filter((item) => item.status === 'accepted');
   const pending = observations.filter((item) => item.status === 'pending');
   const rejected = observations.filter((item) => item.status === 'rejected');
-  const canSubmit = accepted.length > 0 && scan?.scan.status === 'draft';
+  const canSubmit = (accepted.length > 0 || Boolean(scan?.scan.noFindingsConfirmed)) && scan?.scan.status === 'draft';
 
   const openDraft = (target: Scan) => {
     setBuildingId('');
@@ -753,6 +755,7 @@ export function ScanPage() {
                 <li>• Delete accidental photos before submitting.</li>
               </ul>
             </div>
+            {scan && <VideoFrames scanId={scan.scan.id} onSaved={()=>void loadScan(scan.scan.id)}/>}
             <StepNav
               onBack={() => setStep(0)}
               onNext={() => setStep(2)}
@@ -881,6 +884,7 @@ export function ScanPage() {
               </div>
             </div>
 
+            {scan && scan.scan.status==='draft' && accepted.length===0 && <InspectionChecklist scanId={scan.scan.id} onSaved={()=>void loadScan(scan.scan.id)}/>}
             {/* Honest AI state */}
             <div className="rounded-xl border border-border bg-card p-4">
               <div className="flex items-start gap-2">
@@ -898,6 +902,7 @@ export function ScanPage() {
                     {aiStatus?.message ??
                       'No vision model is configured in this installation. Suggestions are disabled; observations are manual findings and still require verification.'}
                   </p>
+                  {aiStatus?.configured && scan && scan.scan.status==='draft' && <Button className="mt-3" size="sm" onClick={async()=>{if(!window.confirm('Send up to four inspection photos to the configured vision provider? Suggestions will require human review.'))return;setBusy('analyze');try{await api.post(`/api/scans/${scan.scan.id}/analyze`,{consent:true});await loadScan(scan.scan.id);}catch(err){setScanError(errorMessage(err));}finally{setBusy(null);}}} disabled={busy==='analyze'}>Analyze uploaded photos</Button>}
                   {!aiStatus?.configured && (
                     <p className="mt-1.5 text-[11px] text-muted-foreground">
                       Nothing is generated automatically. Any area that would show suggestions stays
@@ -939,10 +944,10 @@ export function ScanPage() {
               onBack={() => setStep(1)}
               onNext={() => setStep(3)}
               nextLabel="Review findings"
-              nextDisabled={accepted.length === 0}
+              nextDisabled={accepted.length === 0 && !scan?.scan.noFindingsConfirmed}
               nextHint={
-                accepted.length === 0
-                  ? 'Accept at least one observation to continue.'
+                accepted.length === 0 && !scan?.scan.noFindingsConfirmed
+                  ? 'Review findings or complete the no-visible-findings checklist.'
                   : undefined
               }
             />
@@ -1057,7 +1062,7 @@ export function ScanPage() {
                     </Button>
                     {!canSubmit && (
                       <p className="text-[11px] text-muted-foreground">
-                        Accept at least one observation before submitting.
+                        Review findings or explicitly complete the no-visible-findings checklist before submitting.
                       </p>
                     )}
                   </div>

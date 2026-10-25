@@ -137,6 +137,7 @@ export function ImageUpload({
               ref={inputRef}
               type="file"
               accept={ACCEPTED.join(',')}
+              capture="environment"
               className="sr-only"
               disabled={disabled}
               onChange={(e) => {

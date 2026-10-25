@@ -17,6 +17,17 @@ export const workspaceDirectory = path.join(DATA_DIR, 'workspaces');
 export async function workspaceRecord(id) {
   return await coreDb.prepare('SELECT * FROM school_workspaces WHERE beis_id = ?').get(id);
 }
+export async function workspaceAccess(id, userId) {
+  const workspace = await workspaceRecord(id);
+  if (!workspace) return null;
+  if (workspace.owner_user_id === userId) return { role: 'admin', owner: true };
+  const member = await coreDb
+    .prepare(
+      'SELECT role FROM workspace_members WHERE workspace_id = ? AND user_id = ? AND active = 1',
+    )
+    .get(id, userId);
+  return member ? { role: member.role, owner: false } : null;
+}
 export function workspaceSchool(id) {
   return schools.find((s) => s.id === id);
 }

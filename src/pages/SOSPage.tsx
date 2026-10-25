@@ -1,5 +1,7 @@
 'use client';
 
+import { OfflineEmergency } from '@/components/map/OfflineEmergency';
+import { HoldToConfirm } from '@/components/forms/HoldToConfirm';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -53,6 +55,7 @@ export function SOSPage() {
   const { can, user, school } = useAuth();
   const navigate = useNavigate();
 
+  const [silent, setSilent] = useState(false);
   const [kind, setKind] = useState<SosKind>('medical');
   const [buildingId, setBuildingId] = useState('');
   const [floorId, setFloorId] = useState('');
@@ -109,7 +112,7 @@ export function SOSPage() {
     setSubmitting(true);
     setError(null);
     try {
-      const payload = await api.post<SosResult>('/api/sos', {
+      const payload = await api.post<SosResult>('/api/sos', {silent,
         kind,
         note: note.trim(),
         buildingId: buildingId ? Number(buildingId) : null,
@@ -225,6 +228,7 @@ export function SOSPage() {
 
   return (
     <div className="stack-page space-y-5">
+      {!navigator.onLine&&<OfflineEmergency/>}
       <div>
         <div className="flex items-center gap-2">
           <span className="grid h-9 w-9 place-items-center rounded-lg bg-danger/10 text-danger">
@@ -390,13 +394,8 @@ export function SOSPage() {
           )}
 
           <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-border pt-3">
-            <Button
-              variant="destructive"
-              onClick={() => setConfirming(true)}
-              disabled={submitting}
-            >
-              <PhoneCall className="h-4 w-4" /> Raise SOS
-            </Button>
+            <HoldToConfirm onConfirm={() => setConfirming(true)} disabled={submitting}/>
+            <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={silent} onChange={e => setSilent(e.target.checked)}/> Silent SOS (no audible cue)</label>
             <p className="text-[11px] text-muted-foreground">
               You will be asked to confirm before anything is sent.
             </p>

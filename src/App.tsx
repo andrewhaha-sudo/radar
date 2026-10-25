@@ -10,12 +10,14 @@ import { ThemeProvider } from '@/context/ThemeContext';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { OfflineProvider } from '@/context/OfflineContext';
 import { AppLayout } from '@/components/layout/AppLayout';
+import { ResetPasswordPage } from '@/pages/ResetPasswordPage';
 import { LoginPage } from '@/pages/LoginPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 import { AccessDenied } from '@/components/ui/access-denied';
 
 // Heavy routes (Leaflet, Recharts, admin tooling) are split into their own
 // chunks so the login screen stays fast on a slow school network.
+const OperationsPage = lazy(() => import('@/pages/OperationsPage').then(m=>({default:m.OperationsPage})));
 const DashboardPage = lazy(() =>
   import('@/pages/DashboardPage').then((m) => ({ default: m.DashboardPage })),
 );
@@ -123,9 +125,11 @@ export default function App() {
           <BrowserRouter>
             <Routes>
               <Route path="/login" element={<LoginPage />} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
               <Route element={<ProtectedLayout />}>
                 <Route index element={<Navigate to="/dashboard" replace />} />
                 <Route path="dashboard" element={<DashboardPage />} />
+                <Route path="operations" element={<OperationsPage />} />
                 <Route path="map" element={<MapPage />} />
                 <Route
                   path="scan"

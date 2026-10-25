@@ -107,3 +107,29 @@ export async function cloudDownload(workspaceId, name) {
   if (error) return null;
   return { buffer: Buffer.from(await data.arrayBuffer()), type: data.type };
 }
+
+export async function cloudRequestPasswordReset(email) {
+  const { error } = await client().auth.resetPasswordForEmail(email, {
+    redirectTo: new URL(
+      '/reset-password',
+      process.env.RADAR_PUBLIC_URL ?? 'http://localhost:5173',
+    ).toString(),
+  });
+  if (error) throw new Error('The password reset email could not be requested. Try again later.');
+}
+export async function cloudUpdatePassword(accessToken, password) {
+  const response = await fetch(new URL('/auth/v1/user', process.env.SUPABASE_URL), {
+    method: 'PUT',
+    headers: {
+      apikey: process.env.SUPABASE_PUBLISHABLE_KEY,
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ password }),
+    signal: AbortSignal.timeout(15000),
+  });
+  if (!response.ok)
+    throw new Error(
+      'This recovery link is invalid or expired. Request a new password reset email.',
+    );
+}

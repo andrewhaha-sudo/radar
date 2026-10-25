@@ -13,8 +13,11 @@ RADAR is deliberately honest about its limits:
   Observations entered by people require verification.
 - Live disaster feeds are reported as **unconfigured** until a connector is configured.
   Nothing is fabricated to look live.
-- Every number in the interface comes from the school database. There is no demo-data
-  banner, simulated telemetry or generated activity.
+- Numbers come from stored records. Local SQLite initializes a demonstration school;
+  selected Camarines Norte workspaces begin empty and require verified campus records.
+  Hosted mode does not seed demonstration users or school activity.
+
+For the supplied PDF implementation checklist, new operations screens, external-service requirements and known gaps, see [RADAR 2.0 features](docs/RADAR-2-FEATURES.md).
 
 ## Features
 
@@ -24,9 +27,9 @@ RADAR is deliberately honest about its limits:
 | Guided scans | Room-by-room inspections with observations, evidence uploads and review workflow. |
 | Hazard workspace | Severity, verification, ownership, corrective actions, evidence and full history. |
 | Incidents | Open, update and close incidents, with linked hazards and roll call. |
-| Roll call | Class expectations, present/absent counts and drill snapshots. |
+| Roll call | Class expectations, individual rosters/statuses, teacher ownership, authenticated QR check-ins, history and CSV reports. |
 | Alerts | Four-level alerts (green / yellow / orange / red) with delivery and read tracking, plus manual advisories. |
-| Disaster watch | Manual official advisories with freshness states; live feed connectors report unconfigured honestly. |
+| Disaster watch | Source-linked advisories with freshness states and an opt-in USGS earthquake adapter; other unconfigured feeds remain explicit. |
 | Safety check-ins | “I’m safe” / “I need help” status with optional location sharing and staff board. |
 | Evacuation | Route and assembly-point status, accessible alternatives, roll-call snapshot and printable directory. |
 | Resources | AEDs, extinguishers, first aid, eyewash, spill kits, lighting and radios with expiry and last-checked state. |
@@ -51,21 +54,21 @@ Permissions are enforced by the API, not just hidden in the UI.
 - Tailwind CSS v4 (semantic tokens, four themes, light/dark/system modes, custom accent)
 - Leaflet with OpenStreetMap / Esri World Imagery / OpenTopoMap tiles (no API key required)
 - Recharts for analytics
-- Zero-dependency Node.js API (`node:http`, `node:sqlite`) with scrypt password hashing,
+- Node.js API (`node:http`, `node:sqlite`) with optional PostgreSQL/Supabase, scrypt password hashing,
   HttpOnly session cookies, server-side RBAC and an append-only audit log
 - Service worker for the production app shell; explicit Cache API data pack for offline reads
 
 ## Getting started
 
-Requirements: Node.js 22+ (for `node:sqlite`) and npm.
+Requirements: Node.js 24+ and npm.
 
 ```bash
-npm install
+npm ci
 npm run seed      # create server/data/radar.db and seed the demo school
-npm run dev       # API on 127.0.0.1:8787 + Vite on localhost:5173
+npm run dev       # starts matching API + Vite; uses free ports when defaults are busy
 ```
 
-Open <http://localhost:5173>.
+Open the **Local** address printed by this Vite process. Restart after pulling backend updates; an old terminal/tab may still serve an earlier version.
 
 Production build:
 

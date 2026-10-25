@@ -35,3 +35,6 @@ server/uploads/
 .env
 .env.*
 !.env.example
+
+# Private local data snapshots
+.backups/

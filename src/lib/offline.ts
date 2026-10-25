@@ -21,6 +21,8 @@ export const DATA_PACK_ENDPOINTS = [
   { path: '/api/alerts', label: 'Alerts' },
   { path: '/api/evacuation', label: 'Evacuation' },
   { path: '/api/resources', label: 'Resources' },
+  { path: '/api/emergency/pack', label: 'Emergency contacts and authorized floor plans' },
+  { path: '/api/auth/me', label: 'Read-only offline session profile' },
 ] as const;
 
 export interface DataPackMeta {
@@ -29,6 +31,8 @@ export interface DataPackMeta {
 }
 
 export interface OutboxItem {
+  savedRecordId?: number;
+  attachments?: Array<{ id: string; caption: string; uploadedUrl?: string; linked?: boolean }>;
   id: string;
   kind: string;
   label: string;
@@ -61,7 +65,10 @@ export function writeOutbox(items: OutboxItem[]) {
 
 export function readDataPackMeta(): DataPackMeta | null {
   if (typeof window === 'undefined') return null;
-  return safeParse<DataPackMeta | null>(window.localStorage.getItem(workspaceStorageKey(DATA_PACK_META_KEY)), null);
+  return safeParse<DataPackMeta | null>(
+    window.localStorage.getItem(workspaceStorageKey(DATA_PACK_META_KEY)),
+    null,
+  );
 }
 
 export function writeDataPackMeta(meta: DataPackMeta) {
@@ -88,7 +95,9 @@ export async function readDataPackDocument<T>(path: string): Promise<T | null> {
  */
 export async function saveDataPack(): Promise<DataPackMeta> {
   if (typeof window === 'undefined' || !('caches' in window)) {
-    throw new Error('This browser does not expose the Cache API, so an offline data pack cannot be stored.');
+    throw new Error(
+      'This browser does not expose the Cache API, so an offline data pack cannot be stored.',
+    );
   }
   const cache = await window.caches.open(workspaceStorageKey(DATA_PACK_CACHE));
   const results = await Promise.all(
@@ -130,18 +139,76 @@ export async function saveDataPack(): Promise<DataPackMeta> {
     }),
   );
 
-  const meta: DataPackMeta = { savedAt: new Date().toISOString(), parts: results };
+  const mediaParts: DataPackMeta['parts'] = [];
+  const pack = await readDataPackDocument<{ floors: Array<{ planImage?: string }> }>(
+    '/api/emergency/pack',
+  );
+  let mediaBytes = 0;
+  for (const url of new Set(
+    (pack?.floors ?? []).map((f) => f.planImage).filter((value): value is string => Boolean(value)),
+  )) {
+    try {
+      if (!url.startsWith('/uploads/') || new URL(url, location.origin).origin !== location.origin)
+        throw new Error('Only this school’s uploaded plans can be cached.');
+      const response = await fetch(url, { credentials: 'same-origin' });
+      if (!response.ok) throw new Error(`Plan image returned HTTP ${response.status}`);
+      const image = await response.clone().blob();
+      mediaBytes += image.size;
+      if (mediaBytes > 50 * 1024 * 1024)
+        throw new Error('Floor-plan download exceeds the 50 MB pack limit.');
+      await cache.put(url, response);
+      mediaParts.push({
+        path: url,
+        label: 'Authorized floor-plan image',
+        ok: true,
+        bytes: image.size,
+      });
+    } catch (error) {
+      mediaParts.push({
+        path: url,
+        label: 'Floor-plan image',
+        ok: false,
+        bytes: 0,
+        error: error instanceof Error ? error.message : 'Image download failed',
+      });
+    }
+  }
+  const meta: DataPackMeta = {
+    savedAt: new Date().toISOString(),
+    parts: [...results, ...mediaParts],
+  };
   writeDataPackMeta(meta);
 
   // Remove documents that were not saved this time so stale data is not implied to be current.
-  const keep = new Set(results.filter((part) => part.ok).map((part) => part.path));
+  const keep = new Set(meta.parts.filter((part) => part.ok).map((part) => part.path));
   for (const endpoint of DATA_PACK_ENDPOINTS) {
     if (!keep.has(endpoint.path)) {
       await cache.delete(endpoint.path).catch(() => undefined);
     }
   }
 
+  for (const request of await cache.keys()) {
+    const path = new URL(request.url).pathname;
+    if (!keep.has(path)) await cache.delete(request);
+  }
   return meta;
+}
+
+export async function readCachedImage(url: string): Promise<string | null> {
+  if (typeof window === 'undefined' || !('caches' in window)) return null;
+  const cache = await caches.open(workspaceStorageKey(DATA_PACK_CACHE));
+  const response = await cache.match(url);
+  return response ? URL.createObjectURL(await response.blob()) : null;
+}
+export async function readOfflineSession<T>(): Promise<T | null> {
+  try {
+    if (sessionStorage.getItem('radar:offline-session-authorized') !== '1') return null;
+  } catch {
+    return null;
+  }
+  const meta = readDataPackMeta();
+  if (!meta || Date.now() - Date.parse(meta.savedAt) > 86400000) return null;
+  return readDataPackDocument<T>('/api/auth/me');
 }
 
 export async function clearDataPack() {

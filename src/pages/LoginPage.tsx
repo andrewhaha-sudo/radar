@@ -267,6 +267,7 @@ export function LoginPage() {
                 </Button>
               </form>
 
+              {signupEnabled && <button type="button" className="w-full text-center text-xs text-primary" disabled={submitting} onClick={async()=>{setError(null);if(!email.trim()){setError('Enter your email address above first.');return;}setSubmitting(true);try{const result=await api.post<{message:string}>('/api/auth/password-reset',{email:email.trim()});setNotice(result.message);}catch(err){setError(errorMessage(err));}finally{setSubmitting(false);}}}>Forgot password? Send recovery email</button>}
               {signupEnabled && (
                 <button
                   type="button"

@@ -83,7 +83,9 @@ export async function getUserFromRequest(req) {
     await destroySession(token);
     return null;
   }
-  const accountScope = row.supabase_auth_id ? `supabase:${row.supabase_auth_id}` : `local:${row.id}`;
+  const accountScope = row.supabase_auth_id
+    ? `supabase:${row.supabase_auth_id}`
+    : `local:${row.id}`;
   const context = currentDatabaseContext();
   if (context?.workspaceId) {
     const member = await db.prepare('SELECT * FROM users WHERE id = ?').get(row.id);
@@ -184,6 +186,7 @@ export const PERMISSIONS = {
     'analytics:read',
   ],
   student: [
+    'hazards:report',
     'dashboard:read',
     'map:read',
     'search:read',

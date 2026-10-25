@@ -3,10 +3,15 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { handleApi } from './api.mjs';
-import { workspaceRecord, workspaceUploads } from './workspaces.mjs';
+import { handleApi, maintenanceTick } from './api.mjs';
+import {
+  workspaceRecord,
+  workspaceAccess,
+  workspaceUploads,
+  runInWorkspace,
+} from './workspaces.mjs';
 import { getUserFromRequest } from './auth.mjs';
-import { UPLOAD_DIR } from './db.mjs';
+import { UPLOAD_DIR, coreDb } from './db.mjs';
 import './seed.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -21,6 +26,7 @@ const MIME = {
   '.mjs': 'text/javascript; charset=utf-8',
   '.css': 'text/css; charset=utf-8',
   '.json': 'application/json; charset=utf-8',
+  '.glb': 'model/gltf-binary',
   '.webmanifest': 'application/manifest+json; charset=utf-8',
   '.svg': 'image/svg+xml',
   '.png': 'image/png',
@@ -54,7 +60,7 @@ function serveFile(res, filePath, cache = 'no-cache') {
 function safeJoin(root, requestPath) {
   const decoded = decodeURIComponent(requestPath);
   const resolved = path.resolve(root, `.${decoded}`);
-  return resolved.startsWith(root) ? resolved : null;
+  return resolved === root || resolved.startsWith(root + path.sep) ? resolved : null;
 }
 
 // Reject cross-site state-changing requests (defence in depth alongside SameSite cookies).
@@ -106,7 +112,7 @@ const server = http.createServer(async (req, res) => {
     if (url.pathname.startsWith('/uploads/workspaces/')) {
       const user = await getUserFromRequest(req);
       const record = workspaceMatch && (await workspaceRecord(workspaceMatch[1]));
-      if (!user || !record || record.owner_user_id !== user.id) {
+      if (!user || !record || !(await workspaceAccess(workspaceMatch[1], user.id))) {
         res.writeHead(403);
         return res.end('School workspace access denied.');
       }
@@ -142,6 +148,13 @@ const server = http.createServer(async (req, res) => {
         return res.end('Cloud file storage is unavailable.');
       }
     }
+    if (!workspaceMatch) {
+      const user = await getUserFromRequest(req);
+      if (!user || user.workspaceId) {
+        res.writeHead(403);
+        return res.end('Sign in to the correct school workspace.');
+      }
+    }
     const filePath = safeJoin(uploadRoot, uploadPath);
     if (!filePath || !fs.existsSync(filePath) || !fs.statSync(filePath).isFile()) {
       res.writeHead(404, { 'Content-Type': 'text/plain' });
@@ -150,7 +163,7 @@ const server = http.createServer(async (req, res) => {
     const ext = path.extname(filePath).toLowerCase();
     res.writeHead(200, {
       'Content-Type': MIME[ext] ?? 'application/octet-stream',
-      'Cache-Control': workspaceMatch ? 'private, no-store' : 'public, max-age=31536000, immutable',
+      'Cache-Control': 'private, no-store',
       'Content-Security-Policy': "default-src 'none'; img-src 'self'; style-src 'unsafe-inline'",
     });
     return fs.createReadStream(filePath).pipe(res);
@@ -183,3 +196,19 @@ const server = http.createServer(async (req, res) => {
 server.listen(PORT, HOST, () => {
   console.log(`[radar] API server listening on http://${HOST}:${PORT}`);
 });
+
+let maintaining = false;
+const maintenance = setInterval(async () => {
+  if (maintaining) return;
+  maintaining = true;
+  try {
+    await maintenanceTick();
+    const workspaces = await coreDb.prepare('SELECT beis_id FROM school_workspaces').all();
+    for (const row of workspaces) await runInWorkspace(row.beis_id, maintenanceTick);
+  } catch (error) {
+    console.error('[radar] Scheduled maintenance failed:', error.message);
+  } finally {
+    maintaining = false;
+  }
+}, 60000);
+maintenance.unref();

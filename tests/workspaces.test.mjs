@@ -27,7 +27,7 @@ async function select(cookie, beisId) {
   assert.equal(result.status,200,JSON.stringify(result.body));
 }
 async function startServer() {
-  child = spawn(process.execPath,['server/index.mjs'],{cwd:ROOT,env:{...process.env,RADAR_DATABASE_DRIVER:'sqlite',RADAR_PGLITE_TEST_DIR:'',RADAR_TEST_CLOUD_AUTH:'0',PORT:'8900',HOST:'127.0.0.1',RADAR_DB_DIR:dataDir,NODE_ENV:'development'},stdio:['ignore','pipe','pipe']});
+  child = spawn(process.execPath,['server/index.mjs'],{cwd:ROOT,env:{...process.env, RADAR_VISION_API_KEY:'',RADAR_USGS_FEED_ENABLED:'false',RADAR_VAPID_PUBLIC_KEY:'',RADAR_VAPID_PRIVATE_KEY:'',RADAR_TWILIO_SID:'',RADAR_TWILIO_TOKEN:'',RADAR_DATABASE_DRIVER:'sqlite',RADAR_PGLITE_TEST_DIR:'',RADAR_TEST_CLOUD_AUTH:'0',PORT:'8900',HOST:'127.0.0.1',RADAR_DB_DIR:dataDir,NODE_ENV:'development'},stdio:['ignore','pipe','pipe']});
   let output=''; child.stdout.on('data',c=>{output+=c}); child.stderr.on('data',c=>{output+=c});
   const deadline=Date.now()+20000;
   while(Date.now()<deadline && !output.includes('listening on') && child.exitCode===null) await new Promise(r=>setTimeout(r,100));

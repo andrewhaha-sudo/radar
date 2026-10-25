@@ -49,6 +49,7 @@ export function DashboardPage() {
     </div>
     {error && <div role="alert" className="command-error">{error}<button onClick={() => void load()}>Try again</button></div>}
     {activeWorkspaceId && k?.totalRooms === 0 && <section className="command-panel workspace-onboarding"><div><h2>Set up your school campus</h2><p>Your workspace is empty. Add the school’s real buildings, floors, and rooms to begin inspections. Campus coordinates have not been recorded yet.</p></div><button className="command-action blue" onClick={() => navigate('/buildings')}>Add buildings &amp; rooms <ArrowRight size={16}/></button></section>}
+    <button className="school-back" onClick={() => navigate('/operations')}>Open RADAR 2.0 campus operations <ArrowRight size={15}/></button>
     <div className="command-stats" aria-busy={loading}>
       <Metric icon={Building2} title="Total Rooms" value={k?.totalRooms} hint="Across your campus" tone="blue" onClick={() => navigate('/map')}/>
       {can('scan:read') && <Metric icon={ScanEye} title="Scanned Rooms" value={k?.roomsScanned} hint={`${k?.roomCoverage ?? 0}% complete`} tone="green" onClick={() => navigate('/scan')}/>}

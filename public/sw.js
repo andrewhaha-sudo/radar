@@ -8,7 +8,7 @@
  *    and user-controlled. Caching API GETs silently would show stale safety data.
  */
 
-const VERSION = 'radar-shell-v1';
+const VERSION = 'radar-shell-v2';
 const SHELL_CACHE = `${VERSION}-shell`;
 const ASSET_CACHE = `${VERSION}-assets`;
 const SHELL_ASSETS = ['/', '/index.html', '/manifest.webmanifest', '/favicon.svg'];
@@ -29,7 +29,9 @@ self.addEventListener('activate', (event) => {
       .then((keys) =>
         Promise.all(
           keys
-            .filter((key) => key.startsWith('radar-shell-') && key !== SHELL_CACHE && key !== ASSET_CACHE)
+            .filter(
+              (key) => key.startsWith('radar-shell-') && key !== SHELL_CACHE && key !== ASSET_CACHE,
+            )
             .map((key) => caches.delete(key)),
         ),
       )
@@ -58,7 +60,10 @@ self.addEventListener('fetch', (event) => {
       fetch(request)
         .then((response) => {
           const copy = response.clone();
-          caches.open(SHELL_CACHE).then((cache) => cache.put('/index.html', copy)).catch(() => {});
+          caches
+            .open(SHELL_CACHE)
+            .then((cache) => cache.put('/index.html', copy))
+            .catch(() => {});
           return response;
         })
         .catch(async () => {
@@ -99,4 +104,44 @@ self.addEventListener('fetch', (event) => {
       }),
     );
   }
+});
+
+self.addEventListener('push', (event) => {
+  let data = {
+    title: 'RADAR announcement',
+    body: 'Open your school workspace to view the update.',
+    url: '/alerts',
+  };
+  try {
+    data = { ...data, ...event.data.json() };
+  } catch {
+    /* Generic notification for malformed payloads. */
+  }
+  event.waitUntil(
+    self.registration.showNotification(String(data.title), {
+      body: String(data.body),
+      icon: '/favicon.svg',
+      tag: String(data.tag ?? 'radar-alert'),
+      data: {
+        url:
+          typeof data.url === 'string' && data.url.startsWith('/') && !data.url.startsWith('//')
+            ? data.url
+            : '/alerts',
+      },
+    }),
+  );
+});
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const url = new URL(event.notification.data?.url ?? '/alerts', self.location.origin).toString();
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(async (windows) => {
+      for (const client of windows)
+        if (new URL(client.url).origin === self.location.origin) {
+          await client.navigate(url);
+          return client.focus();
+        }
+      return clients.openWindow(url);
+    }),
+  );
 });

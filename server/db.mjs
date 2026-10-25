@@ -1,3 +1,4 @@
+import { FEATURE_SCHEMA } from './feature-schema.mjs';
 import { PostgresDatabase } from './postgres.mjs';
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { DatabaseSync } from 'node:sqlite';
@@ -431,6 +432,44 @@ CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id);
   await ensureColumn('assembly_points', 'status', "TEXT NOT NULL DEFAULT 'open'");
   await ensureColumn('assembly_points', 'accessible', 'INTEGER NOT NULL DEFAULT 1');
   await ensureColumn('assembly_points', 'updated_at', 'TEXT');
+  await db.exec(FEATURE_SCHEMA);
+  await ensureColumn('rooms', 'width_m', 'REAL');
+  await ensureColumn('rooms', 'length_m', 'REAL');
+  await ensureColumn('rooms', 'intended_use', "TEXT NOT NULL DEFAULT ''");
+  await ensureColumn('rooms', 'department', "TEXT NOT NULL DEFAULT ''");
+  await ensureColumn('rooms', 'emergency_contact', "TEXT NOT NULL DEFAULT ''");
+  await ensureColumn('floors', 'plan_image', "TEXT NOT NULL DEFAULT ''");
+  await ensureColumn('floors', 'plan_source', "TEXT NOT NULL DEFAULT ''");
+  await ensureColumn('floors', 'plan_verified', 'INTEGER NOT NULL DEFAULT 0');
+  await ensureColumn('hazards', 'pin_x', 'REAL');
+  await ensureColumn('hazards', 'pin_y', 'REAL');
+  await ensureColumn('hazards', 'anonymous', 'INTEGER NOT NULL DEFAULT 0');
+  await ensureColumn('hazards', 'category', "TEXT NOT NULL DEFAULT 'other'");
+  await ensureColumn('scan_observations', 'confidence', 'REAL');
+  await ensureColumn('scans', 'client_request_id', 'TEXT');
+  await ensureColumn('hazards', 'client_request_id', 'TEXT');
+  await db.exec(
+    'CREATE UNIQUE INDEX IF NOT EXISTS idx_scan_request ON scans(inspector_id,client_request_id)',
+  );
+  await db.exec(
+    'CREATE UNIQUE INDEX IF NOT EXISTS idx_report_request ON hazards(reported_by,client_request_id)',
+  );
+  await ensureColumn('scans', 'no_findings_confirmed', 'INTEGER NOT NULL DEFAULT 0');
+  await ensureColumn('scans', 'inspection_checklist', "TEXT NOT NULL DEFAULT '{}'");
+  await ensureColumn('advisories', 'details', "TEXT NOT NULL DEFAULT '{}'");
+  await ensureColumn('evacuation_routes', 'verified', 'INTEGER NOT NULL DEFAULT 0');
+  await ensureColumn('evacuation_routes', 'source', "TEXT NOT NULL DEFAULT ''");
+  await ensureColumn('evacuation_routes', 'one_way', 'INTEGER NOT NULL DEFAULT 0');
+  await ensureColumn('safety_equipment', 'low_stock_threshold', 'INTEGER NOT NULL DEFAULT 0');
+  await ensureColumn('users', 'active', 'INTEGER NOT NULL DEFAULT 1');
+  await ensureColumn('alerts', 'send_push', 'INTEGER NOT NULL DEFAULT 0');
+  await ensureColumn('alerts', 'send_sms', 'INTEGER NOT NULL DEFAULT 0');
+  await ensureColumn('alerts', 'target_label', "TEXT NOT NULL DEFAULT ''");
+  await ensureColumn('alerts', 'suspension_reason', "TEXT NOT NULL DEFAULT ''");
+  await ensureColumn('alerts', 'resume_at', 'TEXT');
+  await ensureColumn('alerts', 'target_kind', "TEXT NOT NULL DEFAULT ''");
+  await ensureColumn('alerts', 'target_value', "TEXT NOT NULL DEFAULT ''");
+  await ensureColumn('users', 'sms_consent', 'INTEGER NOT NULL DEFAULT 0');
   if (db.dialect === 'postgres') await db.protectTables();
 }
 await initializeDatabase(coreDb);

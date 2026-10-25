@@ -66,6 +66,12 @@ before(async () => {
     cwd: ROOT,
     env: {
       ...process.env,
+      RADAR_VISION_API_KEY: '',
+      RADAR_USGS_FEED_ENABLED: 'false',
+      RADAR_VAPID_PUBLIC_KEY: '',
+      RADAR_VAPID_PRIVATE_KEY: '',
+      RADAR_TWILIO_SID: '',
+      RADAR_TWILIO_TOKEN: '',
       RADAR_DATABASE_DRIVER: 'sqlite',
       RADAR_PGLITE_TEST_DIR: '',
       RADAR_TEST_CLOUD_AUTH: '0',
@@ -124,7 +130,12 @@ describe('server-side role permissions', () => {
   test('a student can read the alert and evacuation boards but not recovery or analytics', async () => {
     const { cookie } = await login('student@northridge.edu', 'Student#2026');
 
-    for (const pathname of ['/api/alerts', '/api/advisories', '/api/evacuation', '/api/resources']) {
+    for (const pathname of [
+      '/api/alerts',
+      '/api/advisories',
+      '/api/evacuation',
+      '/api/resources',
+    ]) {
       const { status } = await api(cookie, pathname);
       assert.equal(status, 200, `${pathname} should be readable by students`);
     }
@@ -186,7 +197,9 @@ describe('alert publishing', () => {
     assert.ok(archived.body.alert.archivedAt, 'archiving must record a timestamp');
 
     const afterArchive = await api(cookie, '/api/alerts');
-    const archivedItem = afterArchive.body.items.find((alert) => alert.id === created.body.alert.id);
+    const archivedItem = afterArchive.body.items.find(
+      (alert) => alert.id === created.body.alert.id,
+    );
     assert.equal(archivedItem.state, 'archived', 'archived alerts must keep an archived state');
     assert.ok(
       !afterArchive.body.active.some((alert) => alert.id === created.body.alert.id),

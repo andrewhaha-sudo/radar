@@ -33,6 +33,12 @@ before(async () => {
     cwd: ROOT,
     env: {
       ...process.env,
+      RADAR_VISION_API_KEY: '',
+      RADAR_USGS_FEED_ENABLED: 'false',
+      RADAR_VAPID_PUBLIC_KEY: '',
+      RADAR_VAPID_PRIVATE_KEY: '',
+      RADAR_TWILIO_SID: '',
+      RADAR_TWILIO_TOKEN: '',
       NODE_ENV: 'test',
       PORT: '8910',
       HOST: '127.0.0.1',

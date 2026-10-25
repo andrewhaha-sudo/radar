@@ -1,4 +1,5 @@
 import pg from 'pg';
+import { FEATURE_TABLES } from './feature-schema.mjs';
 
 // Every identifier is selected by server code; request values remain bound parameters.
 export const TABLES = [
@@ -30,8 +31,17 @@ export const TABLES = [
   'recovery_tasks',
   'damage_assessments',
   'school_workspaces',
+  ...FEATURE_TABLES,
 ];
-const noIdentity = new Set(['sessions', 'alert_deliveries', 'school_workspaces']);
+const noIdentity = new Set([
+  'sessions',
+  'alert_deliveries',
+  'school_workspaces',
+  'workspace_members',
+  'location_reports',
+  'school_settings',
+  'student_guardians',
+]);
 pg.types.setTypeParser(20, Number);
 pg.types.setTypeParser(1700, Number);
 let pool;

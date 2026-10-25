@@ -1,7 +1,18 @@
-import { usesSupabase, cloudSignIn, cloudSignUp, cloudUpload } from './supabase.mjs';
+import { queueAlertDelivery, drainDeliveryJobs } from './delivery.mjs';
+import { inspectionReminders } from './maintenance.mjs';
+import { featureHandlers } from './features.mjs';
+import {
+  usesSupabase,
+  cloudSignIn,
+  cloudSignUp,
+  cloudUpload,
+  cloudRequestPasswordReset,
+  cloudUpdatePassword,
+} from './supabase.mjs';
 import fs from 'node:fs';
 import {
   workspaceRecord,
+  workspaceAccess,
   workspaceSchool,
   createWorkspace,
   runInWorkspace,
@@ -184,7 +195,7 @@ function locationLabel(ctx) {
 
 const ALERT_LEVELS = ['green', 'yellow', 'orange', 'red'];
 const ALERT_KINDS = ['alert', 'announcement', 'suspension'];
-const ALERT_AUDIENCES = ['school', 'staff', 'students', 'parents', 'grade'];
+const ALERT_AUDIENCES = ['school', 'staff', 'students', 'parents', 'grade', 'section', 'building'];
 const ADVISORY_CATEGORIES = [
   'earthquake',
   'typhoon',
@@ -225,7 +236,7 @@ async function nextAlertRef() {
     const m = /A-\d{4}-(\d+)/.exec(row.ref);
     if (m) max = Math.max(max, Number(m[1]));
   }
-  return `A-${new Date().getFullYear()}-${String(max + 1).padStart(4, '0')}`;
+  return `A-${new Date().getFullYear()}-${String(max + 1).padStart(4, '0')}-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
 }
 
 function alertState(row, now = nowIso()) {
@@ -236,6 +247,7 @@ function alertState(row, now = nowIso()) {
 }
 
 function alertAudienceLabel(row) {
+  if (row.target_kind) return row.target_label || 'Selected school group';
   switch (row.audience) {
     case 'staff':
       return 'Staff';
@@ -258,22 +270,35 @@ function alertAudienceLabel(row) {
  * the dashboard banner.
  */
 function visibleAlertFilter(user) {
-  if (['admin', 'inspector', 'responder'].includes(user.role)) {
-    return { sql: '', params: [] };
-  }
-  if (user.role === 'teacher') {
-    return { sql: "WHERE a.audience IN ('school','staff')", params: [] };
-  }
-  if (user.role === 'student') {
-    return {
-      sql: "WHERE (a.audience IN ('school','students') OR (a.audience = 'grade' AND a.audience_value = ?))",
-      params: [user.grade ?? ''],
-    };
-  }
-  return { sql: "WHERE a.audience IN ('school','parents')", params: [] };
+  if (['admin', 'inspector', 'responder'].includes(user.role)) return { sql: '', params: [] };
+  const classes = `SELECT id FROM rollcall_classes WHERE teacher_id=? UNION SELECT class_id FROM rollcall_people WHERE student_id=? UNION SELECT p.class_id FROM rollcall_people p JOIN student_guardians g ON g.student_id=p.student_id WHERE g.guardian_id=?`;
+  const base =
+    user.role === 'teacher'
+      ? "a.audience IN ('school','staff')"
+      : user.role === 'student'
+        ? "(a.audience IN ('school','students') OR (a.audience='grade' AND a.audience_value=?))"
+        : "a.audience IN ('school','parents')";
+  const params = user.role === 'student' ? [user.grade ?? ''] : [];
+  return {
+    sql: `WHERE ((a.target_kind='' AND ${base}) OR (a.target_kind='section' AND a.target_value IN (SELECT CAST(c.id AS TEXT) FROM rollcall_classes c WHERE c.id IN (${classes}))) OR (a.target_kind='building' AND a.target_value IN (SELECT CAST(f.building_id AS TEXT) FROM rollcall_classes c JOIN rooms r ON r.id=c.room_id JOIN floors f ON f.id=r.floor_id WHERE c.id IN (${classes}))))`,
+    params: [...params, user.id, user.id, user.id, user.id, user.id, user.id],
+  };
 }
 
 async function alertRecipients(row) {
+  if (row.target_kind) {
+    const list =
+      row.target_kind === 'section'
+        ? 'SELECT id FROM rollcall_classes WHERE id=?'
+        : 'SELECT c.id FROM rollcall_classes c JOIN rooms r ON r.id=c.room_id JOIN floors f ON f.id=r.floor_id WHERE f.building_id=?';
+    const id = Number(row.target_value);
+    return db
+      .prepare(
+        `SELECT id,name FROM users WHERE active=1 AND (role IN ('admin','inspector','responder') OR id IN (SELECT teacher_id FROM rollcall_classes WHERE id IN (${list})) OR id IN (SELECT student_id FROM rollcall_people WHERE class_id IN (${list})) OR id IN (SELECT g.guardian_id FROM student_guardians g JOIN rollcall_people p ON p.student_id=g.student_id WHERE p.class_id IN (${list})))`,
+      )
+      .all(id, id, id);
+  }
+
   if (row.audience === 'staff') {
     return await db
       .prepare(
@@ -332,6 +357,7 @@ async function materializeAlerts() {
         alert.body || `${alertAudienceLabel(alert)} announcement`,
         '/alerts',
       );
+      await queueAlertDelivery(alert, recipient.id);
     }
   }
 }
@@ -342,6 +368,7 @@ async function alertPayload(row) {
   ).c;
   return {
     ...camel(row),
+    audience: row.target_kind || row.audience,
     state: alertState(row),
     audienceLabel: alertAudienceLabel(row),
     levelLabel: ALERT_LEVEL_LABEL[row.level] ?? row.level,
@@ -456,7 +483,7 @@ async function nextHazardRef() {
     const m = /H-\d{4}-(\d+)/.exec(row.ref);
     if (m) max = Math.max(max, Number(m[1]));
   }
-  return `H-${new Date().getFullYear()}-${String(max + 1).padStart(4, '0')}`;
+  return `H-${new Date().getFullYear()}-${String(max + 1).padStart(4, '0')}-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
 }
 
 async function nextIncidentRef() {
@@ -468,7 +495,7 @@ async function nextIncidentRef() {
     const m = /INC-\d{4}-(\d+)/.exec(row.ref);
     if (m) max = Math.max(max, Number(m[1]));
   }
-  return `INC-${new Date().getFullYear()}-${String(max + 1).padStart(4, '0')}`;
+  return `INC-${new Date().getFullYear()}-${String(max + 1).padStart(4, '0')}-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
 }
 
 async function addNotification(userId, type, title, body, href = null) {
@@ -516,7 +543,7 @@ async function hazardListItem(row) {
     buildingId: ctx?.buildingId ?? null,
     buildingName: ctx?.buildingName ?? null,
     floorLevel: ctx?.floorLevel ?? null,
-    reporter: row.reporter_name,
+    reporter: row.anonymous ? 'Identity hidden' : row.reporter_name,
     assignee: row.assignee_name,
     source: row.source,
     createdAt: row.created_at,
@@ -547,12 +574,45 @@ handlers['GET /api/auth/config'] = async (ctx) =>
     provider: usesSupabase ? 'supabase' : 'local',
     signupEnabled: usesSupabase,
   });
+handlers['POST /api/auth/password-reset'] = async (ctx) => {
+  if (!usesSupabase)
+    throw new HttpError(400, 'Password recovery requires the configured Supabase Auth service.');
+  const body = await readJson(ctx.req);
+  const email = str(body.email, 200, 'email').toLowerCase();
+  checkAuthRate(ctx.req, email);
+  if (!email.includes('@')) throw new HttpError(400, 'Enter a valid email address.');
+  try {
+    await cloudRequestPasswordReset(email);
+  } catch {
+    throw new HttpError(502, 'Password recovery is unavailable. Try again later.');
+  }
+  return json(ctx.res, 200, {
+    message:
+      'If that email can receive a recovery message, a password reset link has been requested. Check your inbox.',
+  });
+};
+handlers['POST /api/auth/password-update'] = async (ctx) => {
+  if (!usesSupabase) throw new HttpError(400, 'Password recovery is not configured.');
+  const body = await readJson(ctx.req);
+  const password = String(body.password ?? '');
+  const token = String(body.accessToken ?? '');
+  if (password.length < 8 || password.length > 200 || !token || token.length > 10000)
+    throw new HttpError(400, 'Provide a valid recovery link and a password of 8–200 characters.');
+  try {
+    await cloudUpdatePassword(token, password);
+  } catch (error) {
+    throw new HttpError(400, error.message);
+  }
+  return json(ctx.res, 200, { message: 'Password updated. Sign in with your new password.' });
+};
+
 handlers['POST /api/auth/signup'] = async (ctx) => {
   if (!usesSupabase) throw new HttpError(400, 'Cloud account registration is not configured.');
   const body = await readJson(ctx.req);
   const email = str(body.email, 200, 'email').toLowerCase();
   const name = str(body.name, 120, 'name');
   const password = String(body.password ?? '');
+  checkAuthRate(ctx.req, email);
   if (!email.includes('@') || !name || password.length < 8 || password.length > 200)
     throw new HttpError(400, 'Enter your name, a valid email, and a password of 8–200 characters.');
   try {
@@ -566,6 +626,7 @@ handlers['POST /api/auth/login'] = async (ctx) => {
   const body = await readJson(ctx.req);
   const email = str(body.email, 200, 'email').toLowerCase();
   const password = String(body.password ?? '');
+  checkAuthRate(ctx.req, email);
   if (!email || !password) throw new HttpError(400, 'Email and password are required.');
 
   const row = usesSupabase
@@ -618,9 +679,9 @@ handlers['GET /api/workspaces'] = async (ctx) => {
   const user = await requireUser(ctx.req);
   const workspaces = await coreDb
     .prepare(
-      'SELECT beis_id, created_at FROM school_workspaces WHERE owner_user_id = ? ORDER BY created_at',
+      'SELECT w.beis_id, w.created_at FROM school_workspaces w LEFT JOIN workspace_members m ON m.workspace_id = w.beis_id AND m.user_id = ? AND m.active = 1 WHERE w.owner_user_id = ? OR m.user_id IS NOT NULL ORDER BY w.created_at',
     )
-    .all(user.id);
+    .all(user.id, user.id);
   return json(ctx.res, 200, {
     workspaces: workspaces.map((w) => ({ beisId: w.beis_id, createdAt: w.created_at })),
     activeWorkspaceId: user.workspaceId,
@@ -646,7 +707,7 @@ handlers['POST /api/workspaces/select'] = async (ctx) => {
   if (id !== null) {
     const record = await workspaceRecord(id);
     if (!record) throw new HttpError(404, 'Create this school workspace first.');
-    if (record.owner_user_id !== user.id)
+    if (!(await workspaceAccess(id, user.id)))
       throw new HttpError(403, 'You do not have access to this school workspace.');
   }
   await coreDb
@@ -945,11 +1006,34 @@ handlers['POST /api/alerts'] = async (ctx) => {
   if (audience === 'grade' && !audienceValue) {
     throw new HttpError(400, 'Choose a grade when targeting a grade level.');
   }
-  const buildingId = optionalInt(body.buildingId, 'buildingId');
+  let buildingId = optionalInt(body.buildingId, 'buildingId');
+  let targetLabel = '';
+  if (['section', 'building'].includes(audience)) {
+    const targetId = finiteNumber(audienceValue, 'Target group', 1, 2147483647, true);
+    const target = await db
+      .prepare(
+        audience === 'section'
+          ? 'SELECT name FROM rollcall_classes WHERE id=?'
+          : 'SELECT name FROM buildings WHERE id=?',
+      )
+      .get(targetId);
+    if (!target) throw new HttpError(400, 'Select a registered class or building.');
+    targetLabel = target.name;
+    if (audience === 'building') buildingId = targetId;
+  }
+  const suspensionReason =
+    kind === 'suspension' ? str(body.suspensionReason ?? body.body, 2000, 'Suspension reason') : '';
+  if (kind === 'suspension' && !suspensionReason)
+    throw new HttpError(400, 'Record the reason for the class suspension.');
+  const resumeAt = body.resumeAt ? new Date(body.resumeAt) : null;
+  if (resumeAt && Number.isNaN(resumeAt.getTime()))
+    throw new HttpError(400, 'Choose a valid resumption date.');
 
   const effectiveAt = body.effectiveAt ? new Date(body.effectiveAt) : new Date();
   if (Number.isNaN(effectiveAt.getTime()))
     throw new HttpError(400, 'The effective date is invalid.');
+  if (resumeAt && resumeAt.getTime() <= effectiveAt.getTime())
+    throw new HttpError(400, 'Resumption must follow the suspension effective time.');
   let expiresAt = null;
   if (body.expiresAt) {
     const parsed = new Date(body.expiresAt);
@@ -976,7 +1060,7 @@ handlers['POST /api/alerts'] = async (ctx) => {
           kind,
           title,
           message,
-          audience,
+          ['section', 'building'].includes(audience) ? 'school' : audience,
           audienceValue,
           buildingId,
           effectiveAt.toISOString(),
@@ -988,6 +1072,20 @@ handlers['POST /api/alerts'] = async (ctx) => {
     ).lastInsertRowid,
   );
 
+  await db
+    .prepare(
+      'UPDATE alerts SET send_push=?,send_sms=?,target_kind=?,target_value=?,target_label=?,suspension_reason=?,resume_at=? WHERE id=?',
+    )
+    .run(
+      body.sendPush === true ? 1 : 0,
+      body.sendSms === true ? 1 : 0,
+      ['section', 'building'].includes(audience) ? audience : '',
+      audienceValue,
+      targetLabel,
+      suspensionReason,
+      resumeAt?.toISOString() ?? null,
+      id,
+    );
   await materializeAlerts();
   await audit(user.id, 'alert.publish', 'alert', id, { ref, level, kind, audience });
   const row = await db
@@ -1164,17 +1262,16 @@ handlers['PATCH /api/advisories/:id'] = async (ctx) => {
 handlers['GET /api/feeds/status'] = async (ctx) => {
   const user = await requireUser(ctx.req);
   requirePermission(user, 'advisories:read');
-  // No live feed adapter is installed in this build. Reporting this honestly is
-  // preferable to fabricating current earthquake or typhoon information.
+  // Each adapter declares configuration separately from a successful fresh fetch.
   const connectors = [
     {
       id: 'earthquake',
       label: 'Earthquake bulletins',
-      agency: 'PHIVOLCS / USGS',
+      agency: 'USGS (PHIVOLCS PEIS is not inferred)',
       category: 'earthquake',
-      configured: false,
-      requires: 'A server-side feed adapter and credentials allow-list.',
-      docs: 'https://www.phivolcs.dost.gov.ph/',
+      configured: process.env.RADAR_USGS_FEED_ENABLED === 'true',
+      requires: 'Enable RADAR_USGS_FEED_ENABLED and allow HTTPS access to earthquake.usgs.gov.',
+      docs: 'https://earthquake.usgs.gov/earthquakes/feed/v1.0/geojson.php',
     },
     {
       id: 'typhoon',
@@ -1213,12 +1310,22 @@ handlers['GET /api/feeds/status'] = async (ctx) => {
       docs: 'https://www.mgb.gov.ph/',
     },
   ];
+  const usgsStatus = await db
+    .prepare("SELECT value FROM school_settings WHERE key='usgs_status'")
+    .get();
+  const usgs = usgsStatus ? JSON.parse(usgsStatus.value) : null;
+  const verified =
+    process.env.RADAR_USGS_FEED_ENABLED === 'true' &&
+    usgs &&
+    Date.now() - Date.parse(usgs.lastSuccessAt) < 7200000;
   return json(ctx.res, 200, {
-    liveFeeds: false,
+    liveFeeds: Boolean(verified),
+    lastUsgsSuccess: usgs?.lastSuccessAt ?? null,
     connectors,
     checkedAt: nowIso(),
-    message:
-      'No live disaster feed is configured. RADAR shows only official advisories recorded by authorized staff, with their source and publication time. It does not invent or estimate disaster data.',
+    message: verified
+      ? 'The USGS adapter has a recent successful source response. PHIVOLCS PEIS and school impact are not inferred. Other agencies require their own verified integrations.'
+      : 'No live disaster connection is currently verified. Manual official advisories retain their source and publication time; configured adapters still need a successful source request.',
   });
 };
 
@@ -1238,6 +1345,7 @@ handlers['POST /api/safety/check'] = async (ctx) => {
   const status = oneOf(body.status, ['safe', 'need_help'], 'status');
   const note = str(body.note ?? '', 500, 'note');
   const sharing = Boolean(body.sharing);
+  if (!sharing) await db.prepare('DELETE FROM location_reports WHERE user_id=?').run(user.id);
   const roomId = sharing ? optionalInt(body.roomId, 'roomId') : null;
   const buildingId = sharing ? optionalInt(body.buildingId, 'buildingId') : null;
   if (roomId && !(await roomContext(roomId))) throw new HttpError(400, 'Select a valid room.');
@@ -1278,6 +1386,16 @@ handlers['POST /api/safety/check'] = async (ctx) => {
       '/safety',
     );
   }
+  for (const guardian of await db
+    .prepare('SELECT guardian_id FROM student_guardians WHERE student_id=?')
+    .all(user.id))
+    await addNotification(
+      guardian.guardian_id,
+      'info',
+      'Authorized student check-in',
+      `${user.name} reported ${status === 'safe' ? 'safe' : 'a need for assistance'}. This is a reported status, not an independently verified location.`,
+      '/operations?tab=guardians',
+    );
   await audit(user.id, 'safety.check', 'safety_check', user.id, { status, sharing, location });
   const row = await db.prepare('SELECT * FROM safety_checks WHERE user_id = ?').get(user.id);
   return json(ctx.res, 200, {
@@ -1292,6 +1410,7 @@ handlers['POST /api/safety/check'] = async (ctx) => {
 
 handlers['DELETE /api/safety/me'] = async (ctx) => {
   const user = await requireUser(ctx.req);
+  await db.prepare('DELETE FROM location_reports WHERE user_id=?').run(user.id);
   requirePermission(user, 'safety:write');
   await db.prepare('DELETE FROM safety_checks WHERE user_id = ?').run(user.id);
   await audit(user.id, 'safety.clear', 'safety_check', user.id, {});
@@ -1372,7 +1491,7 @@ handlers['GET /api/map'] = async (ctx) => {
     await db
       .prepare(
         `SELECT h.id, h.ref, h.title, h.severity, h.status, h.room_id, h.location_note, h.created_at,
-                b.id AS building_id, b.name AS building_name, r.name AS room_name
+                b.id AS building_id, b.name AS building_name, r.name AS room_name, h.category
          FROM hazards h
          LEFT JOIN rooms r ON r.id = h.room_id
          LEFT JOIN floors f ON f.id = r.floor_id
@@ -1415,7 +1534,15 @@ handlers['GET /api/map'] = async (ctx) => {
       null;
   }
 
-  return json(ctx.res, 200, { school, buildings, hazards, equipment, assemblyPoints, routes });
+  return json(ctx.res, 200, {
+    school,
+    buildings,
+    hazards,
+    equipment,
+    assemblyPoints,
+    routes,
+    generatedAt: nowIso(),
+  });
 };
 
 /* ---- Buildings / floors / rooms ---- */
@@ -2204,8 +2331,17 @@ handlers['GET /api/hazards/:id'] = async (ctx) => {
 
 handlers['POST /api/hazards'] = async (ctx) => {
   const user = await requireUser(ctx.req);
-  requirePermission(user, 'hazards:write');
+  if (!can(user, 'hazards:write') && !can(user, 'hazards:report'))
+    throw new HttpError(403, 'Your role cannot report hazards.');
   const body = await readJson(ctx.req);
+  const requestId = str(body.clientRequestId, 80, 'clientRequestId');
+  if (requestId) {
+    const existing = await db
+      .prepare('SELECT id FROM hazards WHERE reported_by=? AND client_request_id=?')
+      .get(user.id, requestId);
+    if (existing)
+      return json(ctx.res, 200, { hazard: await hazardListItem(await hazardBaseRow(existing.id)) });
+  }
 
   const title = str(body.title, 140, 'title');
   if (!title) throw new HttpError(400, 'A hazard title is required.');
@@ -2213,21 +2349,58 @@ handlers['POST /api/hazards'] = async (ctx) => {
   const roomId = optionalInt(body.roomId, 'roomId');
   const description = str(body.description, 4000, 'description');
   const locationNote = str(body.locationNote, 200, 'locationNote');
-  const assignedTo = optionalInt(body.assignedTo, 'assignedTo');
+  const assignedTo = can(user, 'hazards:write') ? optionalInt(body.assignedTo, 'assignedTo') : null;
+  if (roomId && !(await roomContext(roomId)))
+    throw new HttpError(400, 'Choose a room in this school.');
+  if (assignedTo && !(await db.prepare('SELECT id FROM users WHERE id=?').get(assignedTo)))
+    throw new HttpError(400, 'Choose a responsible school member.');
+  let anonymous = 0;
+  if (body.anonymous === true) {
+    const policy = await db
+      .prepare("SELECT value FROM school_settings WHERE key='reporting'")
+      .get();
+    if (!policy || !JSON.parse(policy.value).allowAnonymous)
+      throw new HttpError(403, 'This school does not allow identity-hidden reports.');
+    anonymous = 1;
+  }
 
   const ref = await nextHazardRef();
   const at = nowIso();
-  const id = Number(
-    (
-      await db
-        .prepare(
-          `INSERT INTO hazards (ref, title, description, severity, status, room_id, location_note, reported_by, assigned_to, source, created_at, updated_at)
-         VALUES (?, ?, ?, ?, 'new', ?, ?, ?, ?, 'manual', ?, ?)`,
-        )
-        .run(ref, title, description, severity, roomId, locationNote, user.id, assignedTo, at, at)
-    ).lastInsertRowid,
-  );
-
+  const created = await db
+    .prepare(
+      `INSERT INTO hazards(ref,title,description,severity,status,room_id,location_note,reported_by,assigned_to,source,created_at,updated_at,client_request_id) VALUES (?,?,?,?,'new',?,?,?,?,'manual',?,?,?) ON CONFLICT(reported_by,client_request_id) DO NOTHING RETURNING id`,
+    )
+    .get(
+      ref,
+      title,
+      description,
+      severity,
+      roomId,
+      locationNote,
+      user.id,
+      assignedTo,
+      at,
+      at,
+      requestId || null,
+    );
+  if (!created) {
+    const existing = await db
+      .prepare('SELECT id FROM hazards WHERE reported_by=? AND client_request_id=?')
+      .get(user.id, requestId);
+    return json(ctx.res, 200, { hazard: await hazardListItem(await hazardBaseRow(existing.id)) });
+  }
+  const id = Number(created.id);
+  await db
+    .prepare('UPDATE hazards SET anonymous=?,category=? WHERE id=?')
+    .run(
+      typeof anonymous === 'undefined' ? 0 : anonymous,
+      oneOf(
+        body.category ?? 'other',
+        ['electrical', 'structural', 'fire', 'chemical', 'slip', 'blocked_exit', 'other'],
+        'category',
+      ),
+      id,
+    );
   await db
     .prepare(
       'INSERT INTO hazard_events (hazard_id, type, note, actor_id, created_at) VALUES (?, ?, ?, ?, ?)',
@@ -2355,13 +2528,23 @@ handlers['PATCH /api/hazards/:id'] = async (ctx) => {
 
 handlers['POST /api/hazards/:id/evidence'] = async (ctx) => {
   const user = await requireUser(ctx.req);
-  requirePermission(user, 'hazards:write');
+
   const id = Number(ctx.params.id);
-  if (!(await hazardBaseRow(id))) throw new HttpError(404, 'Hazard not found.');
+  const evidenceHazard = await hazardBaseRow(id);
+  if (!evidenceHazard) throw new HttpError(404, 'Hazard not found.');
+  if (
+    !can(user, 'hazards:write') &&
+    !(can(user, 'hazards:report') && evidenceHazard.reported_by === user.id)
+  )
+    throw new HttpError(403, 'Only authorized staff or this reporter can add evidence.');
   const body = await readJson(ctx.req);
   const url = str(body.url, 500, 'url');
   if (!workspaceUploadUrl(url))
     throw new HttpError(400, 'Evidence must reference an uploaded file.');
+  const existingEvidence = await db
+    .prepare('SELECT id FROM hazard_evidence WHERE hazard_id=? AND url=?')
+    .get(id, url);
+  if (existingEvidence) return json(ctx.res, 200, { id: existingEvidence.id, url });
   const caption = str(body.caption, 300, 'caption');
   const at = nowIso();
   const evidenceId = Number(
@@ -2462,18 +2645,27 @@ handlers['PATCH /api/hazards/:hazardId/actions/:actionId'] = async (ctx) => {
   return json(ctx.res, 200, { ok: true });
 };
 
+export async function maintenanceTick() {
+  await materializeAlerts();
+  await drainDeliveryJobs();
+  return inspectionReminders();
+}
+
 /* ---- Scans ---- */
 
 handlers['GET /api/ai/status'] = async (ctx) => {
   await requireUser(ctx.req);
   // Honest capability reporting: no vision model is configured in this build.
   return json(ctx.res, 200, {
-    configured: false,
-    provider: null,
-    model: null,
+    configured: Boolean(process.env.RADAR_VISION_API_KEY),
+    provider: process.env.RADAR_VISION_API_KEY ? 'OpenAI' : null,
+    model: process.env.RADAR_VISION_API_KEY
+      ? (process.env.RADAR_VISION_MODEL ?? 'gpt-4.1-mini')
+      : null,
     checkedAt: nowIso(),
-    message:
-      'No vision model is configured. Suggestions are disabled; observations you add are recorded as manual findings and still require verification.',
+    message: process.env.RADAR_VISION_API_KEY
+      ? 'A vision provider is configured but must be verified by a successful photo analysis. All suggestions require human review; reported confidence is not a safety certification.'
+      : 'No vision model is configured. Suggestions are disabled; observations you add are recorded as manual findings and still require verification.',
   });
 };
 
@@ -2502,6 +2694,13 @@ handlers['POST /api/scans'] = async (ctx) => {
   const user = await requireUser(ctx.req);
   requirePermission(user, 'scan:write');
   const body = await readJson(ctx.req);
+  const requestId = str(body.clientRequestId, 80, 'clientRequestId');
+  if (requestId) {
+    const existing = await db
+      .prepare('SELECT id FROM scans WHERE inspector_id=? AND client_request_id=?')
+      .get(user.id, requestId);
+    if (existing) return json(ctx.res, 200, { scanId: existing.id, resumed: true });
+  }
   const roomId = optionalInt(body.roomId, 'roomId');
   if (!roomId || !(await roomContext(roomId)))
     throw new HttpError(400, 'Select a valid room to scan.');
@@ -2511,18 +2710,21 @@ handlers['POST /api/scans'] = async (ctx) => {
       "SELECT * FROM scans WHERE room_id = ? AND inspector_id = ? AND status = 'draft' ORDER BY id DESC",
     )
     .get(roomId, user.id);
-  if (existing) return json(ctx.res, 200, { scanId: existing.id, resumed: true });
+  if (existing && !requestId) return json(ctx.res, 200, { scanId: existing.id, resumed: true });
 
   const at = nowIso();
-  const id = Number(
-    (
-      await db
-        .prepare(
-          "INSERT INTO scans (room_id, inspector_id, status, notes, started_at) VALUES (?, ?, 'draft', '', ?)",
-        )
-        .run(roomId, user.id, at)
-    ).lastInsertRowid,
-  );
+  const created = await db
+    .prepare(
+      "INSERT INTO scans(room_id,inspector_id,status,notes,started_at,client_request_id) VALUES (?,?,'draft','',?,?) ON CONFLICT(inspector_id,client_request_id) DO NOTHING RETURNING id",
+    )
+    .get(roomId, user.id, at, requestId || null);
+  if (!created) {
+    const existing = await db
+      .prepare('SELECT id FROM scans WHERE inspector_id=? AND client_request_id=?')
+      .get(user.id, requestId);
+    return json(ctx.res, 200, { scanId: existing.id, resumed: true });
+  }
+  const id = Number(created.id);
   await audit(user.id, 'scan.start', 'scan', id, { roomId });
   return json(ctx.res, 201, { scanId: id, resumed: false });
 };
@@ -2640,8 +2842,11 @@ handlers['POST /api/scans/:id/submit'] = async (ctx) => {
   const accepted = await db
     .prepare("SELECT * FROM scan_observations WHERE scan_id = ? AND status = 'accepted'")
     .all(id);
-  if (accepted.length === 0)
-    throw new HttpError(400, 'Accept at least one observation before submitting.');
+  if (accepted.length === 0 && !scan.no_findings_confirmed)
+    throw new HttpError(
+      400,
+      'Review findings or explicitly complete the no-visible-findings checklist before submitting.',
+    );
 
   const at = nowIso();
   const created = [];
@@ -2687,6 +2892,18 @@ handlers['POST /api/scans/:id/submit'] = async (ctx) => {
   await db
     .prepare("UPDATE scans SET status = 'submitted', notes = ?, submitted_at = ? WHERE id = ?")
     .run(notes, at, id);
+  await db.prepare('UPDATE rooms SET last_inspected_at=? WHERE id=?').run(at, scan.room_id);
+  const schedule = await db
+    .prepare('SELECT * FROM inspection_schedules WHERE room_id=?')
+    .get(scan.room_id);
+  if (schedule)
+    await db
+      .prepare('UPDATE inspection_schedules SET next_due_at=?,updated_at=? WHERE room_id=?')
+      .run(
+        new Date(Date.now() + schedule.interval_days * 86400000).toISOString(),
+        nowIso(),
+        scan.room_id,
+      );
   await audit(user.id, 'scan.submit', 'scan', id, { created: created.map((c) => c.ref) });
   await notifyRoles(
     ['admin', 'inspector'],
@@ -2699,8 +2916,9 @@ handlers['POST /api/scans/:id/submit'] = async (ctx) => {
   return json(ctx.res, 200, {
     ok: true,
     created,
-    message:
-      'Findings were saved as pending review. They are not verified until an authorised reviewer confirms them.',
+    message: created.length
+      ? 'Findings were saved as pending review. They are not verified until an authorised reviewer confirms them.'
+      : 'The visual inspection was recorded with no visible findings. This is not a safety certification.',
   });
 };
 
@@ -2708,7 +2926,7 @@ handlers['POST /api/scans/:id/submit'] = async (ctx) => {
 
 handlers['POST /api/uploads'] = async (ctx) => {
   const user = await requireUser(ctx.req);
-  if (!can(user, 'scan:write') && !can(user, 'hazards:write')) {
+  if (!can(user, 'scan:write') && !can(user, 'hazards:write') && !can(user, 'hazards:report')) {
     throw new HttpError(403, 'Your role cannot upload inspection images.');
   }
   const mime = String(ctx.req.headers['content-type'] ?? '')
@@ -2720,16 +2938,47 @@ handlers['POST /api/uploads'] = async (ctx) => {
     'image/webp': '.webp',
     'image/gif': '.gif',
     'image/svg+xml': '.svg',
+    'model/gltf-binary': '.glb',
+    'application/octet-stream': '.glb',
   };
   if (!allowed[mime]) throw new HttpError(415, 'Upload a JPEG, PNG, WebP, GIF or SVG image.');
 
   const buf = await readBinary(ctx.req);
   if (buf.length === 0) throw new HttpError(400, 'The uploaded file is empty.');
 
+  if (allowed[mime] === '.glb') {
+    requirePermission(user, 'admin:users');
+    try {
+      if (
+        buf.length < 20 ||
+        buf.toString('ascii', 0, 4) !== 'glTF' ||
+        buf.readUInt32LE(4) !== 2 ||
+        buf.readUInt32LE(8) !== buf.length ||
+        buf.toString('ascii', 16, 20) !== 'JSON'
+      )
+        throw new Error();
+      const doc = JSON.parse(buf.toString('utf8', 20, 20 + buf.readUInt32LE(12)));
+      if (
+        [...(doc.buffers ?? []), ...(doc.images ?? [])].some(
+          (asset) => asset.uri && !asset.uri.startsWith('data:'),
+        )
+      )
+        throw new Error();
+    } catch {
+      throw new HttpError(
+        400,
+        'Upload a valid self-contained GLB 2.0 file with embedded textures.',
+      );
+    }
+  }
   const name = `${Date.now()}-${crypto.randomBytes(8).toString('hex')}${allowed[mime]}`;
   const scope = currentDatabaseContext();
   if (usesSupabase) await cloudUpload(scope?.workspaceId, name, buf, mime);
-  else fs.writeFileSync(path.join(scope?.uploadDir ?? UPLOAD_DIR, name), buf);
+  else {
+    const directory = scope?.uploadDir ?? UPLOAD_DIR;
+    fs.mkdirSync(directory, { recursive: true });
+    fs.writeFileSync(path.join(directory, name), buf);
+  }
   await audit(user.id, 'upload.create', 'upload', name, { mime, bytes: buf.length });
   return json(ctx.res, 201, {
     url: currentDatabaseContext()?.workspaceId
@@ -2876,9 +3125,9 @@ handlers['GET /api/rollcall'] = async (ctx) => {
          LEFT JOIN rooms r ON r.id = c.room_id
          LEFT JOIN floors f ON f.id = r.floor_id
          LEFT JOIN buildings b ON b.id = f.building_id
-         ORDER BY c.grade, c.name`,
+         ${user.role === 'teacher' ? 'WHERE c.teacher_id = ?' : ''} ORDER BY c.grade, c.name`,
       )
-      .all(),
+      .all(...(user.role === 'teacher' ? [user.id] : [])),
   );
   return json(ctx.res, 200, { classes });
 };
@@ -2889,6 +3138,10 @@ handlers['PATCH /api/rollcall/:id'] = async (ctx) => {
   const id = Number(ctx.params.id);
   const row = await db.prepare('SELECT * FROM rollcall_classes WHERE id = ?').get(id);
   if (!row) throw new HttpError(404, 'Class not found.');
+  if (user.role === 'teacher' && row.teacher_id !== user.id)
+    throw new HttpError(403, 'This class is not assigned to you.');
+  if ((await db.prepare('SELECT COUNT(*) AS c FROM rollcall_people WHERE class_id=?').get(id)).c)
+    throw new HttpError(409, 'Update individual roster statuses for a class with a roster.');
   const body = await readJson(ctx.req);
   const present = Math.max(0, Math.min(row.expected, Number(body.present ?? row.present)));
   const status = oneOf(body.status, ['incomplete', 'complete'], 'status');
@@ -3557,6 +3810,11 @@ handlers['POST /api/sos'] = async (ctx) => {
       'INSERT INTO incident_updates (incident_id, note, actor_id, created_at) VALUES (?, ?, ?, ?)',
     )
     .run(incidentId, `SOS raised by ${user.name} (${user.role}).`, user.id, at);
+  await db
+    .prepare(
+      'INSERT INTO sos_requests(incident_id,reporter_id,state,silent,created_at,updated_at) VALUES (?,?,?,?,?,?)',
+    )
+    .run(incidentId, user.id, 'active', body.silent === true ? 1 : 0, at, at);
   await notifyRoles(
     ['admin', 'responder'],
     'alert',
@@ -3666,12 +3924,56 @@ handlers['PATCH /api/me'] = async (ctx) => {
 };
 
 handlers['GET /api/health'] = async (ctx) =>
-  json(ctx.res, 200, { ok: true, time: nowIso(), database: 'sqlite' });
+  json(ctx.res, 200, {
+    ok: true,
+    time: nowIso(),
+    database: coreDb.dialect === 'postgres' ? 'postgres' : 'sqlite',
+    apiVersion: '2.1',
+  });
 
 /* ------------------------------------------------------------------ */
 /* Dispatch                                                            */
 /* ------------------------------------------------------------------ */
 
+Object.assign(
+  handlers,
+  featureHandlers({
+    requireUser,
+    requirePermission,
+    readJson,
+    readBinary,
+    json,
+    HttpError,
+    camel,
+    camelAll,
+    str,
+    oneOf,
+    finiteNumber,
+    optionalInt,
+    roomContext,
+    workspaceUploadUrl,
+    notifyRoles,
+  }),
+);
+const authAttempts = new Map();
+function checkAuthRate(req, email) {
+  const key = `${req.socket.remoteAddress}:${String(email).toLowerCase()}:${req.url.split('?')[0]}`;
+  const now = Date.now();
+  const current = authAttempts.get(key);
+  if (current && current.until > now && current.count >= 20)
+    throw new HttpError(
+      429,
+      'Too many authentication attempts. Wait ten minutes before trying again.',
+    );
+  authAttempts.set(
+    key,
+    current && current.until > now
+      ? { ...current, count: current.count + 1 }
+      : { count: 1, until: now + 600000 },
+  );
+  if (authAttempts.size > 10000)
+    for (const [name, item] of authAttempts) if (item.until < now) authAttempts.delete(name);
+}
 const ROUTES = Object.keys(handlers).map((key) => {
   const [method, pattern] = key.split(' ');
   const segments = pattern.split('/').filter(Boolean);
@@ -3703,10 +4005,18 @@ export async function handleApi(req, res) {
   const match = matchRoute(req.method, url.pathname);
 
   try {
-    if (!match) throw new HttpError(404, 'Endpoint not found.');
+    if (!match)
+      return json(res, 404, {
+        error: 'Endpoint not found.',
+        code: 'API_ENDPOINT_NOT_FOUND',
+        method: req.method,
+        path: url.pathname,
+        apiVersion: '2.1',
+      });
     const account = await getUserFromRequest(req);
     const control =
       url.pathname.startsWith('/api/workspaces') ||
+      url.pathname === '/api/notifications/sms-status' ||
       (url.pathname.startsWith('/api/auth/') && url.pathname !== '/api/auth/me');
     const active = account?.workspaceId ?? null;
     // Reject writes from a stale tab instead of applying them to a newly selected school.
@@ -3728,7 +4038,7 @@ export async function handleApi(req, res) {
     const invoke = () => match.route.handler({ req, res, params: match.params, url });
     if (active && !control) {
       const record = await workspaceRecord(active);
-      if (!record || record.owner_user_id !== account.id)
+      if (!record || !(await workspaceAccess(active, account.id)))
         throw new HttpError(403, 'School workspace access denied.');
       await runInWorkspace(active, invoke);
     } else {

@@ -1,5 +1,7 @@
 'use client';
 
+import { OfflineInspection } from '@/components/forms/OfflineInspection';
+import { OfflineEmergency } from '@/components/map/OfflineEmergency';
 import { useCallback, useEffect, useState } from 'react';
 import {
   AlertTriangle,
@@ -30,7 +32,12 @@ import {
   saveDataPack,
   type DataPackMeta,
 } from '@/lib/offline';
-import type { AlertsPayload, DashboardPayload, EvacuationPayload, ResourcesPayload } from '@/lib/types';
+import type {
+  AlertsPayload,
+  DashboardPayload,
+  EvacuationPayload,
+  ResourcesPayload,
+} from '@/lib/types';
 import { cn } from '@/components/ui/card';
 
 interface Snapshot {
@@ -42,7 +49,8 @@ interface Snapshot {
 }
 
 export function OfflinePage() {
-  const { online, pending, pendingCount, flushing, lastSyncAt, lastError, remove, flush } = useOffline();
+  const { online, pending, pendingCount, flushing, lastSyncAt, lastError, remove, flush } =
+    useOffline();
   const [meta, setMeta] = useState<DataPackMeta | null>(() => readDataPackMeta());
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -68,7 +76,8 @@ export function OfflinePage() {
         readDataPackDocument<ResourcesPayload>('/api/resources'),
       ]);
       setSnapshot({
-        generatedAt: dashboard?.generatedAt ?? alerts?.generatedAt ?? evacuation?.generatedAt ?? null,
+        generatedAt:
+          dashboard?.generatedAt ?? alerts?.generatedAt ?? evacuation?.generatedAt ?? null,
         dashboard,
         alerts,
         evacuation,
@@ -92,7 +101,9 @@ export function OfflinePage() {
       setMeta(saved);
       await loadSnapshot();
     } catch (error) {
-      setSaveError(error instanceof Error ? error.message : 'Could not save the offline data pack.');
+      setSaveError(
+        error instanceof Error ? error.message : 'Could not save the offline data pack.',
+      );
     } finally {
       setSaving(false);
     }
@@ -118,6 +129,8 @@ export function OfflinePage() {
 
   return (
     <div className="stack-page space-y-5">
+      <OfflineInspection key={meta?.savedAt ?? 'none'} />
+      <OfflineEmergency key={meta?.savedAt ?? 'none'} />
       <PageHeader
         eyebrow="Offline & connectivity"
         title="Prepared when the network is not"
@@ -125,10 +138,21 @@ export function OfflinePage() {
         icon={online ? Wifi : WifiOff}
         actions={
           <>
-            <Button variant="outline" size="sm" onClick={() => void loadSnapshot()} disabled={loadingSnapshot}>
-              <RefreshCw className={cn('h-4 w-4', loadingSnapshot && 'animate-spin')} /> Refresh view
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => void loadSnapshot()}
+              disabled={loadingSnapshot}
+            >
+              <RefreshCw className={cn('h-4 w-4', loadingSnapshot && 'animate-spin')} /> Refresh
+              view
             </Button>
-            <Button size="sm" onClick={() => setPackConfirm(true)} loading={saving} disabled={!online}>
+            <Button
+              size="sm"
+              onClick={() => setPackConfirm(true)}
+              loading={saving}
+              disabled={!online}
+            >
               <HardDriveDownload className="h-4 w-4" /> Save data pack
             </Button>
           </>
@@ -202,8 +226,8 @@ export function OfflinePage() {
             <div>
               <h2 className="text-sm font-semibold">Offline data pack</h2>
               <p className="text-xs text-muted-foreground">
-                Read-only JSON stored in this browser's Cache API. It is not encrypted at rest beyond your device
-                security.
+                Read-only JSON stored in this browser's Cache API. It is not encrypted at rest
+                beyond your device security.
               </p>
             </div>
             <Badge variant={meta ? 'success' : 'muted'}>{meta ? 'Saved' : 'Not saved'}</Badge>
@@ -217,7 +241,10 @@ export function OfflinePage() {
               </p>
               <ul className="mt-2 divide-y divide-border rounded-lg border border-border">
                 {meta.parts.map((part) => (
-                  <li key={part.path} className="flex items-center justify-between gap-2 px-3 py-2 text-xs">
+                  <li
+                    key={part.path}
+                    className="flex items-center justify-between gap-2 px-3 py-2 text-xs"
+                  >
                     <span className="inline-flex items-center gap-2">
                       {part.ok ? (
                         <CheckCircle2 className="h-3.5 w-3.5 text-success" />
@@ -227,22 +254,33 @@ export function OfflinePage() {
                       {part.label}
                     </span>
                     <span className="text-[11px] text-muted-foreground">
-                      {part.ok ? formatBytes(part.bytes) : part.error ?? 'Failed'}
+                      {part.ok ? formatBytes(part.bytes) : (part.error ?? 'Failed')}
                     </span>
                   </li>
                 ))}
               </ul>
               {failedParts.length > 0 && (
                 <p className="mt-2 text-[11px] leading-relaxed text-warning">
-                  {failedParts.length} section(s) failed to save. The previous copy was removed so an old snapshot
-                  is not mistaken for current data.
+                  {failedParts.length} section(s) failed to save. The previous copy was removed so
+                  an old snapshot is not mistaken for current data.
                 </p>
               )}
               <div className="mt-3 flex flex-wrap gap-2">
-                <Button variant="outline" size="sm" onClick={() => setPackConfirm(true)} loading={saving} disabled={!online}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPackConfirm(true)}
+                  loading={saving}
+                  disabled={!online}
+                >
                   <RefreshCw className="h-3.5 w-3.5" /> Re-save pack
                 </Button>
-                <Button variant="ghost" size="sm" onClick={() => void dropPack()} loading={clearing}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => void dropPack()}
+                  loading={clearing}
+                >
                   <Trash2 className="h-3.5 w-3.5" /> Delete pack
                 </Button>
               </div>
@@ -252,9 +290,16 @@ export function OfflinePage() {
               <CloudOff className="mx-auto mb-2 h-7 w-7 text-muted-foreground" />
               <p className="text-sm font-medium">No offline data pack</p>
               <p className="mx-auto mt-1 max-w-sm text-xs leading-relaxed text-muted-foreground">
-                Save a pack while connected so you can review the last known campus state if the network drops.
+                Save a pack while connected so you can review the last known campus state if the
+                network drops.
               </p>
-              <Button size="sm" className="mt-3" onClick={() => setPackConfirm(true)} loading={saving} disabled={!online}>
+              <Button
+                size="sm"
+                className="mt-3"
+                onClick={() => setPackConfirm(true)}
+                loading={saving}
+                disabled={!online}
+              >
                 <HardDriveDownload className="h-3.5 w-3.5" /> Save data pack
               </Button>
             </div>
@@ -265,8 +310,9 @@ export function OfflinePage() {
               <ShieldAlert className="h-3.5 w-3.5" /> Cached data can be wrong
             </p>
             <p className="mt-1">
-              A data pack is a snapshot, not a live feed. Alert levels, route closures and room clearance can change
-              after it was saved. Confirm with a person on scene before acting on cached information.
+              A data pack is a snapshot, not a live feed. Alert levels, route closures and room
+              clearance can change after it was saved. Confirm with a person on scene before acting
+              on cached information.
             </p>
           </div>
         </Card>
@@ -306,11 +352,13 @@ export function OfflinePage() {
                     <div className="min-w-0">
                       <p className="text-sm font-medium">{item.label}</p>
                       <p className="mt-0.5 text-[11px] text-muted-foreground">
-                        {item.kind.replace(/_/g, ' ')} · queued {relativeTime(item.createdAt)} · {item.attempts}{' '}
-                        attempt(s)
+                        {item.kind.replace(/_/g, ' ')} · queued {relativeTime(item.createdAt)} ·{' '}
+                        {item.attempts} attempt(s)
                       </p>
                       {item.lastError && (
-                        <p className="mt-1 text-[11px] leading-snug text-danger">{item.lastError}</p>
+                        <p className="mt-1 text-[11px] leading-snug text-danger">
+                          {item.lastError}
+                        </p>
                       )}
                     </div>
                     <Button
@@ -327,8 +375,8 @@ export function OfflinePage() {
             </ul>
           )}
           <p className="border-t border-border px-4 py-2 text-[11px] leading-relaxed text-muted-foreground">
-            Queued items are stored in this browser's localStorage. Clearing site data removes them. RADAR does not
-            send anything in the background without your action.
+            Queued items are stored in this browser's localStorage. Clearing site data removes them.
+            RADAR does not send anything in the background without your action.
           </p>
         </Card>
       </div>
@@ -340,7 +388,8 @@ export function OfflinePage() {
         ) : snapshot.generatedAt ? (
           <>
             <p className="mt-1 text-[11px] text-muted-foreground">
-              Snapshot generated {absoluteTime(snapshot.generatedAt)} ({relativeTime(snapshot.generatedAt)})
+              Snapshot generated {absoluteTime(snapshot.generatedAt)} (
+              {relativeTime(snapshot.generatedAt)})
             </p>
             <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               <SnapshotStat
@@ -385,8 +434,8 @@ export function OfflinePage() {
           </>
         ) : (
           <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-            No cached documents are available. Save a data pack while connected to review the last known state
-            offline.
+            No cached documents are available. Save a data pack while connected to review the last
+            known state offline.
           </p>
         )}
       </Card>
@@ -396,7 +445,9 @@ export function OfflinePage() {
           <h2 className="text-sm font-semibold">What works offline</h2>
           <ul className="mt-2 space-y-1.5 text-xs leading-relaxed text-muted-foreground">
             <li>Opening RADAR after it has been loaded once (service-worker shell cache).</li>
-            <li>Reading the last saved data pack: dashboard, map, alerts, evacuation, resources.</li>
+            <li>
+              Reading the last saved data pack: dashboard, map, alerts, evacuation, resources.
+            </li>
             <li>Writing notes into the outbox for later review and sending.</li>
           </ul>
         </Card>
@@ -452,10 +503,18 @@ function SnapshotStat({
   tone: 'green' | 'yellow' | 'orange' | 'red';
 }) {
   const color =
-    tone === 'red' ? '#EF4444' : tone === 'orange' ? '#F97316' : tone === 'yellow' ? '#FACC15' : '#22C55E';
+    tone === 'red'
+      ? '#EF4444'
+      : tone === 'orange'
+        ? '#F97316'
+        : tone === 'yellow'
+          ? '#FACC15'
+          : '#22C55E';
   return (
     <div className="rounded-lg border border-border bg-background/60 p-3">
-      <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+        {label}
+      </p>
       <p className="mt-0.5 text-xl font-semibold tabular-nums" style={{ color }}>
         {value}
       </p>

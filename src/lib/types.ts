@@ -44,6 +44,9 @@ export interface Building {
 }
 
 export interface Floor {
+  planImage?: string;
+  planSource?: string;
+  planVerified?: number;
   id: number;
   buildingId: number;
   level: number;
@@ -75,6 +78,8 @@ export interface Room {
 }
 
 export interface Hazard {
+  pinX?: number | null;
+  pinY?: number | null;
   id: number;
   ref: string;
   title: string;
@@ -174,6 +179,7 @@ export interface MapPayload {
   school: School;
   buildings: Building[];
   hazards: Array<{
+    category?: string;
     id: number;
     ref: string;
     title: string;
@@ -203,6 +209,8 @@ export interface Scan {
   buildingName?: string;
   floorLevel?: number;
   inspectorName?: string;
+  noFindingsConfirmed?: number;
+  inspectionChecklist?: string;
   photoCount?: number;
   observationCount?: number;
 }
@@ -221,6 +229,7 @@ export interface ScanObservation {
   title: string;
   description: string;
   severity: Severity;
+  confidence?: number | null;
   source: 'manual' | 'ai';
   status: 'pending' | 'accepted' | 'rejected';
   hazardId: number | null;
@@ -331,9 +340,11 @@ export interface SearchResult {
 export type AlertLevel = 'green' | 'yellow' | 'orange' | 'red';
 export type AlertKind = 'alert' | 'announcement' | 'suspension';
 export type AlertState = 'active' | 'scheduled' | 'expired' | 'archived';
-export type AlertAudience = 'school' | 'staff' | 'students' | 'parents' | 'grade';
+export type AlertAudience = 'school' | 'staff' | 'students' | 'parents' | 'grade' | 'section' | 'building';
 
 export interface Alert {
+  suspensionReason?: string;
+  resumeAt?: string | null;
   id: number;
   ref: string;
   level: AlertLevel;

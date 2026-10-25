@@ -125,3 +125,49 @@ test('Gemini handles building and room analysis using its own key, native image 
     else process.env.RADAR_VISION_PROVIDER = previous;
   }
 });
+
+test('Gemini model discovery lists only valid model IDs advertising generateContent', async () => {
+  const { generationModels } = await import('../server/vision-provider.mjs');
+  assert.deepEqual(
+    generationModels({
+      models: [
+        { name: 'models/gemini-example-flash', supportedGenerationMethods: ['generateContent'] },
+        { name: 'models/embedding-example', supportedGenerationMethods: ['embedContent'] },
+        { name: 'https://private.example', supportedGenerationMethods: ['generateContent'] },
+        { name: 'models/gemini-other', supportedGenerationMethods: null },
+      ],
+    }),
+    ['gemini-example-flash'],
+  );
+});
+
+test('model access check refuses metadata-only HTTP 200 when generateContent is unsupported', async () => {
+  const { spawnSync } = await import('node:child_process');
+  const { fileURLToPath } = await import('node:url');
+  for (const supported of [true, false]) {
+    const mock = `globalThis.fetch=async(url)=>{if(!String(url).endsWith('/models/gemini-diagnostic-test'))throw new Error('Wrong model checked');return new Response(JSON.stringify({supportedGenerationMethods:${JSON.stringify(supported ? ['generateContent'] : ['embedContent'])}}));};`;
+    const result = spawnSync(
+      process.execPath,
+      [
+        '--import',
+        'data:text/javascript,' + encodeURIComponent(mock),
+        fileURLToPath(new URL('../scripts/config-check.mjs', import.meta.url)),
+        '--live',
+        '--vision',
+      ],
+      {
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          RADAR_VISION_PROVIDER: 'gemini',
+          RADAR_GEMINI_MODEL: 'gemini-diagnostic-test',
+          RADAR_GEMINI_API_KEY: 'private-fake-fixture',
+        },
+      },
+    );
+    assert.equal(result.status, supported ? 0 : 1, result.stdout + result.stderr);
+    assert.match(result.stdout, /Selected vision provider: gemini; model: gemini-diagnostic-test/);
+    if (!supported) assert.match(result.stdout, /FAIL:.*generateContent is not supported/);
+    assert.ok(!result.stdout.includes('private-fake-fixture'));
+  }
+});

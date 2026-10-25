@@ -131,3 +131,9 @@ The Google key must never be committed, sent in chat or placed in a `VITE_` vari
 ### One-command Gemini setup
 
 Run `npm run setup:gemini` in your local project. It selects Gemini automatically and asks only for the Google key and optional model. Enter preserves a saved key/model; unrelated settings remain untouched. If an existing key in the OpenAI field has the Google key prefix, it is reused privately in the Gemini field. Keys are never printed, and a protected backup is created before changing an existing `.env`. Run `npm run check:vision` and restart the app afterward. The cloud workspace and your computer have separate private configuration files; changing one does not configure the other.
+
+### Gemini metadata succeeds but analysis returns 404
+
+`check:vision` now prints the selected provider/model and checks that Gemini model metadata advertises `generateContent`. HTTP 200 on metadata alone is not proof of image analysis. Campus video survey also displays the running server's model; compare the two to find stale servers or different environment settings.
+
+Run `npm run list:vision-models` to list model IDs that your Google key can access with `generateContent` support. This is read-only and sends no images. Choose a current image-capable model supporting JSON-schema output from Google AI Studio, run `npm run setup:gemini` and enter that exact ID at **Gemini model**. Model listing does not prove free quota, image input or schema support. Stop the old app with Ctrl+C, restart `npm run dev`, and open the new Local URL printed in that terminal. Do not continue using a tab served by an older running backend. On Vercel update `RADAR_GEMINI_MODEL` and redeploy. Confirm with an actual consented image analysis afterward.

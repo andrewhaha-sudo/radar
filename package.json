@@ -24,7 +24,8 @@
     "backup:verify": "node scripts/verify-backup.mjs",
     "device:send": "node --env-file-if-exists=.env scripts/send-count.mjs",
     "check:vision": "node --env-file-if-exists=.env scripts/config-check.mjs --live --vision",
-    "setup:gemini": "node scripts/setup-integrations.mjs --gemini"
+    "setup:gemini": "node scripts/setup-integrations.mjs --gemini",
+    "list:vision-models": "node --env-file-if-exists=.env scripts/config-check.mjs --vision --list-models"
   },
   "dependencies": {
     "@google/model-viewer": "^4.4.0",

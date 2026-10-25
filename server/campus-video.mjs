@@ -118,6 +118,7 @@ export function campusVideoHandlers(h) {
       return json(ctx.res, 200, {
         configured: Boolean(visionApiKey()),
         provider: visionProvider(),
+        model: selectedVisionModel(),
         training: process.env.RADAR_TEST_LAB === '1',
       });
     },

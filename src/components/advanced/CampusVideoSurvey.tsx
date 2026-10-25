@@ -35,6 +35,7 @@ export function CampusVideoSurvey({ buildings, rooms }: { buildings: Row[]; room
       configured: boolean;
       training: boolean;
       provider?: string;
+      model?: string;
     } | null>(null);
   async function load() {
     try {
@@ -46,7 +47,7 @@ export function CampusVideoSurvey({ buildings, rooms }: { buildings: Row[]; room
   useEffect(() => {
     void load();
     api
-      .get<{ configured: boolean; training: boolean; provider?: string }>(
+      .get<{ configured: boolean; training: boolean; provider?: string; model?: string }>(
         '/api/advanced/video-provider',
       )
       .then(setProvider)
@@ -126,7 +127,8 @@ export function CampusVideoSurvey({ buildings, rooms }: { buildings: Row[]; room
       {provider && (
         <p>
           Selected vision provider:{' '}
-          <strong>{provider.provider === 'gemini' ? 'Google Gemini' : 'OpenAI'}</strong>.{' '}
+          <strong>{provider.provider === 'gemini' ? 'Google Gemini' : 'OpenAI'}</strong> · running
+          server model: <strong>{provider.model}</strong>.{' '}
           {provider.provider === 'gemini' &&
             'Free-tier eligibility, quotas and data-use terms are set by Google. Avoid sharing student faces or private records.'}
         </p>

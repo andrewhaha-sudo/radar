@@ -80,7 +80,7 @@ export async function visionFailure(response) {
       response.status === 429
         ? 'The Gemini rate limit or quota was reached. Free-tier availability and limits vary by account, region and model; check Google AI Studio and retry later.'
         : response.status === 404
-          ? 'The configured Gemini model is unavailable. Check RADAR_GEMINI_MODEL and model access in Google AI Studio.'
+          ? 'Gemini could not find this model for generateContent, or it is unavailable to this API project. Run npm run list:vision-models, select an available image-capable model using npm run setup:gemini, then stop the old app server and restart. Compare the model printed by check:vision with the running server model shown in Campus video survey.'
           : [401, 403].includes(response.status)
             ? 'Check RADAR_GEMINI_API_KEY, key restrictions and Gemini API access in Google AI Studio.'
             : 'The provider rejected or could not complete the analysis. Check model support and provider availability.';
@@ -124,4 +124,31 @@ export async function visionFailure(response) {
     prefix +
       'Analysis was not completed. Check provider availability and your server configuration before retrying.',
   );
+}
+
+export function generationModels(data) {
+  return (Array.isArray(data?.models) ? data.models : [])
+    .filter(
+      (model) =>
+        typeof model.name === 'string' &&
+        /^models\/[a-zA-Z0-9][a-zA-Z0-9._:-]{0,99}$/.test(model.name) &&
+        Array.isArray(model.supportedGenerationMethods) &&
+        model.supportedGenerationMethods.includes('generateContent'),
+    )
+    .map((model) => model.name.slice('models/'.length));
+}
+export async function listGeminiModels({ apiKey = visionApiKey(), request = fetch } = {}) {
+  if (visionProvider() !== 'gemini')
+    throw new Error('Select Gemini first with npm run setup:gemini.');
+  if (!apiKey) throw new Error('Gemini API key is missing. Run npm run setup:gemini.');
+  const response = await request(
+    'https://generativelanguage.googleapis.com/v1beta/models?pageSize=1000',
+    {
+      headers: { 'x-goog-api-key': apiKey },
+      signal: AbortSignal.timeout(15000),
+      redirect: 'error',
+    },
+  );
+  if (!response.ok) throw await visionFailure(response);
+  return generationModels(await response.json());
 }

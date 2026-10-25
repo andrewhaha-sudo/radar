@@ -127,3 +127,7 @@ RADAR_GEMINI_MODEL=gemini-2.5-flash
 ```
 
 The Google key must never be committed, sent in chat or placed in a `VITE_` variable. The old OpenAI key is not used while Gemini is selected. Gemini failures do not automatically fall back to OpenAI or generate manual findings disguised as AI output. Training mode blocks both providers. `check:vision` checks access but does not verify free quota, billing or detection quality. Mock tests cover both analysis workflows, native request formatting, validated outputs, blocked responses and quota failure without fallback; no live Gemini account was supplied for verification.
+
+### One-command Gemini setup
+
+Run `npm run setup:gemini` in your local project. It selects Gemini automatically and asks only for the Google key and optional model. Enter preserves a saved key/model; unrelated settings remain untouched. If an existing key in the OpenAI field has the Google key prefix, it is reused privately in the Gemini field. Keys are never printed, and a protected backup is created before changing an existing `.env`. Run `npm run check:vision` and restart the app afterward. The cloud workspace and your computer have separate private configuration files; changing one does not configure the other.

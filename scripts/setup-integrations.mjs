@@ -17,6 +17,13 @@ if (spawnSync('git', ['check-ignore', '--quiet', '.env'], { stdio: 'ignore' }).s
   throw new Error('.env must be ignored by Git before private credentials are saved.');
 const original = fs.existsSync(target) ? fs.readFileSync(target, 'utf8') : '';
 const current = parseEnv(original);
+const geminiOnly = process.argv.includes('--gemini');
+if (geminiOnly) {
+  current.RADAR_VISION_PROVIDER = 'gemini';
+  current.RADAR_GEMINI_MODEL ||= 'gemini-2.5-flash';
+  if (!current.RADAR_GEMINI_API_KEY && /^AIza/.test(current.RADAR_VISION_API_KEY || ''))
+    current.RADAR_GEMINI_API_KEY = current.RADAR_VISION_API_KEY;
+}
 let muted = false;
 const output = new Writable({
   write(chunk, encoding, done) {
@@ -69,8 +76,11 @@ try {
     ['RADAR_PUBLIC_URL', 'Public app origin (HTTPS for deployment)', false],
   ];
   let text = original;
-  for (const [name, label, hidden] of fields) {
-    const answer = await ask(name, label, hidden);
+  for (const [name, label, hidden] of fields.filter(
+    ([name]) => !geminiOnly || name === 'RADAR_VISION_PROVIDER' || name.startsWith('RADAR_GEMINI_'),
+  )) {
+    const answer =
+      geminiOnly && name === 'RADAR_VISION_PROVIDER' ? 'gemini' : await ask(name, label, hidden);
     if (!answer) continue;
     const value = answer === 'CLEAR' ? '' : answer;
     if (['RADAR_VISION_MODEL', 'RADAR_GEMINI_MODEL'].includes(name) && value) visionModel(value);
@@ -104,6 +114,17 @@ try {
   fs.writeFileSync(temporary, text, { mode: 0o600 });
   fs.renameSync(temporary, target);
   fs.chmodSync(target, 0o600);
+  if (geminiOnly) {
+    console.log('Gemini selected. Saved settings stay private; restart the running app.');
+    if (!parseEnv(text).RADAR_GEMINI_API_KEY)
+      console.log(
+        'Gemini API key is still missing. Create one privately at https://aistudio.google.com/apikey and run npm run setup:gemini again.',
+      );
+    if (process.env.RADAR_VISION_PROVIDER && process.env.RADAR_VISION_PROVIDER !== 'gemini')
+      console.log(
+        'Your terminal overrides the provider. Run unset RADAR_VISION_PROVIDER in your Linux terminal before checking/restarting.',
+      );
+  }
   console.log(
     'Saved private .env settings. Run npm run config:check; use npm run config:live for read-only provider checks. Restart/redeploy before using changed settings.',
   );

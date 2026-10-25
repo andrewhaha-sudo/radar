@@ -132,3 +132,45 @@ test('optional provider wizard preserves configuration and never echoes private 
     fs.rmSync(temp, { recursive: true, force: true });
   }
 });
+
+test('Gemini-only setup switches the provider, reuses a misplaced Google key privately and preserves unrelated settings', async () => {
+  const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'radar-gemini-only-'));
+  try {
+    spawnSync('git', ['init', '--quiet'], { cwd: temp });
+    fs.writeFileSync(path.join(temp, '.gitignore'), '.env\n.env.*\n');
+    fs.writeFileSync(path.join(temp, 'package.json'), '{}');
+    fs.copyFileSync(path.join(ROOT, '.env.example'), path.join(temp, '.env.example'));
+    fs.writeFileSync(
+      path.join(temp, '.env'),
+      'RADAR_VISION_PROVIDER=openai\nRADAR_VISION_API_KEY=AIza-test-private-fixture\nUNRELATED_SETTING=preserved\n',
+    );
+    const child = spawn(
+      process.execPath,
+      [path.join(ROOT, 'scripts/setup-integrations.mjs'), '--gemini'],
+      { cwd: temp, stdio: ['pipe', 'pipe', 'pipe'] },
+    );
+    let output = '',
+      stage = 0;
+    const prompts = ['Gemini API key', 'Gemini model'];
+    child.stdout.on('data', (chunk) => {
+      output += chunk;
+      if (stage < prompts.length && output.includes(prompts[stage])) {
+        child.stdin.write('\n');
+        stage++;
+      }
+    });
+    child.stderr.on('data', (chunk) => (output += chunk));
+    assert.equal(await new Promise((resolve) => child.once('exit', resolve)), 0, output);
+    const values = parseEnv(fs.readFileSync(path.join(temp, '.env'), 'utf8'));
+    assert.equal(values.RADAR_VISION_PROVIDER, 'gemini');
+    assert.equal(values.RADAR_GEMINI_API_KEY, 'AIza-test-private-fixture');
+    assert.equal(values.RADAR_GEMINI_MODEL, 'gemini-2.5-flash');
+    assert.equal(values.UNRELATED_SETTING, 'preserved');
+    assert.equal(stage, 2);
+    assert.ok(!output.includes('AIza-test-private-fixture'));
+    assert.ok(!output.includes('Twilio account SID'));
+    assert.equal(fs.statSync(path.join(temp, '.env')).mode & 0o777, 0o600);
+  } finally {
+    fs.rmSync(temp, { recursive: true, force: true });
+  }
+});

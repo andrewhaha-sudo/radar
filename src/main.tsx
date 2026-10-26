@@ -4,6 +4,7 @@ import './index.css'
 import './styles/workspace.css'
 import './styles/welcome.css'
 import './styles/motion.css'
+import './styles/gis.css'
 import App from './App.tsx'
 
 createRoot(document.getElementById('root')!).render(

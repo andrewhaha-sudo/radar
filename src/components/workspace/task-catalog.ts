@@ -33,6 +33,14 @@ const catalog: Array<WorkspaceTask & { permission?: string }> = [
     permission: 'evacuation:read',
   },
   {
+    id: 'gis',
+    title: 'GIS hazard mapping',
+    description: 'Compare building pins with hazard areas and reviewed CNN imagery results.',
+    group: 'Campus views',
+    icon: Layers,
+    permission: 'map:read',
+  },
+  {
     id: 'layers',
     title: 'Official datasets',
     description: 'Bring source-linked official disaster information onto your map.',

@@ -1,3 +1,4 @@
+import { GisHazardMapping } from './GisHazardMapping';
 import { Prerequisite } from '@/components/workspace/Prerequisite';
 import { PhotoRouteStudio } from './PhotoRouteStudio';
 import { TaskLibrary } from '@/components/workspace/TaskLibrary';
@@ -91,6 +92,7 @@ export function AdvancedWorkspace() {
       {tab === 'testing' && can('admin:users') && <TestingPanel />}
       {tab === 'imports' && can('rollcall:write') && <RosterImport />}
       {tab === 'reports' && can('hazards:read') && <ReportBuilder />}
+      {tab === 'gis' && can('map:read') && <GisHazardMapping />}
       {tab === 'layers' && can('map:read') && <OfficialLayers />}
       {tab === 'models' &&
         can('buildings:read') &&

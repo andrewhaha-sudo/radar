@@ -1060,6 +1060,102 @@ test('bulk roster import previews, preserves attendance, deduplicates and enforc
     400,
   );
 });
+test('school GIS separates reviewed model suggestions, applies thresholds, and protects imports and tenant scope', async () => {
+  const geojson = {
+    type: 'FeatureCollection',
+    features: [
+      {
+        type: 'Feature',
+        geometry: {
+          type: 'Polygon',
+          coordinates: [
+            [
+              [122, 13],
+              [124, 13],
+              [124, 15],
+              [122, 15],
+              [122, 13],
+            ],
+          ],
+        },
+        properties: { label: 'visible_debris', confidence: 0.82, verified: true },
+      },
+    ],
+  };
+  const body = {
+    title: 'TEST FIXTURE — synthetic CNN output, not trained inference',
+    modelName: 'Fixture U-Net',
+    modelVersion: 'test-1',
+    sourceNote: 'Synthetic geometry for permission and overlap tests only.',
+    observedAt: '2025-01-01T00:00:00Z',
+    crs: 'EPSG:4326',
+    georeferenced: true,
+    geojson,
+  };
+  assert.equal((await post(student, '/api/advanced/gis/models', body)).status, 403);
+  assert.equal(
+    (await post(admin, '/api/advanced/gis/models', { ...body, georeferenced: false })).status,
+    400,
+  );
+  assert.equal(
+    (await post(admin, '/api/advanced/gis/models', { ...body, observedAt: null })).status,
+    400,
+  );
+  const saved = assertOK(await post(admin, '/api/advanced/gis/models', body), 201);
+  const listed = assertOK(await api(student, '/api/advanced/gis')).models.find(
+    (row) => row.id === saved.id,
+  );
+  assert.equal(listed.reviewState, 'pending');
+  assert.equal(listed.geojson.features[0].properties.verified, undefined);
+  const assess = async (threshold = 0.5, selectedIds = [`model:${saved.id}`]) =>
+    assertOK(await post(student, '/api/advanced/gis/assess', { threshold, selectedIds }));
+  assert.equal((await assess()).assessment.flatMap((b) => b.evidence).length, 0);
+  assert.equal(
+    (
+      await post(student, `/api/advanced/gis/models/${saved.id}/review`, {
+        state: 'reviewed',
+        note: 'fixture',
+      })
+    ).status,
+    403,
+  );
+  assertOK(
+    await post(admin, `/api/advanced/gis/models/${saved.id}/review`, {
+      state: 'reviewed',
+      note: 'Test geometry alignment reviewed; not evidence of a real hazard.',
+    }),
+  );
+  const result = await assess();
+  assert.ok(result.assessment.flatMap((b) => b.evidence).length > 0);
+  assert.equal(result.geojson.features[0].properties.basis, 'registered_building_pin');
+  assert.equal(result.assessment.flatMap((b) => b.evidence)[0].sourceType, 'cnn_suggestion');
+  assert.equal((await assess(0.9)).assessment.flatMap((b) => b.evidence).length, 0);
+  assert.equal((await assess(0.5, [])).assessment.flatMap((b) => b.evidence).length, 0);
+  assert.equal((await post(student, '/api/advanced/gis/assess', { threshold: 2 })).status, 400);
+  await select(admin, null);
+  assert.equal(
+    assertOK(await api(admin, '/api/advanced/gis')).models.some((row) => row.title === body.title),
+    false,
+  );
+  assert.equal(
+    (
+      await post(admin, `/api/advanced/gis/models/${saved.id}/review`, {
+        state: 'reviewed',
+        note: 'wrong school',
+      })
+    ).status,
+    404,
+  );
+  await select(admin, SCHOOL);
+  assertOK(
+    await post(admin, `/api/advanced/gis/models/${saved.id}/review`, {
+      state: 'rejected',
+      note: 'Fixture rejected after testing.',
+    }),
+  );
+  assert.equal((await assess()).assessment.flatMap((b) => b.evidence).length, 0);
+});
+
 test('official map imports require source provenance, valid coordinates and role permissions', async () => {
   const geojson = {
     type: 'FeatureCollection',

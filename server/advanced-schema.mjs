@@ -2,6 +2,7 @@ export const ADVANCED_TABLES = [
   'imagery_route_drafts',
   'campus_video_surveys',
   'geo_layers',
+  'gis_model_layers',
   'room_counts',
   'photo_calibrations',
   'foreground_sessions',
@@ -12,6 +13,8 @@ export const ADVANCED_TABLES = [
   'emergency_sms_jobs',
 ];
 export const ADVANCED_SCHEMA = `
+CREATE TABLE IF NOT EXISTS gis_model_layers(id INTEGER PRIMARY KEY AUTOINCREMENT,title TEXT NOT NULL,model_name TEXT NOT NULL,model_version TEXT NOT NULL,source_note TEXT NOT NULL,observed_at TEXT NOT NULL,geojson TEXT NOT NULL,review_state TEXT NOT NULL DEFAULT 'pending',review_note TEXT NOT NULL DEFAULT '',created_by INTEGER REFERENCES users(id),created_at TEXT NOT NULL,reviewed_by INTEGER REFERENCES users(id),reviewed_at TEXT);
+
 CREATE TABLE IF NOT EXISTS imagery_route_drafts(id INTEGER PRIMARY KEY AUTOINCREMENT,title TEXT NOT NULL,source TEXT NOT NULL,image TEXT NOT NULL,paths TEXT NOT NULL,checks TEXT NOT NULL,notes TEXT NOT NULL,uncertainties TEXT NOT NULL,created_by INTEGER REFERENCES users(id),created_at TEXT NOT NULL,updated_at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS campus_video_surveys(id INTEGER PRIMARY KEY AUTOINCREMENT,title TEXT NOT NULL,payload TEXT NOT NULL,created_by INTEGER REFERENCES users(id),created_at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS room_counts(id INTEGER PRIMARY KEY AUTOINCREMENT,room_id INTEGER NOT NULL REFERENCES rooms(id),count INTEGER NOT NULL,source TEXT NOT NULL,observed_at TEXT NOT NULL);

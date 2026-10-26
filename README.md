@@ -185,3 +185,7 @@ The dashboard now uses one bounded campus panel, and **Tools & setup** provides 
 ## Welcome and account continuity
 
 Animated preparedness slides introduce the sign-in screen, followed by a role-aware getting-started tour. The selected authorized school now survives logout and login. [See behavior, previews and update instructions](docs/WELCOME-AND-ACCOUNT-RESTORATION.md).
+
+## GIS hazard mapping
+
+Compare school building pins with geographic hazard areas and separately reviewed CNN segmentation outputs. Export overlap results to QGIS. [GIS workflow and CNN prerequisites](docs/GIS-AND-CNN.md). CNN training/inference is external; RADAR does not bundle a trained hazard model.

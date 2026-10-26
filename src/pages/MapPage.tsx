@@ -321,6 +321,13 @@ export function MapPage() {
             {filteredHazards.length} open hazards
           </span>
           <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate('/operations?tab=advanced&tool=gis')}
+          >
+            GIS mapping
+          </Button>
+          <Button
             variant={layersOpen ? 'primary' : 'outline'}
             size="sm"
             onClick={() => setLayersOpen((p) => !p)}

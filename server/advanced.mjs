@@ -1,3 +1,4 @@
+import { gisHandlers } from './gis.mjs';
 import { imagePathHandlers } from './image-paths.mjs';
 import { visionApiKey } from './vision-provider.mjs';
 import { campusVideoHandlers } from './campus-video.mjs';
@@ -768,5 +769,5 @@ export function advancedHandlers(h) {
     await audit(user.id, 'acceptance.record', 'test', key, { state });
     return json(ctx.res, 201, { recorded: true });
   };
-  return { ...routes, ...campusVideoHandlers(h),...imagePathHandlers(h) };
+  return { ...routes, ...campusVideoHandlers(h),...imagePathHandlers(h), ...gisHandlers(h) };
 }

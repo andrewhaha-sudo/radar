@@ -32,7 +32,7 @@ The reference video informed the pacing of the reveal; RADAR uses its own shield
 
 ## Verification
 
-- 86 automated tests pass, including school restoration, all six school roles, explicit original-workspace selection and revoked membership handling.
+- 87 automated tests pass, including school restoration, all six school roles, explicit original-workspace selection and revoked membership handling.
 - 36 feature integration tests pass with the PostgreSQL-compatible test adapter.
 - Production build passes. Lint completes with existing repository warnings.
 - Chromium checks cover the welcome controls, real WebP response, reduced motion, first-run tour and replay, and actual UI logout/login for all six approved school roles. School selection and the published close-up view remain visible. Layouts were checked at 360, 390, 768, 1024 and 1440 pixels, without horizontal overflow or browser exceptions.

@@ -266,7 +266,7 @@ export function campusMapHandlers(h) {
         });
         return json(ctx.res, 200, draft);
       } catch (e) {
-        throw new HttpError(e.code === 'VISION_TIMEOUT' ? 504 : 400, e.message);
+        throw new HttpError(e.code === 'VISION_TIMEOUT' ? 504 : e.code === 'VISION_UNAVAILABLE' ? 503 : 400, e.message);
       }
     },
     'GET /api/advanced/campus-maps': async (ctx) => {

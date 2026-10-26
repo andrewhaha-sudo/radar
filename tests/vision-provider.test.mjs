@@ -219,3 +219,39 @@ test('provider and response-body timeouts keep actionable errors and never retry
     else process.env.RADAR_VISION_PROVIDER = original;
   }
 });
+
+test('temporary vision outages distinguish provider availability from credentials and never trigger retries', async () => {
+  const previous = process.env.RADAR_VISION_PROVIDER;
+  try {
+    for (const provider of ['gemini', 'openai']) {
+      process.env.RADAR_VISION_PROVIDER = provider;
+      for (const status of [502, 503, 504]) {
+        const error = await visionFailure(
+          new Response('sensitive-provider-fixture', { status, headers: { 'Retry-After': '45' } }),
+        );
+        assert.equal(error.code, 'VISION_UNAVAILABLE');
+        assert.match(error.message, /temporarily unavailable or overloaded/);
+        assert.match(error.message, /45 seconds/);
+        assert.match(error.message, /No automatic retry/);
+        assert.ok(!error.message.includes('sensitive-provider-fixture'));
+      }
+    }
+    process.env.RADAR_VISION_PROVIDER = 'gemini';
+    let calls = 0;
+    await assert.rejects(
+      () =>
+        suggestCampusBuildings([{ time: 0, image: 'data:image/jpeg;base64,AA==' }], {
+          apiKey: 'test-only',
+          request: async () => {
+            calls++;
+            return new Response('{}', { status: 503 });
+          },
+        }),
+      (error) => error.code === 'VISION_UNAVAILABLE',
+    );
+    assert.equal(calls, 1);
+  } finally {
+    if (previous === undefined) delete process.env.RADAR_VISION_PROVIDER;
+    else process.env.RADAR_VISION_PROVIDER = previous;
+  }
+});

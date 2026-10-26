@@ -146,7 +146,7 @@ export function imagePathHandlers(h) {
         await audit(user.id, 'image_path.suggest', 'campus', null, { paths: result.paths.length });
         return json(ctx.res, 200, result);
       } catch (e) {
-        throw new HttpError(e.code === 'VISION_TIMEOUT' ? 504 : 400, e.message);
+        throw new HttpError(e.code === 'VISION_TIMEOUT' ? 504 : e.code === 'VISION_UNAVAILABLE' ? 503 : 400, e.message);
       }
     },
     'GET /api/advanced/image-paths': async (ctx) => {

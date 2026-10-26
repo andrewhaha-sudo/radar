@@ -13,7 +13,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-import { api, errorMessage } from '@/lib/api';
+import { api, ApiError, errorMessage } from '@/lib/api';
 import { captureCampusImage } from '@/lib/campus-images';
 import { downloadText, type Row } from './tools';
 type Point = [number, number];
@@ -78,6 +78,7 @@ export function CampusMapGenerator() {
     [generating, setGenerating] = useState(false),
     [elapsed, setElapsed] = useState(0),
     [error, setError] = useState(''),
+    [unavailable, setUnavailable] = useState(false),
     [notice, setNotice] = useState(''),
     [consent, setConsent] = useState(false),
     [reviewed, setReviewed] = useState(false),
@@ -118,11 +119,15 @@ export function CampusMapGenerator() {
   async function run(fn: () => Promise<void>) {
     setBusy(true);
     setError('');
+    setUnavailable(false);
     setNotice('');
     try {
       await fn();
     } catch (e) {
       setError(errorMessage(e));
+      setUnavailable(
+        e instanceof ApiError && e.status === 503 && /vision.*HTTP 50[234]/i.test(e.message),
+      );
     } finally {
       setBusy(false);
       setGenerating(false);
@@ -206,17 +211,34 @@ export function CampusMapGenerator() {
     setFrames(next);
     return next;
   }
-  async function generate() {
+  async function generate(currentOnly = false) {
     await run(async () => {
       setElapsed(0);
       setGenerating(true);
-      const batch = frames.length ? frames : await sample();
+      const available = frames.length ? frames : await sample();
+      const index = Math.min(selected, available.length - 1);
+      const batch = currentOnly ? [available[index]] : available;
       const output = await api.post<Row>('/api/advanced/campus-maps/generate', {
         frames: batch,
         consent,
       });
-      setFeatures(output.features);
-      setUncertainties(output.uncertainties);
+      const next = output.features.map((f: Feature) => ({
+        ...f,
+        frameIndex: currentOnly ? index : f.frameIndex,
+      }));
+      const combined = currentOnly
+        ? [...features.filter((f) => f.frameIndex !== index), ...next]
+        : next;
+      if (combined.length > 40)
+        throw new Error(
+          'This result would exceed 40 draft features. Remove unused features before retrying; the previous draft is unchanged.',
+        );
+      setFeatures(combined);
+      setUncertainties((previous) =>
+        currentOnly
+          ? [...new Set([...output.uncertainties, ...previous])].slice(0, 6)
+          : output.uncertainties,
+      );
       invalidate();
       setDrawing(false);
       setPoints([]);
@@ -280,9 +302,18 @@ export function CampusMapGenerator() {
           <ImagePlus size={34} />
         </section>
         {error && (
-          <p className="desk-error" role="alert">
-            {error}
-          </p>
+          <div className="desk-error" role="alert">
+            <p>{error}</p>
+            {unavailable && frames.length > 1 && (
+              <button
+                className="desk-button"
+                disabled={busy || !consent || !writer}
+                onClick={() => void generate(true)}
+              >
+                Try only this view
+              </button>
+            )}
+          </div>
         )}
         {notice && (
           <p className="ops-notice" role="status">

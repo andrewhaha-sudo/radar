@@ -101,6 +101,26 @@ export function visionModel(value = process.env.RADAR_VISION_MODEL) {
   return model;
 }
 export async function visionFailure(response) {
+  if ([502, 503, 504].includes(response.status)) {
+    const value = response.headers?.get?.('retry-after');
+    const seconds =
+      value && /^\d+$/.test(value.trim())
+        ? Number(value)
+        : value
+          ? (Date.parse(value) - Date.now()) / 1000
+          : NaN;
+    const wait =
+      Number.isFinite(seconds) && seconds > 0
+        ? seconds <= 3600
+          ? `Wait at least ${Math.max(1, Math.ceil(seconds))} seconds`
+          : 'Wait until the provider’s Retry-After period has elapsed'
+        : 'Wait 30–60 seconds';
+    const error = new Error(
+      `${visionProvider() === 'gemini' ? 'Gemini vision' : 'Vision provider'} returned HTTP ${response.status}. The provider is temporarily unavailable or overloaded; this alone does not mean your API key is invalid. ${wait}, then explicitly try one clear photo or only the current video view. Your uploaded views and existing draft are unchanged. No automatic retry was sent.`,
+    );
+    error.code = 'VISION_UNAVAILABLE';
+    return error;
+  }
   if (visionProvider() === 'gemini') {
     const prefix = `Gemini vision returned HTTP ${response.status}. `;
     const detail =

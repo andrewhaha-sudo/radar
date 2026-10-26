@@ -195,7 +195,7 @@ export function HazardsPage() {
           <span className="grid h-9 w-9 place-items-center rounded-lg bg-accent text-accent-foreground">
             <AlertTriangle className="h-5 w-5" />
           </span>
-          <h1 className="text-2xl font-semibold tracking-tight">Hazards</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Findings &amp; follow-up</h1>
         </div>
         <div className="mx-auto max-w-md rounded-xl border border-border bg-card p-6 text-center">
           <ShieldCheck className="mx-auto mb-2 h-8 w-8 text-muted-foreground" />
@@ -226,10 +226,10 @@ export function HazardsPage() {
             <span className="grid h-9 w-9 place-items-center rounded-lg bg-accent text-accent-foreground">
               <AlertTriangle className="h-5 w-5" />
             </span>
-            <h1 className="text-2xl font-semibold tracking-tight">Hazards</h1>
+            <h1 className="text-2xl font-semibold tracking-tight">Findings &amp; follow-up</h1>
           </div>
           <p className="mt-1 text-sm text-muted-foreground">
-            Every recorded hazard, its evidence and the corrective work that closes it out.
+            See what was observed, what needs review, and what is being fixed.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -458,10 +458,11 @@ export function HazardsPage() {
       ) : !data || data.items.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border bg-card px-6 py-14 text-center">
           <AlertTriangle className="mx-auto mb-2 h-8 w-8 text-muted-foreground" />
-          <p className="text-sm font-medium">No hazards match these filters</p>
+          <p className="text-sm font-medium">{hasFilters?'No findings match these filters':'Start with a small observation.'}</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            Adjust the search or clear the filters. Reported hazards appear here immediately.
+            {hasFilters?'Try a broader search or clear the filters.':'Photograph what you notice. Your school team can review the evidence and decide what needs attention.'}
           </p>
+          {!hasFilters&&can('hazards:write')&&<Button size="sm" className="mt-4" onClick={()=>setReportOpen(true)}>Report an observation</Button>}
           {hasFilters && (
             <Button variant="outline" size="sm" className="mt-3" onClick={resetFilters}>
               Clear filters

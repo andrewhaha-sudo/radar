@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { motion, type HTMLMotionProps } from 'framer-motion';
+import { motion, useReducedMotion, type HTMLMotionProps } from 'framer-motion';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -17,11 +17,12 @@ export interface CardProps
 
 export const Card = React.forwardRef<HTMLDivElement, CardProps>(
   ({ className, hover = true, ...props }, ref) => {
+    const reducedMotion = useReducedMotion();
     return (
       <motion.div
-        initial={{ opacity: 0, y: 8 }}
+        initial={reducedMotion ? false : { opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
+        transition={{ duration: reducedMotion ? 0 : 0.32, ease: [0.22, 1, 0.36, 1] }}
         className={cn(
           'border border-border bg-card/88 text-card-foreground rounded-xl shadow-sm backdrop-blur-sm transition-all duration-200',
           hover && 'hover:shadow-md hover:border-border/60 hover:bg-card',

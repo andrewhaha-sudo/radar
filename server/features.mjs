@@ -1,3 +1,6 @@
+import { visionApiKey, visionProvider } from './vision-provider.mjs';
+import { csvCell } from './advanced-utils.mjs';
+import { projectPoint } from './advanced-utils.mjs';
 import { grantSchoolMembership } from './memberships.mjs';
 import { channelStatus, validPush, verifySmsSignature, drainDeliveryJobs } from './delivery.mjs';
 import { runInWorkspace } from './workspaces.mjs';
@@ -639,7 +642,7 @@ export function featureHandlers(h) {
         'SELECT display_name,status,updated_at FROM rollcall_people WHERE class_id=? ORDER BY display_name',
       )
       .all(id);
-    const escape = (s) => '"' + String(s ?? '').replace(/"/g, '""') + '"';
+    const escape = csvCell;
     ctx.res.writeHead(200, {
       'Content-Type': 'text/csv; charset=utf-8',
       'Content-Disposition': `attachment; filename="rollcall-${id}.csv"`,
@@ -1104,7 +1107,7 @@ export function featureHandlers(h) {
   routes['POST /api/scans/:id/analyze'] = async (ctx) => {
     const user = await requireUser(ctx.req);
     requirePermission(user, 'scan:write');
-    if (!process.env.RADAR_VISION_API_KEY)
+    if (!visionApiKey())
       throw new HttpError(503, 'A vision provider has not been configured.');
     const id = Number(ctx.params.id);
     const scan = await db.prepare('SELECT * FROM scans WHERE id=?').get(id);
@@ -1120,6 +1123,7 @@ export function featureHandlers(h) {
       .all(id);
     if (!photos.length) throw new HttpError(400, 'Upload photos before requesting suggestions.');
     const images = [];
+    const imagePhotos = [];
     for (const photo of photos) {
       if (!workspaceUploadUrl(photo.url))
         throw new HttpError(400, 'The image does not belong to the active school.');
@@ -1136,15 +1140,28 @@ export function featureHandlers(h) {
         buffer = fs.readFileSync(
           path.join(currentDatabaseContext()?.uploadDir ?? UPLOAD_DIR, name),
         );
+      imagePhotos.push(photo);
       images.push(`data:${mime};base64,${buffer.toString('base64')}`);
     }
     if (!images.length)
       throw new HttpError(400, 'Use JPEG, PNG or WebP inspection images for analysis.');
     let findings;
     try {
-      findings = await analyzeVisibleHazards(images);
+      findings = await analyzeVisibleHazards(images, {
+        calibratedImageIndexes: (
+          await Promise.all(
+            imagePhotos.map(async (photo, index) =>
+              (await db
+                .prepare('SELECT photo_id FROM photo_calibrations WHERE photo_id=?')
+                .get(photo.id))
+                ? index
+                : null,
+            ),
+          )
+        ).filter((index) => index != null),
+      });
     } catch (error) {
-      throw new HttpError(502, error.message);
+      throw new HttpError(error.code === 'VISION_TIMEOUT' ? 504 : error.code === 'VISION_UNAVAILABLE' ? 503 : 502, error.message);
     }
     let added = 0;
     for (const f of findings) {
@@ -1156,17 +1173,32 @@ export function featureHandlers(h) {
           .get(id, f.title)
       )
         continue;
-      await db
+      const suggestion = await db
         .prepare(
           "INSERT INTO scan_observations(scan_id,title,description,severity,source,status,confidence,created_at) VALUES (?,?,?,?,'ai','pending',?,?)",
         )
         .run(id, f.title, f.description, f.severity, f.confidence, nowIso());
+      await db.prepare('UPDATE scan_observations SET category=? WHERE id=?').run(f.category??'other',suggestion.lastInsertRowid);
+      if (f.imagePoint && imagePhotos[f.imageIndex]) {
+        const calibration = await db
+          .prepare('SELECT anchors FROM photo_calibrations WHERE photo_id=?')
+          .get(imagePhotos[f.imageIndex].id);
+        if (calibration)
+          try {
+            const point = projectPoint(JSON.parse(calibration.anchors), ...f.imagePoint);
+            await db
+              .prepare('UPDATE scan_observations SET mapped_x=?,mapped_y=? WHERE id=?')
+              .run(...point, suggestion.lastInsertRowid);
+          } catch {
+            /* Unsupported/out-of-plane positions remain unplaced for manual review. */
+          }
+      }
       added++;
     }
     await db.prepare('UPDATE scans SET no_findings_confirmed=0 WHERE id=?').run(id);
     await audit(user.id, 'scan.ai.request', 'scan', id, {
       added,
-      provider: 'OpenAI',
+      provider: visionProvider(),
       reviewRequired: true,
     });
     return json(ctx.res, 200, {

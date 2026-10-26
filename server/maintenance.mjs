@@ -29,6 +29,8 @@ export async function inspectionReminders() {
       "DELETE FROM location_reports WHERE expires_at<=? OR incident_id IN (SELECT id FROM incidents WHERE status='closed')",
     )
     .run(nowIso());
+  await db.prepare("DELETE FROM foreground_sessions WHERE ends_at<=? OR incident_id IN (SELECT id FROM incidents WHERE status='closed')").run(nowIso());
+  await db.prepare('DELETE FROM room_counts WHERE observed_at<?').run(new Date(Date.now()-30*86400000).toISOString());
   let sent = 0;
   const reviewers = (
     await db.prepare("SELECT id FROM users WHERE role IN ('admin','inspector')").all()

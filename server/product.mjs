@@ -1,3 +1,4 @@
+import { visionApiKey } from './vision-provider.mjs';
 import crypto from 'node:crypto';
 import { UPLOAD_MIMES, validateGlb } from './upload-validation.mjs';
 import { cloudSignedUpload, cloudDownload, cloudRemoveUpload } from './supabase.mjs';
@@ -262,10 +263,10 @@ export function productHandlers(h) {
       {
         id: 'vision',
         name: 'AI photo suggestions',
-        state: process.env.RADAR_VISION_API_KEY ? 'configured' : 'missing',
-        detail: process.env.RADAR_VISION_API_KEY
+        state: visionApiKey() ? 'configured' : 'missing',
+        detail: visionApiKey()
           ? 'Server key is present. An inspector must consent and run an actual photo analysis to verify service access.'
-          : 'Set RADAR_VISION_API_KEY privately on the server. Manual inspections remain available.',
+          : 'Choose OpenAI or Gemini and configure its API key privately on the server. Manual inspections remain available.',
         href: '/scan',
       },
       {

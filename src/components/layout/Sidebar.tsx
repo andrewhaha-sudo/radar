@@ -50,10 +50,10 @@ const NAV_SECTIONS: Array<{ label: string; items: NavItem[] }> = [
     label: 'Operate',
     items: [
       { title: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-      { title: 'Campus operations', href: '/operations', icon: ClipboardList },
-      { title: 'Interactive Map', href: '/map', icon: MapIcon },
-      { title: 'Room scanning', href: '/scan', icon: ScanEye, permission: 'scan:read' },
-      { title: 'Hazard Reports', href: '/hazards', icon: AlertTriangle, permission: 'hazards:read', badge: 'hazards' },
+      { title: 'Tools & setup', href: '/operations', icon: ClipboardList },
+      { title: 'Campus map', href: '/map', icon: MapIcon },
+      { title: 'Room inspections', href: '/scan', icon: ScanEye, permission: 'scan:read' },
+      { title: 'Findings & follow-up', href: '/hazards', icon: AlertTriangle, permission: 'hazards:read', badge: 'hazards' },
       { title: 'Roll call', href: '/rollcall', icon: Activity, permission: 'rollcall:read' },
       { title: 'Incidents', href: '/incidents', icon: ShieldAlert, permission: 'incidents:read', badge: 'incidents' },
     ],
@@ -62,10 +62,10 @@ const NAV_SECTIONS: Array<{ label: string; items: NavItem[] }> = [
     label: 'Respond',
     items: [
       { title: 'Alerts', href: '/alerts', icon: BellRing, permission: 'alerts:read', badge: 'alerts' },
-      { title: 'Disaster watch', href: '/disaster', icon: RadioTower, permission: 'advisories:read' },
+      { title: 'Official advisories', href: '/disaster', icon: RadioTower, permission: 'advisories:read' },
       { title: 'Safety status', href: '/safety', icon: ShieldCheck, permission: 'safety:write' },
       { title: 'Evacuation', href: '/evacuation', icon: DoorOpen, permission: 'evacuation:read' },
-      { title: 'Resources', href: '/resources', icon: Package, permission: 'resources:read' },
+      { title: 'Equipment & supplies', href: '/resources', icon: Package, permission: 'resources:read' },
     ],
   },
   {
@@ -178,10 +178,10 @@ function SidebarBody({ onNavigate }: { onNavigate?: () => void }) {
           const items = section.items.filter((item) => !item.permission || can(item.permission));
           if (items.length === 0) return null;
           return (
-            <div key={section.label} className="mb-2">
-              <p className="sr-only px-3 pb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+            <details key={section.label} className="sidebar-section mb-2" open={section.label==='Operate'||items.some(item=>isActive(item.href))}>
+              <summary className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                 {section.label}
-              </p>
+              </summary>
               <div className="space-y-1">
                 {items.map((item) => {
                   const active = isActive(item.href);
@@ -225,7 +225,7 @@ function SidebarBody({ onNavigate }: { onNavigate?: () => void }) {
                   );
                 })}
               </div>
-            </div>
+            </details>
           );
         })}
       </nav>

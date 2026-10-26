@@ -65,7 +65,12 @@ async function login(email, password) {
 }
 async function select(cookie, id) {
   assert.equal(
-    (await api(cookie, '/api/workspaces/select', { method: 'POST', body: { beisId: id } })).status,
+    (
+      await api(cookie, '/api/workspaces/select', {
+        method: 'POST',
+        body: { beisId: id },
+      })
+    ).status,
     200,
   );
   modes.set(cookie, id ?? '');
@@ -93,6 +98,8 @@ before(async () => {
       RADAR_ALLOW_TEST_SEED: '1',
       RADAR_TEST_CLOUD_AUTH: '0',
       RADAR_VISION_API_KEY: '',
+      RADAR_TURN_SECRET: '',
+      RADAR_TURN_URLS: '',
       RADAR_USGS_FEED_ENABLED: 'false',
       RADAR_VAPID_PUBLIC_KEY: '',
       RADAR_VAPID_PRIVATE_KEY: '',
@@ -142,11 +149,17 @@ before(async () => {
     201,
   ).building;
   const f = assertOK(
-    await post(admin, `/api/buildings/${b.id}/floors`, { name: 'Fixture floor', level: 1 }),
+    await post(admin, `/api/buildings/${b.id}/floors`, {
+      name: 'Fixture floor',
+      level: 1,
+    }),
     201,
   ).floor;
   roomId = assertOK(
-    await post(admin, `/api/floors/${f.id}/rooms`, { name: 'Fixture classroom', code: '101' }),
+    await post(admin, `/api/floors/${f.id}/rooms`, {
+      name: 'Fixture classroom',
+      code: '101',
+    }),
     201,
   ).room.id;
 });
@@ -172,8 +185,12 @@ test('members gain only their school role and cannot grant themselves administra
     assertOK(await api(teacher, '/api/workspaces')).workspaces.some((w) => w.beisId === SCHOOL),
   );
   assert.equal(
-    (await post(student, '/api/members', { email: 'student@northridge.edu', role: 'admin' }))
-      .status,
+    (
+      await post(student, '/api/members', {
+        email: 'student@northridge.edu',
+        role: 'admin',
+      })
+    ).status,
     403,
   );
   assert.equal((await api(student, '/api/members')).status, 403);
@@ -213,7 +230,9 @@ test('rosters are class-scoped, audited, and reconcile individual attendance', a
     201,
   ).id;
   assertOK(
-    await post(teacher, `/api/rollcall/${classId}/roster`, { name: 'Manual fixture student' }),
+    await post(teacher, `/api/rollcall/${classId}/roster`, {
+      name: 'Manual fixture student',
+    }),
     201,
   );
   assert.equal((await api(student, `/api/rollcall/${classId}/roster`)).status, 403);
@@ -226,11 +245,18 @@ test('rosters are class-scoped, audited, and reconcile individual attendance', a
   assert.equal(assertOK(await api(teacher, '/api/rollcall')).classes[0].present, 1);
   assert.equal((await post(parent, '/api/rollcall/qr', { token: roster[0].qrToken })).status, 403);
   assert.equal(
-    (await post(otherTeacher, `/api/rollcall/people/${personId}/status`, { status: 'present' }))
-      .status,
+    (
+      await post(otherTeacher, `/api/rollcall/people/${personId}/status`, {
+        status: 'present',
+      })
+    ).status,
     403,
   );
-  assertOK(await post(teacher, `/api/rollcall/people/${personId}/status`, { status: 'injured' }));
+  assertOK(
+    await post(teacher, `/api/rollcall/people/${personId}/status`, {
+      status: 'injured',
+    }),
+  );
   assert.equal(assertOK(await api(teacher, '/api/rollcall')).classes[0].present, 0);
   assert.equal(
     (
@@ -279,20 +305,36 @@ test('inspection schedules, genuine no-findings submissions, QR records and tran
   );
   const upload = await fetch(BASE + '/api/uploads', {
     method: 'POST',
-    headers: { Cookie: admin, 'X-Radar-Workspace': SCHOOL, 'Content-Type': 'image/svg+xml' },
+    headers: {
+      Cookie: admin,
+      'X-Radar-Workspace': SCHOOL,
+      'Content-Type': 'image/svg+xml',
+    },
     body: '<svg xmlns="http://www.w3.org/2000/svg"/>',
   });
   assert.equal(upload.status, 201, await upload.clone().text());
   const file = await upload.json();
   assertOK(
-    await post(admin, `/api/scans/${scan}/photos`, { url: file.url, caption: 'Fixture evidence' }),
+    await post(admin, `/api/scans/${scan}/photos`, {
+      url: file.url,
+      caption: 'Fixture evidence',
+    }),
     201,
   );
   const checklist = Object.fromEntries(
     ['entrance', 'exits', 'walls', 'ceiling', 'electrical', 'equipment'].map((k) => [k, true]),
   );
-  assertOK(await post(admin, `/api/scans/${scan}/checklist`, { checklist, noFindings: true }));
-  assertOK(await post(admin, `/api/scans/${scan}/submit`, { notes: 'Visual inspection only' }));
+  assertOK(
+    await post(admin, `/api/scans/${scan}/checklist`, {
+      checklist,
+      noFindings: true,
+    }),
+  );
+  assertOK(
+    await post(admin, `/api/scans/${scan}/submit`, {
+      notes: 'Visual inspection only',
+    }),
+  );
   const record = assertOK(await api(admin, `/api/rooms/${roomId}/record`));
   assert.equal(record.score.value, 100);
   assert.match(record.score.note, /not a safety certification/);
@@ -342,7 +384,11 @@ test('student reports remain unverified and cannot alter another reporter’s ev
   ).hazard.id;
   const upload = await fetch(BASE + '/api/uploads', {
     method: 'POST',
-    headers: { Cookie: student, 'X-Radar-Workspace': SCHOOL, 'Content-Type': 'image/svg+xml' },
+    headers: {
+      Cookie: student,
+      'X-Radar-Workspace': SCHOOL,
+      'Content-Type': 'image/svg+xml',
+    },
     body: '<svg xmlns="http://www.w3.org/2000/svg"/>',
   });
   assert.equal(upload.status, 201, await upload.clone().text());
@@ -364,7 +410,11 @@ test('student reports remain unverified and cannot alter another reporter’s ev
       note: 'Corroboration does not verify a hazard',
     }),
   );
-  assertOK(await post(student, `/api/hazards/${ownReport}/feedback`, { kind: 'confirm' }));
+  assertOK(
+    await post(student, `/api/hazards/${ownReport}/feedback`, {
+      kind: 'confirm',
+    }),
+  );
   assert.equal(
     (
       await post(student, '/api/hazards', {
@@ -417,12 +467,19 @@ test('inventory checkout is bounded by available stock and retains movement hist
     }),
   );
   assert.equal(
-    (await post(admin, `/api/resources/${resourceId}/movements`, { kind: 'consume', quantity: 2 }))
-      .status,
+    (
+      await post(admin, `/api/resources/${resourceId}/movements`, {
+        kind: 'consume',
+        quantity: 2,
+      })
+    ).status,
     409,
   );
   assertOK(
-    await post(admin, `/api/resources/${resourceId}/movements`, { kind: 'replenish', quantity: 4 }),
+    await post(admin, `/api/resources/${resourceId}/movements`, {
+      kind: 'replenish',
+      quantity: 4,
+    }),
   );
   assert.equal(
     assertOK(await api(admin, `/api/resources/${resourceId}/history`)).history.length,
@@ -440,14 +497,26 @@ test('inventory checkout is bounded by available stock and retains movement hist
 });
 test('SOS acknowledgement, safeguarded cancellation and optional coordinates are permission checked', async () => {
   const incident = assertOK(
-    await post(student, '/api/sos', { kind: 'medical', note: 'Fixture only', silent: true }),
+    await post(student, '/api/sos', {
+      kind: 'medical',
+      note: 'Fixture only',
+      silent: true,
+    }),
     201,
   ).incidentId;
   assert.equal(
-    (await post(student, `/api/sos/${incident}/respond`, { state: 'acknowledged' })).status,
+    (
+      await post(student, `/api/sos/${incident}/respond`, {
+        state: 'acknowledged',
+      })
+    ).status,
     403,
   );
-  assertOK(await post(responder, `/api/sos/${incident}/respond`, { state: 'acknowledged' }));
+  assertOK(
+    await post(responder, `/api/sos/${incident}/respond`, {
+      state: 'acknowledged',
+    }),
+  );
   assert.equal(
     (
       await post(student, '/api/safety/location', {
@@ -475,11 +544,18 @@ test('SOS acknowledgement, safeguarded cancellation and optional coordinates are
   assertOK(await api(student, '/api/safety/location', { method: 'DELETE' }));
   assert.equal(assertOK(await api(responder, '/api/operations')).locations.length, 0);
   assert.equal(
-    assertOK(await post(student, `/api/sos/${incident}/cancel`, { reason: 'Fixture cancellation' }))
-      .state,
+    assertOK(
+      await post(student, `/api/sos/${incident}/cancel`, {
+        reason: 'Fixture cancellation',
+      }),
+    ).state,
     'cancel_requested',
   );
-  assertOK(await post(responder, `/api/sos/${incident}/respond`, { state: 'cancelled' }));
+  assertOK(
+    await post(responder, `/api/sos/${incident}/respond`, {
+      state: 'cancelled',
+    }),
+  );
   assert.equal(
     (
       await post(student, '/api/safety/location', {
@@ -524,7 +600,12 @@ test('confidential recovery requests and guardian relationships expose only auth
     }),
     201,
   );
-  assertOK(await post(student, '/api/safety/check', { status: 'safe', sharing: false }));
+  assertOK(
+    await post(student, '/api/safety/check', {
+      status: 'safe',
+      sharing: false,
+    }),
+  );
   const check = assertOK(await api(parent, '/api/guardians/checkins')).checks[0];
   assert.equal(check.status, 'safe');
   assert.equal(check.lat, undefined);
@@ -574,8 +655,12 @@ test('provider opt-ins validate destinations and unsigned delivery callbacks can
     400,
   );
   assert.equal(
-    (await post(student, '/api/notifications/sms/consent', { consent: true, phone: 'invalid' }))
-      .status,
+    (
+      await post(student, '/api/notifications/sms/consent', {
+        consent: true,
+        phone: 'invalid',
+      })
+    ).status,
     400,
   );
   assertOK(await post(student, '/api/notifications/sms/consent', { consent: false }));
@@ -592,7 +677,11 @@ test('prepared assets and floor plans stay school-scoped and coverage reflects r
   const upload = async (buffer, mime) => {
     const response = await fetch(BASE + '/api/uploads', {
       method: 'POST',
-      headers: { Cookie: admin, 'X-Radar-Workspace': SCHOOL, 'Content-Type': mime },
+      headers: {
+        Cookie: admin,
+        'X-Radar-Workspace': SCHOOL,
+        'Content-Type': mime,
+      },
       body: buffer,
     });
     assert.equal(response.status, 201, await response.clone().text());
@@ -612,8 +701,15 @@ test('prepared assets and floor plans stay school-scoped and coverage reflects r
   };
   const invalid = await fetch(BASE + '/api/uploads', {
     method: 'POST',
-    headers: { Cookie: admin, 'X-Radar-Workspace': SCHOOL, 'Content-Type': 'model/gltf-binary' },
-    body: glb({ asset: { version: '2.0' }, buffers: [{ uri: 'https://other.example/model.bin' }] }),
+    headers: {
+      Cookie: admin,
+      'X-Radar-Workspace': SCHOOL,
+      'Content-Type': 'model/gltf-binary',
+    },
+    body: glb({
+      asset: { version: '2.0' },
+      buffers: [{ uri: 'https://other.example/model.bin' }],
+    }),
   });
   assert.equal(invalid.status, 400);
   const model = await upload(
@@ -700,7 +796,12 @@ test('school location editing is admin-only, validated, persisted and independen
     (
       await api(student, '/api/school/location', {
         method: 'PATCH',
-        body: { lat: 14.12, lng: 122.95, verified: true, source: 'Fixture survey' },
+        body: {
+          lat: 14.12,
+          lng: 122.95,
+          verified: true,
+          source: 'Fixture survey',
+        },
       })
     ).status,
     403,
@@ -709,7 +810,12 @@ test('school location editing is admin-only, validated, persisted and independen
     (
       await api(admin, '/api/school/location', {
         method: 'PATCH',
-        body: { lat: 999, lng: 122.95, verified: true, source: 'Fixture survey' },
+        body: {
+          lat: 999,
+          lng: 122.95,
+          verified: true,
+          source: 'Fixture survey',
+        },
       })
     ).status,
     400,
@@ -726,7 +832,12 @@ test('school location editing is admin-only, validated, persisted and independen
   assertOK(
     await api(admin, '/api/school/location', {
       method: 'PATCH',
-      body: { lat: 14.11, lng: 122.94, verified: true, source: 'Fixture approved survey' },
+      body: {
+        lat: 14.11,
+        lng: 122.94,
+        verified: true,
+        source: 'Fixture approved survey',
+      },
     }),
   );
   const school = assertOK(await api(admin, '/api/auth/me')).school;
@@ -773,7 +884,10 @@ test('Gmail registration never grants staff privileges and school requests requi
   assert.equal(assertOK(await api(gmail, '/api/auth/me')).user.role, 'student');
   assert.equal((await post(gmail, `/api/schools/${SCHOOL}/join`, { role: 'admin' })).status, 400);
   assertOK(
-    await post(gmail, `/api/schools/${SCHOOL}/join`, { role: 'teacher', note: 'Fixture request' }),
+    await post(gmail, `/api/schools/${SCHOOL}/join`, {
+      role: 'teacher',
+      note: 'Fixture request',
+    }),
     201,
   );
   assert.equal(
@@ -852,12 +966,19 @@ test('setup readiness distinguishes local records from unconfigured services and
   assert.ok(duplicates.matches.some((row) => row.id === id2 && row.similarity >= 90));
   assert.equal((await api(student, `/api/hazards/${id1}/duplicates`)).status, 403);
   assertOK(
-    await post(admin, '/api/escalation/rules', { enabled: true, threshold: 2, severity: 'high' }),
+    await post(admin, '/api/escalation/rules', {
+      enabled: true,
+      threshold: 2,
+      severity: 'high',
+    }),
   );
   assert.equal(assertOK(await api(admin, '/api/escalation/suggestions')).suggestions.length, 0);
   for (const id of [id1, id2])
     assertOK(
-      await api(admin, `/api/hazards/${id}`, { method: 'PATCH', body: { status: 'verified' } }),
+      await api(admin, `/api/hazards/${id}`, {
+        method: 'PATCH',
+        body: { status: 'verified' },
+      }),
     );
   assert.equal(assertOK(await api(admin, '/api/escalation/suggestions')).suggestions[0].count, 2);
   const alerts = assertOK(await api(admin, '/api/alerts'));
@@ -895,6 +1016,810 @@ test('prepared model mappings reject cross-building room links and retain genuin
     400,
   );
 });
+test('bulk roster import previews, preserves attendance, deduplicates and enforces class ownership', async () => {
+  const csv = 'name,email,externalRef\r\n"Fixture, Imported One",,a1\r\nImported Two,,a2\r\n';
+  const preview = assertOK(await post(teacher, `/api/advanced/rosters/${classId}/import`, { csv }));
+  assert.equal(preview.dryRun, true);
+  assert.equal(preview.preview.length, 2);
+  assert.equal(preview.added, 0);
+  assert.equal(
+    (
+      await post(otherTeacher, `/api/advanced/rosters/${classId}/import`, {
+        csv,
+        commit: true,
+      })
+    ).status,
+    403,
+  );
+  assert.equal(
+    assertOK(
+      await post(teacher, `/api/advanced/rosters/${classId}/import`, {
+        csv,
+        commit: true,
+      }),
+    ).added,
+    2,
+  );
+  assert.equal(
+    assertOK(
+      await post(teacher, `/api/advanced/rosters/${classId}/import`, {
+        csv,
+        commit: true,
+      }),
+    ).added,
+    0,
+  );
+  const roster = assertOK(await api(teacher, `/api/rollcall/${classId}/roster`)).people;
+  assert.equal(roster.find((row) => row.id === personId).status, 'injured');
+  assert.equal(
+    (
+      await post(teacher, `/api/advanced/rosters/${classId}/import`, {
+        csv: 'name,email\nUnknown,not-a-member@gmail.com',
+      })
+    ).status,
+    400,
+  );
+});
+test('school image-map drafts require staff review, remain private to the school, and only export with measured anchors', async () => {
+  assert.equal((await api(student, '/api/advanced/campus-map-provider')).status, 403);
+  assert.equal(
+    typeof assertOK(await api(admin, '/api/advanced/campus-map-provider')).configured,
+    'boolean',
+  );
+  const frames = [{ time: 0, image: 'data:image/jpeg;base64,AA==', kind: 'photo' }];
+  const features = [
+    {
+      frameIndex: 0,
+      kind: 'building',
+      geometryType: 'Polygon',
+      points: [
+        [0.2, 0.2],
+        [0.6, 0.2],
+        [0.6, 0.6],
+        [0.2, 0.6],
+      ],
+      confidence: 0.8,
+      label: 'Synthetic building candidate',
+      note: 'API fixture, not an actual detected school building',
+    },
+  ];
+  const input = {
+    title: 'TEST FIXTURE image draft',
+    frames,
+    features,
+    uncertainties: [],
+    reviewed: true,
+  };
+  assert.equal((await post(student, '/api/advanced/campus-maps', input)).status, 403);
+  assert.equal((await api(student, '/api/advanced/campus-maps')).status, 403);
+  assert.equal(
+    (await post(admin, '/api/advanced/campus-maps/generate', { frames, consent: false })).status,
+    400,
+  );
+  assert.equal(
+    (await post(admin, '/api/advanced/campus-maps', { ...input, reviewed: false })).status,
+    400,
+  );
+  const before = assertOK(await api(admin, '/api/map')).buildings.length;
+  const saved = assertOK(await post(admin, '/api/advanced/campus-maps', input), 201);
+  const record = assertOK(await api(admin, `/api/advanced/campus-maps/${saved.id}`));
+  assert.equal(record.payload.status, 'unverified_image_draft');
+  assert.equal(record.payload.features.length, 1);
+  const anchors = [
+    { x: 0.2, y: 0.2, lat: 14.12, lng: 122.95 },
+    { x: 0.8, y: 0.2, lat: 14.12, lng: 122.951 },
+    { x: 0.2, y: 0.8, lat: 14.119, lng: 122.95 },
+  ];
+  assert.equal(
+    (
+      await post(admin, `/api/advanced/campus-maps/${saved.id}/georeference`, {
+        frameIndex: 0,
+        anchors,
+      })
+    ).status,
+    400,
+  );
+  const placed = assertOK(
+    await post(admin, `/api/advanced/campus-maps/${saved.id}/georeference`, {
+      frameIndex: 0,
+      anchors,
+      topDownConfirmed: true,
+      sourceNote: 'Synthetic measured-point fixture only.',
+    }),
+  );
+  assert.equal(placed.geojson.features[0].properties.status, 'unverified_image_draft');
+  assert.equal(
+    assertOK(await api(admin, '/api/map')).buildings.length,
+    before,
+    'drafts never register actual buildings automatically',
+  );
+  assert.ok(
+    assertOK(await api(admin, `/api/advanced/campus-maps/${saved.id}`)).payload.georeferences[0],
+  );
+  await select(admin, null);
+  assert.equal((await api(admin, `/api/advanced/campus-maps/${saved.id}`)).status, 404);
+  await select(admin, SCHOOL);
+});
+
+test('school GIS separates reviewed model suggestions, applies thresholds, and protects imports and tenant scope', async () => {
+  const geojson = {
+    type: 'FeatureCollection',
+    features: [
+      {
+        type: 'Feature',
+        geometry: {
+          type: 'Polygon',
+          coordinates: [
+            [
+              [122, 13],
+              [124, 13],
+              [124, 15],
+              [122, 15],
+              [122, 13],
+            ],
+          ],
+        },
+        properties: { label: 'visible_debris', confidence: 0.82, verified: true },
+      },
+    ],
+  };
+  const body = {
+    title: 'TEST FIXTURE — synthetic CNN output, not trained inference',
+    modelName: 'Fixture U-Net',
+    modelVersion: 'test-1',
+    sourceNote: 'Synthetic geometry for permission and overlap tests only.',
+    observedAt: '2025-01-01T00:00:00Z',
+    crs: 'EPSG:4326',
+    georeferenced: true,
+    geojson,
+  };
+  assert.equal((await post(student, '/api/advanced/gis/models', body)).status, 403);
+  assert.equal(
+    (await post(admin, '/api/advanced/gis/models', { ...body, georeferenced: false })).status,
+    400,
+  );
+  assert.equal(
+    (await post(admin, '/api/advanced/gis/models', { ...body, observedAt: null })).status,
+    400,
+  );
+  const saved = assertOK(await post(admin, '/api/advanced/gis/models', body), 201);
+  const listed = assertOK(await api(student, '/api/advanced/gis')).models.find(
+    (row) => row.id === saved.id,
+  );
+  assert.equal(listed.reviewState, 'pending');
+  assert.equal(listed.geojson.features[0].properties.verified, undefined);
+  const assess = async (threshold = 0.5, selectedIds = [`model:${saved.id}`]) =>
+    assertOK(await post(student, '/api/advanced/gis/assess', { threshold, selectedIds }));
+  assert.equal((await assess()).assessment.flatMap((b) => b.evidence).length, 0);
+  assert.equal(
+    (
+      await post(student, `/api/advanced/gis/models/${saved.id}/review`, {
+        state: 'reviewed',
+        note: 'fixture',
+      })
+    ).status,
+    403,
+  );
+  assertOK(
+    await post(admin, `/api/advanced/gis/models/${saved.id}/review`, {
+      state: 'reviewed',
+      note: 'Test geometry alignment reviewed; not evidence of a real hazard.',
+    }),
+  );
+  const result = await assess();
+  assert.ok(result.assessment.flatMap((b) => b.evidence).length > 0);
+  assert.equal(result.geojson.features[0].properties.basis, 'registered_building_pin');
+  assert.equal(result.assessment.flatMap((b) => b.evidence)[0].sourceType, 'cnn_suggestion');
+  assert.equal((await assess(0.9)).assessment.flatMap((b) => b.evidence).length, 0);
+  assert.equal((await assess(0.5, [])).assessment.flatMap((b) => b.evidence).length, 0);
+  assert.equal((await post(student, '/api/advanced/gis/assess', { threshold: 2 })).status, 400);
+  await select(admin, null);
+  assert.equal(
+    assertOK(await api(admin, '/api/advanced/gis')).models.some((row) => row.title === body.title),
+    false,
+  );
+  assert.equal(
+    (
+      await post(admin, `/api/advanced/gis/models/${saved.id}/review`, {
+        state: 'reviewed',
+        note: 'wrong school',
+      })
+    ).status,
+    404,
+  );
+  await select(admin, SCHOOL);
+  assertOK(
+    await post(admin, `/api/advanced/gis/models/${saved.id}/review`, {
+      state: 'rejected',
+      note: 'Fixture rejected after testing.',
+    }),
+  );
+  assert.equal((await assess()).assessment.flatMap((b) => b.evidence).length, 0);
+});
+
+test('official map imports require source provenance, valid coordinates and role permissions', async () => {
+  const geojson = {
+    type: 'FeatureCollection',
+    features: [
+      {
+        type: 'Feature',
+        geometry: {
+          type: 'LineString',
+          coordinates: [
+            [122.9, 14.1],
+            [122.91, 14.11],
+          ],
+        },
+        properties: { name: 'Parser test fixture only' },
+      },
+    ],
+  };
+  const layer = {
+    kind: 'fault',
+    title: 'TEST FIXTURE — not an actual official dataset',
+    agency: 'Parser fixture',
+    sourceUrl: 'https://www.phivolcs.dost.gov.ph/test-fixture.geojson',
+    publishedAt: new Date().toISOString(),
+    geojson,
+    verified: false,
+  };
+  assert.equal((await post(student, '/api/advanced/layers', layer)).status, 403);
+  assert.equal(
+    (
+      await post(admin, '/api/advanced/layers', {
+        ...layer,
+        sourceUrl: 'http://127.0.0.1/internal',
+      })
+    ).status,
+    400,
+  );
+  const saved = assertOK(await post(admin, '/api/advanced/layers', layer), 201);
+  const listed = assertOK(await api(student, '/api/advanced/layers')).layers.find(
+    (row) => row.id === saved.id,
+  );
+  assert.equal(listed.freshness, 'unverified_import');
+  assert.equal(listed.geojson.features.length, 1);
+  assertOK(await api(admin, `/api/advanced/layers/${saved.id}`, { method: 'DELETE' }));
+});
+test('calibrated image projection carries an approximate pin into a human-reviewed inspection', async () => {
+  const scan = assertOK(
+    await post(admin, '/api/scans', {
+      roomId,
+      clientRequestId: crypto.randomUUID(),
+    }),
+    201,
+  ).scanId;
+  const file = await fetch(BASE + '/api/uploads', {
+    method: 'POST',
+    headers: {
+      Cookie: admin,
+      'X-Radar-Workspace': SCHOOL,
+      'Content-Type': 'image/svg+xml',
+    },
+    body: '<svg xmlns="http://www.w3.org/2000/svg"/>',
+  });
+  const image = await file.json();
+  assertOK(await post(admin, `/api/scans/${scan}/photos`, { url: image.url }), 201);
+  assertOK(
+    await post(admin, `/api/scans/${scan}/observations`, {
+      title: 'Calibrated parser fixture observation',
+      severity: 'low',
+    }),
+    201,
+  );
+  const detail = assertOK(await api(admin, `/api/scans/${scan}`));
+  const photo = detail.photos[0].id,
+    observation = detail.observations[0].id;
+  const anchors = [
+    [0, 0, 0, 0],
+    [1, 0, 1, 0],
+    [1, 1, 1, 1],
+    [0, 1, 0, 1],
+  ];
+  assert.equal(
+    (
+      await post(student, `/api/advanced/photos/${photo}/calibrate`, {
+        anchors,
+        source: 'Fixture plane',
+        verified: true,
+      })
+    ).status,
+    403,
+  );
+  assertOK(
+    await post(admin, `/api/advanced/photos/${photo}/calibrate`, {
+      anchors,
+      source: 'Fixture known planar correspondences',
+      verified: true,
+    }),
+  );
+  const point = assertOK(
+    await post(admin, `/api/advanced/observations/${observation}/project`, {
+      photoId: photo,
+      x: 0.25,
+      y: 0.6,
+    }),
+  );
+  assert.ok(Math.abs(point.x - 0.25) < 1e-8);
+  assertOK(
+    await api(admin, `/api/scans/${scan}/observations/${observation}`, {
+      method: 'PATCH',
+      body: { status: 'accepted' },
+    }),
+  );
+  assertOK(await post(admin, `/api/scans/${scan}/submit`, {}));
+  const record = assertOK(await api(admin, `/api/rooms/${roomId}/record`));
+  assert.ok(record.hazards.some((row) => row.pinX === 0.25 && row.pinY === 0.6));
+});
+test('foreground sharing has explicit consent, fixed expiry and responder-only sample access', async () => {
+  const incident = assertOK(
+    await post(student, '/api/sos', {
+      kind: 'other',
+      note: 'Temporary GPS fixture',
+    }),
+    201,
+  ).incidentId;
+  assert.equal(
+    (
+      await post(student, '/api/advanced/location/start', {
+        incidentId: incident,
+        minutes: 5,
+      })
+    ).status,
+    400,
+  );
+  const session = assertOK(
+    await post(student, '/api/advanced/location/start', {
+      consent: true,
+      incidentId: incident,
+      minutes: 5,
+    }),
+  );
+  const sample = assertOK(
+    await post(student, '/api/advanced/location/sample', {
+      lat: 14.1,
+      lng: 122.9,
+      accuracy: 20,
+    }),
+  );
+  assert.equal(sample.expiresAt, session.endsAt);
+  assert.equal(assertOK(await api(responder, '/api/operations')).locations.length, 1);
+  assert.equal(assertOK(await api(parent, '/api/operations')).locations, undefined);
+  assertOK(await api(student, '/api/advanced/location', { method: 'DELETE' }));
+  assert.equal(
+    (
+      await post(student, '/api/advanced/location/sample', {
+        lat: 14.1,
+        lng: 122.9,
+        accuracy: 20,
+      })
+    ).status,
+    410,
+  );
+});
+test('registered count devices are scoped, reject replayed readings, and revoke tokens', async () => {
+  assert.equal(
+    (await post(student, '/api/advanced/devices', { name: 'Unauthorized' })).status,
+    403,
+  );
+  const device = assertOK(
+    await post(admin, '/api/advanced/devices', {
+      name: 'Aggregate test fixture',
+      roomId,
+    }),
+    201,
+  );
+  const payload = {
+    deviceId: device.id,
+    count: 7,
+    observedAt: new Date().toISOString(),
+    nonce: crypto.randomUUID(),
+  };
+  assert.equal((await post(null, '/api/device/occupancy', payload)).status, 403);
+  assertOK(
+    await api(null, '/api/device/occupancy', {
+      method: 'POST',
+      body: payload,
+      headers: { Authorization: `Bearer ${device.token}` },
+    }),
+    201,
+  );
+  assert.equal(
+    (
+      await api(null, '/api/device/occupancy', {
+        method: 'POST',
+        body: payload,
+        headers: { Authorization: `Bearer ${device.token}` },
+      })
+    ).status,
+    409,
+  );
+  const counts = assertOK(await api(responder, '/api/advanced/occupancy'));
+  assert.equal(counts.rooms.find((row) => row.roomId === roomId).count, 7);
+  const devices = assertOK(await api(admin, '/api/advanced/devices')).devices;
+  assert.equal(devices[0].tokenHash, undefined);
+  assert.equal(devices[0].token, undefined);
+  assertOK(
+    await api(admin, `/api/advanced/devices/${device.id}`, {
+      method: 'DELETE',
+    }),
+  );
+  assert.equal(
+    (
+      await api(null, '/api/device/occupancy', {
+        method: 'POST',
+        body: { ...payload, nonce: crypto.randomUUID() },
+        headers: { Authorization: `Bearer ${device.token}` },
+      })
+    ).status,
+    403,
+  );
+});
+test('custom report fields are allowlisted and measured models need actual floor surveys', async () => {
+  assert.equal(
+    (
+      await post(student, '/api/advanced/reports', {
+        dataset: 'hazards',
+        groupBy: ['severity'],
+      })
+    ).status,
+    403,
+  );
+  assert.equal(
+    (
+      await post(admin, '/api/advanced/reports', {
+        dataset: 'hazards',
+        groupBy: ['reported_by; DROP TABLE users'],
+      })
+    ).status,
+    400,
+  );
+  const report = assertOK(
+    await post(admin, '/api/advanced/reports', {
+      dataset: 'hazards',
+      groupBy: ['severity', 'status'],
+    }),
+  );
+  assert.ok(report.sourceRecords > 0);
+  assert.ok(report.csv.includes('averageResolutionHours'));
+  assert.ok(assertOK(await api(admin, '/api/advanced/recurrence')).groups.length > 0);
+  const record = assertOK(await api(admin, `/api/rooms/${roomId}/record`));
+  assertOK(
+    await post(admin, `/api/advanced/floors/${record.room.floorId}/survey`, {
+      scale: 10,
+      elevation: 3.2,
+      source: 'Test fixture measured plane',
+      verified: true,
+      layoutVerified: true,
+    }),
+  );
+  const map = assertOK(await api(admin, '/api/map'));
+  const layout = assertOK(await api(admin, `/api/advanced/models/${map.buildings[0].id}/layout`));
+  assert.equal(layout.ready, true);
+  assert.equal(layout.floors[0].elevationM, 3.2);
+});
+test('relay drafts stay unverified, expire, reject other schools and cannot be replayed', async () => {
+  const packet = {
+    version: 1,
+    id: crypto.randomUUID(),
+    school: SCHOOL,
+    kind: 'other',
+    note: 'Test fixture, no actual emergency',
+    expiresAt: new Date(Date.now() + 600000).toISOString(),
+  };
+  assert.equal((await post(student, '/api/advanced/relay/receive', { packet })).status, 403);
+  assert.equal(
+    (
+      await post(responder, '/api/advanced/relay/receive', {
+        packet: { ...packet, school: '112082' },
+      })
+    ).status,
+    409,
+  );
+  assert.equal(
+    (
+      await post(responder, '/api/advanced/relay/receive', {
+        packet: { ...packet, expiresAt: '2000-01-01T00:00:00Z' },
+      })
+    ).status,
+    400,
+  );
+  const received = assertOK(await post(responder, '/api/advanced/relay/receive', { packet }), 201);
+  assert.equal(received.verified, false);
+  assert.equal((await post(responder, '/api/advanced/relay/receive', { packet })).status, 409);
+});
+test('acceptance records and notification policies require administrators and never imply provider delivery', async () => {
+  assert.equal(
+    (
+      await post(student, '/api/advanced/testing/results', {
+        testKey: 'sensor',
+        state: 'passed',
+        note: 'unauthorized',
+      })
+    ).status,
+    403,
+  );
+  assertOK(
+    await post(admin, '/api/advanced/testing/results', {
+      testKey: 'sensor',
+      state: 'blocked',
+      note: 'Fixture only; no physical sensor configured.',
+    }),
+    201,
+  );
+  const notebook = assertOK(await api(admin, '/api/advanced/testing'));
+  assert.equal(notebook.checks.smsConfigured, false);
+  assert.ok(notebook.results.some((row) => row.state === 'blocked'));
+  assertOK(
+    await post(admin, '/api/advanced/delivery-policy', {
+      fallbackSms: true,
+      sosSms: true,
+    }),
+  );
+  assert.equal(
+    assertOK(await api(admin, '/api/advanced/delivery-policy')).policy.fallbackSms,
+    true,
+  );
+  assert.equal((await api(student, '/api/advanced/health')).status, 403);
+  assert.equal(assertOK(await api(admin, '/api/advanced/health')).database, true);
+});
+test('SMS fallback and SOS jobs honor consent and show unconfigured providers instead of fabricated delivery', async () => {
+  assertOK(
+    await post(responder, '/api/notifications/sms/consent', {
+      consent: true,
+      phone: '+639001234567',
+    }),
+  );
+  assertOK(
+    await post(admin, '/api/advanced/delivery-policy', {
+      fallbackSms: true,
+      sosSms: true,
+    }),
+  );
+  const incident = assertOK(
+    await post(student, '/api/sos', {
+      kind: 'other',
+      note: 'Delivery policy test fixture only',
+    }),
+    201,
+  ).incidentId;
+  const alert = assertOK(
+    await post(admin, '/api/alerts', {
+      title: 'Fallback test fixture',
+      body: 'No live messages',
+      audience: 'school',
+      level: 'green',
+      sendPush: true,
+    }),
+    201,
+  ).alert;
+  assert.equal((await post(student, '/api/advanced/delivery/drain', {})).status, 403);
+  assertOK(await post(admin, '/api/advanced/delivery/drain', {}));
+  const policy = assertOK(await api(admin, '/api/advanced/delivery-policy'));
+  assert.ok(policy.sosJobs.some((job) => job.incidentId === incident && job.state === 'processed'));
+  const receipts = assertOK(await api(admin, '/api/notifications/channels')).deliveries;
+  assert.ok(
+    receipts.some(
+      (row) => row.channel === 'sms' && row.alertId === alert.id && row.state === 'not_configured',
+    ),
+  );
+  assert.ok(!receipts.some((row) => row.state === 'delivered'));
+  assertOK(await post(responder, '/api/notifications/sms/consent', { consent: false }));
+});
+test('campus video surveys require reviewed school-scoped labels and never fabricate AI availability', async () => {
+  const frames = [{ time: 1, image: 'data:image/jpeg;base64,YWJj' }];
+  assert.equal(
+    (
+      await api(student, '/api/advanced/video-surveys', {
+        method: 'POST',
+        body: { title: 'Denied', frames, candidates: [], reviewed: true },
+      })
+    ).status,
+    403,
+  );
+  assert.equal(
+    (
+      await api(admin, '/api/advanced/video-surveys', {
+        method: 'POST',
+        body: { title: 'Not reviewed', frames, candidates: [] },
+      })
+    ).status,
+    400,
+  );
+  assert.equal(
+    (
+      await api(admin, '/api/advanced/video-surveys/analyze', {
+        method: 'POST',
+        body: { frames, consent: false },
+      })
+    ).status,
+    400,
+  );
+  const ai = await api(admin, '/api/advanced/video-surveys/analyze', {
+    method: 'POST',
+    body: { frames, consent: true },
+  });
+  assert.equal(ai.status, 400);
+  assert.match(ai.body.error, /configure|training/i);
+  const saved = await api(admin, '/api/advanced/video-surveys', {
+    method: 'POST',
+    body: {
+      title: 'Reviewed video fixture',
+      frames,
+      candidates: [
+        {
+          frameIndex: 0,
+          x: 0.2,
+          y: 0.4,
+          label: 'Draft 1',
+          description: 'Needs building match',
+          buildingId: null,
+        },
+      ],
+      reviewed: true,
+    },
+  });
+  assert.equal(saved.status, 201);
+  const read = await api(admin, `/api/advanced/video-surveys/${saved.body.id}`);
+  assert.equal(read.body.payload.candidates[0].buildingId, null);
+  assert.equal((await api(admin, '/api/advanced/video-provider')).body.configured, false);
+  assert.equal(
+    (
+      await api(student, `/api/advanced/video-surveys/${saved.body.id}/dashboard`, {
+        method: 'POST',
+        body: {},
+      })
+    ).status,
+    403,
+  );
+  assert.equal(
+    (
+      await api(admin, `/api/advanced/video-surveys/${saved.body.id}/dashboard`, {
+        method: 'POST',
+        body: {},
+      })
+    ).status,
+    200,
+  );
+  const closeView = await api(admin, '/api/campus-close-view');
+  assert.equal(closeView.body.survey.id, saved.body.id);
+  assert.equal(closeView.body.survey.payload.frames.length, 1);
+
+  assert.equal(
+    (
+      await api(admin, `/api/advanced/video-surveys/${saved.body.id}`, {
+        scope: '',
+      })
+    ).status,
+    409,
+  );
+  assert.equal(
+    (
+      await api(admin, `/api/advanced/video-surveys/${saved.body.id}`, {
+        method: 'DELETE',
+      })
+    ).status,
+    200,
+  );
+});
+test('image route sketches remain school-scoped drafts, require meaningful geometry and never activate evacuation routes', async () => {
+  const image = 'data:image/jpeg;base64,YWJj';
+  const payload = {
+    title: 'Field-walk fixture',
+    source: 'photo',
+    image,
+    paths: [
+      {
+        name: 'Visible walkway',
+        description: 'Needs field walk',
+        points: [
+          [0.1, 0.2],
+          [0.4, 0.5],
+          [0.8, 0.6],
+        ],
+      },
+    ],
+    checks: {},
+    notes: '',
+    uncertainties: ['Check the gate'],
+  };
+  assert.equal((await post(student, '/api/advanced/image-paths', payload)).status, 403);
+  assert.equal((await post(teacher, '/api/advanced/image-paths', payload)).status, 403);
+  assert.equal(
+    (
+      await post(admin, '/api/advanced/image-paths', {
+        ...payload,
+        paths: [
+          {
+            name: 'Invalid GPS',
+            points: [
+              [14, 122],
+              [15, 123],
+            ],
+          },
+        ],
+      })
+    ).status,
+    400,
+  );
+  assert.equal(
+    (await post(admin, '/api/advanced/image-paths', { ...payload, checks: { surface: true } }))
+      .status,
+    400,
+  );
+  const before = assertOK(await api(admin, '/api/evacuation')).routes.length;
+  const saved = assertOK(await post(admin, '/api/advanced/image-paths', payload), 201);
+  const read = assertOK(await api(admin, `/api/advanced/image-paths/${saved.id}`));
+  assert.equal(read.paths[0].points.length, 3);
+  assert.equal(read.checks.surface, false);
+  assert.equal(
+    (await post(responder, '/api/advanced/image-paths', { ...payload, id: saved.id })).status,
+    403,
+  );
+  const copy = assertOK(
+    await post(responder, '/api/advanced/image-paths', { ...payload, title: 'Responder copy' }),
+    201,
+  );
+  assert.equal(
+    (await api(responder, `/api/advanced/image-paths/${saved.id}`, { method: 'DELETE' })).status,
+    403,
+  );
+  assert.equal(
+    (await api(responder, `/api/advanced/image-paths/${copy.id}`, { method: 'DELETE' })).status,
+    200,
+  );
+  assert.equal(
+    (await api(admin, `/api/advanced/image-paths/${saved.id}`, { scope: '' })).status,
+    409,
+  );
+  assertOK(
+    await post(admin, '/api/advanced/image-paths', {
+      ...payload,
+      id: saved.id,
+      checks: { surface: true, access: true, obstructions: true, destination: true },
+      notes: 'Synthetic field-check fixture only',
+    }),
+    201,
+  );
+  assert.equal(assertOK(await api(admin, '/api/evacuation')).routes.length, before);
+  assert.equal(
+    (await post(admin, '/api/advanced/image-paths/suggest', { image, consent: false })).status,
+    400,
+  );
+  assert.equal(
+    (await api(admin, `/api/advanced/image-paths/${saved.id}`, { method: 'DELETE' })).status,
+    200,
+  );
+  assert.equal((await api(admin, `/api/advanced/image-paths/${saved.id}`)).status, 404);
+});
+test('all six approved school roles return to the same configured dashboard after logout and login',async()=>{
+ const image='data:image/jpeg;base64,YWJj';
+ const survey=assertOK(await post(admin,'/api/advanced/video-surveys',{title:'Login persistence fixture',frames:[{time:0,image,kind:'photo'}],candidates:[],reviewed:true}),201);
+ assertOK(await post(admin,`/api/advanced/video-surveys/${survey.id}/dashboard`,{}));
+ const map=assertOK(await api(admin,'/api/map'));
+ for(const role of ['admin','inspector','teacher','responder','student','parent']){
+  const email=`login-${role}@example.test`,password='Fixture#2026';
+  assert.equal((await post(null,'/api/auth/signup',{name:`Login ${role}`,email,password})).status,201);
+  assertOK(await post(admin,'/api/members',{email,role}),201);
+  async function signIn(){const response=await fetch(BASE+'/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password})});assert.equal(response.status,200);const body=await response.json();const cookie=response.headers.getSetCookie().map(value=>value.split(';')[0]).join('; ');modes.set(cookie,body.activeWorkspaceId||'');assert.equal(body.activeWorkspaceId,SCHOOL);assert.equal(body.user.role,role);assert.equal(body.school.name,map.school.name);return cookie;}
+  let cookie=await signIn();assertOK(await post(cookie,'/api/auth/logout',{}));cookie=await signIn();
+  const restored=assertOK(await api(cookie,'/api/map'));assert.equal(restored.school.lat,map.school.lat);assert.equal(restored.buildings.length,map.buildings.length);
+  assertOK(await api(cookie,'/api/dashboard'));
+  assert.equal(assertOK(await api(cookie,'/api/campus-close-view')).survey.id,survey.id);
+  assert.equal((await api(cookie,'/api/admin/users')).status,role==='admin'?200:403);
+  assert.equal((await post(cookie,`/api/schools/${SCHOOL}/join`,{role})).status,409,'approved members must not request approval again');
+ }
+ assertOK(await api(admin,`/api/advanced/video-surveys/${survey.id}`,{method:'DELETE'}));
+});
+test('explicit original-workspace choices persist, while revoked schools are never restored on login',async()=>{
+ const email='restore-revocation@example.test',password='Fixture#2026';
+ assert.equal((await post(null,'/api/auth/signup',{name:'Restore fixture',email,password})).status,201);
+ assertOK(await post(admin,'/api/members',{email,role:'student'}),201);
+ async function signIn(){const response=await fetch(BASE+'/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password})});assert.equal(response.status,200);const body=await response.json();const cookie=response.headers.getSetCookie().map(v=>v.split(';')[0]).join('; ');modes.set(cookie,body.activeWorkspaceId||'');return {body,cookie};}
+ let session=await signIn();assert.equal(session.body.activeWorkspaceId,SCHOOL);await select(session.cookie,null);assertOK(await post(session.cookie,'/api/auth/logout',{}));session=await signIn();assert.equal(session.body.activeWorkspaceId,null);
+ await select(session.cookie,SCHOOL);assertOK(await post(session.cookie,'/api/auth/logout',{}));const member=assertOK(await api(admin,'/api/admin/users')).users.find(u=>u.email===email);assertOK(await api(admin,`/api/members/${member.id}`,{method:'DELETE'}));
+ session=await signIn();assert.equal(session.body.activeWorkspaceId,null);assert.equal((await post(session.cookie,'/api/workspaces/select',{beisId:SCHOOL})).status,403);
+});
 test('revoking school membership removes access while retaining historical attendance', async () => {
   const id = users.find((u) => u.role === 'student').id;
   assertOK(await api(admin, `/api/members/${id}`, { method: 'DELETE' }));
@@ -904,7 +1829,13 @@ test('revoking school membership removes access while retaining historical atten
 });
 
 test('route planning uses only verified connected walkways and avoids closures and full assembly points', () => {
-  const point = { id: 1, name: 'Fixture point', status: 'open', accessible: 1, capacity: 20 };
+  const point = {
+    id: 1,
+    name: 'Fixture point',
+    status: 'open',
+    accessible: 1,
+    capacity: 20,
+  };
   const route = {
     id: 1,
     path: [
@@ -917,17 +1848,27 @@ test('route planning uses only verified connected walkways and avoids closures a
     building_id: 1,
     assembly_point_id: 1,
   };
-  const valid = planEvacuation({ routes: [route], points: [point], buildingId: 1 });
+  const valid = planEvacuation({
+    routes: [route],
+    points: [point],
+    buildingId: 1,
+  });
   assert.equal(valid.available, true);
   assert.ok(valid.distanceMeters > 100);
   assert.equal(
-    planEvacuation({ routes: [{ ...route, verified: 0 }], points: [point], buildingId: 1 })
-      .available,
+    planEvacuation({
+      routes: [{ ...route, verified: 0 }],
+      points: [point],
+      buildingId: 1,
+    }).available,
     false,
   );
   assert.equal(
-    planEvacuation({ routes: [{ ...route, status: 'closed' }], points: [point], buildingId: 1 })
-      .available,
+    planEvacuation({
+      routes: [{ ...route, status: 'closed' }],
+      points: [point],
+      buildingId: 1,
+    }).available,
     false,
   );
   assert.equal(
@@ -935,7 +1876,13 @@ test('route planning uses only verified connected walkways and avoids closures a
       routes: [route],
       points: [point],
       buildingId: 1,
-      occupancy: [{ assembly_point_id: 1, count: 20, observed_at: new Date().toISOString() }],
+      occupancy: [
+        {
+          assembly_point_id: 1,
+          count: 20,
+          observed_at: new Date().toISOString(),
+        },
+      ],
     }).available,
     false,
   );
@@ -956,7 +1903,12 @@ test('route planning uses only verified connected walkways and avoids closures a
     },
   };
   assert.equal(
-    planEvacuation({ routes: [route], points: [point], buildingId: 1, zones: [zone] }).available,
+    planEvacuation({
+      routes: [route],
+      points: [point],
+      buildingId: 1,
+      zones: [zone],
+    }).available,
     false,
   );
 });

@@ -1,87 +1,363 @@
-import { useCallback, useEffect, useState, type ElementType } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet';
-import 'leaflet/dist/leaflet.css';
-import { AlertTriangle, ArrowRight, Bell, Building2, CheckCircle2, ClipboardCheck, Layers, MapPinned, ScanEye, ShieldCheck, Siren, Users, Wifi, RefreshCw } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
+import {
+  ArrowRight,
+  ArrowUpRight,
+  Bell,
+  Check,
+  Building2,
+  ClipboardCheck,
+  Compass,
+  MapPin,
+  RefreshCw,
+  ScanEye,
+  ShieldAlert,
+  Users,
+} from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { api, errorMessage } from '@/lib/api';
 import { relativeTime, SEVERITY_META } from '@/components/ui/hazard-bits';
+import { CampusScene } from '@/components/workspace/CampusScene';
 import type { DashboardPayload, MapPayload, AlertsPayload } from '@/lib/types';
-
 export function DashboardPage() {
   const { user, school, can, activeWorkspaceId } = useAuth();
-  const navigate = useNavigate();
-  const [today] = useState(() => new Date().toISOString());
-  const [data, setData] = useState<DashboardPayload>();
-  const [map, setMap] = useState<MapPayload>();
-  const [alerts, setAlerts] = useState<AlertsPayload>();
-  const [error, setError] = useState('');
-  const [tileError, setTileError] = useState(false);
-  const [satellite, setSatellite] = useState(true);
-  const [buildings, setBuildings] = useState(true);
-  const [hazards, setHazards] = useState(true);
-  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState<DashboardPayload>(),
+    [map, setMap] = useState<MapPayload>(),
+    [alerts, setAlerts] = useState<AlertsPayload>(),
+    [error, setError] = useState(''),
+    [loading, setLoading] = useState(true);
+  const sequence = useRef(0);
   const load = useCallback(async () => {
-    setLoading(true); setError('');
+    const request = ++sequence.current;
+    setLoading(true);
+    setError('');
     try {
-      const [dashboard, campus, notices] = await Promise.all([
-        api.get<DashboardPayload>('/api/dashboard'), api.get<MapPayload>('/api/map'),
+      const [d, m, a] = await Promise.all([
+        api.get<DashboardPayload>('/api/dashboard'),
+        api.get<MapPayload>('/api/map'),
         can('alerts:read') ? api.get<AlertsPayload>('/api/alerts') : Promise.resolve(undefined),
       ]);
-      setData(dashboard); setMap(campus); setAlerts(notices);
-    } catch (err) { setError(errorMessage(err)); }
-    finally { setLoading(false); }
-  }, [can]);
-  useEffect(() => { void load(); }, [load]); // Reload when the signed-in account changes.
+      if (sequence.current === request) {
+        setData(d);
+        setMap(m);
+        setAlerts(a);
+      }
+    } catch (e) {
+      if (sequence.current === request) setError(errorMessage(e));
+    } finally {
+      if (sequence.current === request) setLoading(false);
+    }
+  }, [can, activeWorkspaceId]);
+  useEffect(() => {
+    setData(undefined);
+    setMap(undefined);
+    setAlerts(undefined);
+    void load();
+    return () => {
+      sequence.current++;
+    };
+  }, [load]);
   const k = data?.kpis;
-  const actions = [
-    { label: 'Report Hazard', icon: AlertTriangle, href: '/hazards', tone: 'red', show: can('hazards:write') },
-    { label: 'SOS Emergency', icon: Siren, href: '/sos', tone: 'red', show: can('sos:create') },
-    { label: 'Start Roll Call', icon: Users, href: '/rollcall', tone: 'blue', show: can('rollcall:read') },
-    { label: 'Evacuation Routes', icon: MapPinned, href: '/evacuation', tone: 'green', show: can('evacuation:read') },
-  ];
-  return <div className="command-dashboard stack-page">
-    <div className="command-greeting">
-      <span className="command-avatar">{user?.name?.charAt(0)}</span>
-      <div><p className="command-eyebrow">CAMPUS SAFETY COMMAND CENTER</p><h1>Welcome back, {user?.name}!</h1><p>Stay informed. Stay prepared. Stay safe.</p></div>
-      <div className="command-date"><span>{new Date(data?.generatedAt ?? today).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}</span><strong>{school?.name}</strong></div>
-      <button className="command-icon-button" onClick={() => void load()} disabled={loading} aria-label="Refresh dashboard"><RefreshCw size={17} className={loading ? 'animate-spin' : ''}/></button>
-    </div>
-    {error && <div role="alert" className="command-error">{error}<button onClick={() => void load()}>Try again</button></div>}
-    {activeWorkspaceId && k?.totalRooms === 0 && <section className="command-panel workspace-onboarding"><div><h2>Set up your school campus</h2><p>Your workspace is empty. Add the school’s real buildings, floors, and rooms to begin inspections. Campus coordinates have not been recorded yet.</p></div><button className="command-action blue" onClick={() => navigate('/buildings')}>Add buildings &amp; rooms <ArrowRight size={16}/></button></section>}
-    <button className="school-back" onClick={() => navigate('/operations')}>Open RADAR 2.0 campus operations <ArrowRight size={15}/></button>
-    <div className="command-stats" aria-busy={loading}>
-      <Metric icon={Building2} title="Total Rooms" value={k?.totalRooms} hint="Across your campus" tone="blue" onClick={() => navigate('/map')}/>
-      {can('scan:read') && <Metric icon={ScanEye} title="Scanned Rooms" value={k?.roomsScanned} hint={`${k?.roomCoverage ?? 0}% complete`} tone="green" onClick={() => navigate('/scan')}/>}
-      {can('hazards:read') && <Metric icon={ShieldCheck} title="Active Hazards" value={k?.unresolved} hint="Unresolved findings" tone="red" onClick={() => navigate('/hazards')}/>}
-      {can('hazards:read') && <Metric icon={ClipboardCheck} title="Pending Review" value={k?.pendingReview} hint="Awaiting verification" tone="amber" onClick={() => navigate('/hazards?status=pending_review')}/>}
-      {can('alerts:read') && <Metric icon={Bell} title="Active Alerts" value={k?.activeAlertCount} hint={k?.alertLevel ? `${k.alertLevel} alert level` : 'No active alerts'} tone="pink" onClick={() => navigate('/alerts')}/>}
-    </div>
-    <div className="command-main-grid">
-      <section className="command-panel command-map-panel"><PanelTitle title="Campus Map" action="Full map" onClick={() => navigate('/map')}/>
-        <div className="command-map">
-          {map && <MapContainer center={[map.school.lat ?? 14.15, map.school.lng ?? 122.75]} zoom={map.school.lat == null ? 10 : 17} scrollWheelZoom={false} style={{background: 'var(--muted)'}}>
-            <TileLayer eventHandlers={{tileerror: () => setTileError(true), tileload: () => setTileError(false)}} key={String(satellite)} url={satellite ? 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}' : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'} attribution={satellite ? 'Imagery © Esri, Maxar, Earthstar Geographics' : '© OpenStreetMap contributors'}/>
-            {buildings && map.buildings.map(b => <CircleMarker key={b.id} center={[b.lat,b.lng]} radius={10} pathOptions={{color:'#a6e5ff',fillColor:'#007bff',fillOpacity:1,weight:2}}><Popup><strong>{b.name}</strong><p>{b.roomCount} rooms · {b.floorCount} floors</p><button onClick={() => navigate('/map')}>Explore building →</button></Popup></CircleMarker>)}
-            {hazards && map.hazards.map(h => { const b = map.buildings.find(b => b.id === h.buildingId); return b && <CircleMarker key={h.id} center={[b.lat,b.lng]} radius={6} pathOptions={{color:'#fff',fillColor:SEVERITY_META[h.severity].hex,fillOpacity:1,weight:1}}><Popup><strong>{h.title}</strong><p>{h.severity} · {h.buildingName}</p><button onClick={() => navigate(`/hazards?open=${h.id}`)}>View finding →</button></Popup></CircleMarker>; })}
-          </MapContainer>}
-          <div className="command-map-tools"><div className="command-segment">{['Map','Satellite'].map((label,i) => <button key={label} className={satellite === Boolean(i) ? 'selected' : ''} onClick={() => { setTileError(false); setSatellite(Boolean(i)); }}>{label}</button>)}</div><div className="command-layer-panel"><h3><Layers size={14}/> Map Layers</h3><label><Building2 size={14}/> Buildings<input type="checkbox" checked={buildings} onChange={e => setBuildings(e.target.checked)}/></label><label><AlertTriangle size={14}/> Hazard Markers<input type="checkbox" checked={hazards} onChange={e => setHazards(e.target.checked)}/></label><button onClick={() => navigate('/map')}>All map layers <ArrowRight size={13}/></button></div></div>
-          {map?.school.lat == null && <div className="workspace-location-notice">Camarines Norte overview · School location not set</div>}
-          {tileError && <div role="status" className="command-tile-status">Basemap unavailable. Campus markers remain interactive. Try another map layer.</div>}
-          <div className="command-map-legend">{['low','medium','high','critical','info'].map(s => <span key={s}><i style={{background:SEVERITY_META[s as keyof typeof SEVERITY_META].hex}}/>{s}</span>)}</div>
-          {!map && <div className="command-map-loading">{loading ? 'Loading campus map…' : 'Campus map unavailable'}</div>}
+  const date = new Intl.DateTimeFormat('en-PH', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+    timeZone: school?.timezone || 'Asia/Manila',
+  }).format(new Date(data?.generatedAt || Date.now()));
+  const findings = [...(map?.hazards ?? [])].sort(
+    (a, b) =>
+      ['critical', 'high', 'medium', 'low', 'info'].indexOf(a.severity) -
+      ['critical', 'high', 'medium', 'low', 'info'].indexOf(b.severity),
+  );
+  const firstStep = k?.totalRooms === 0;
+  const tools = [
+    {
+      title: 'Inspect a room',
+      text: 'Capture conditions. Review findings.',
+      icon: ScanEye,
+      to: '/scan',
+      show: can('scan:read'),
+    },
+    {
+      title: 'Explore the campus',
+      text: 'Buildings, rooms and real imagery.',
+      icon: MapPin,
+      to: '/map',
+      show: true,
+    },
+    {
+      title: 'Check your people',
+      text: 'Attendance and follow-up.',
+      icon: Users,
+      to: '/rollcall',
+      show: can('rollcall:read'),
+    },
+    {
+      title: 'Photo route studio',
+      text: 'Sketch a path. Verify it on foot.',
+      icon: Compass,
+      to: '/operations?tab=advanced&tool=paths',
+      show: can('evacuation:read'),
+    },
+  ].filter((t) => t.show);
+  return (
+    <div className="campus-desk stack-page">
+      <header className="desk-hero">
+        <div>
+          <div className="desk-eyebrow">
+            <span className="desk-status-dot" />
+            {date}
+          </div>
+          <h1>
+            Your campus.
+            <br />A clearer picture.
+          </h1>
+          <p>
+            Hello, {user?.name.split(' ')[0]}. Here’s where things stand at{' '}
+            <strong>{school?.name}</strong>.
+          </p>
+          <div className="desk-hero-actions">
+            <Link
+              className="desk-button primary"
+              to={
+                firstStep && can('admin:users')
+                  ? '/buildings'
+                  : can('scan:read')
+                    ? '/scan'
+                    : '/operations'
+              }
+            >
+              {firstStep && can('admin:users')
+                ? 'Set up your campus'
+                : can('scan:read')
+                  ? 'Start an inspection'
+                  : 'Open your workspace'}
+              <ArrowUpRight size={17} />
+            </Link>
+            <Link className="desk-link" to="/operations">
+              Find a task <ArrowRight size={16} />
+            </Link>
+          </div>
+        </div>
+        <div className="desk-hero-note">
+          <span className="desk-orbit" aria-hidden="true">
+            <span />
+            <Compass size={42} strokeWidth={1} />
+          </span>
+          <span className="desk-eyebrow">THE CAMPUS NOTEBOOK</span>
+          <p>
+            Small observations.
+            <br />
+            <strong>Better decisions.</strong>
+          </p>
+          <button onClick={() => void load()} disabled={loading} aria-label="Refresh dashboard">
+            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+            {loading
+              ? 'Checking records…'
+              : data
+                ? `Updated ${relativeTime(data.generatedAt)}`
+                : 'Refresh records'}
+          </button>
+        </div>
+      </header>
+      {error && (
+        <div className="desk-error" role="alert">
+          {error}
+          <button onClick={() => void load()}>Try again</button>
+        </div>
+      )}
+      {k && Boolean(k.activeIncidents || k.safetyNeedHelp) && (
+        <section className="desk-response" aria-label="Response attention">
+          <ShieldAlert size={23} />
+          <div>
+            <span className="desk-eyebrow">NEEDS ATTENTION</span>
+            <h2>
+              {k.activeIncidents
+                ? `${k.activeIncidents} active incident${k.activeIncidents === 1 ? '' : 's'}`
+                : 'A check-in needs follow-up'}
+            </h2>
+            <p>
+              {k.safetyNeedHelp
+                ? `${k.safetyNeedHelp} check-in${k.safetyNeedHelp === 1 ? '' : 's'} requesting help. `
+                : ''}
+              Follow school response procedures; call local emergency services for immediate danger.
+            </p>
+          </div>
+          <Link className="desk-button" to={can('incidents:read') ? '/incidents' : '/sos'}>
+            Open response
+            <ArrowUpRight size={16} />
+          </Link>
+        </section>
+      )}
+      {Boolean(alerts?.active.length) && (
+        <section className="desk-announcement">
+          <Bell size={19} />
+          <div>
+            <span>FROM YOUR SCHOOL</span>
+            <strong>{alerts!.active[0].title}</strong>
+          </div>
+          <Link to="/alerts">
+            Read update <ArrowRight size={16} />
+          </Link>
+        </section>
+      )}
+      <section className="desk-numbers" aria-label="Campus summary" aria-busy={loading}>
+        <Link to={can('buildings:read') ? '/buildings' : '/map'}>
+          <Building2 size={18} />
+          <span>Rooms on record</span>
+          <strong>{k?.totalRooms ?? '—'}</strong>
+          <small>
+            {map?.buildings.length ?? '—'} {map?.buildings.length === 1 ? 'building' : 'buildings'}
+          </small>
+        </Link>
+        {can('scan:read') && (
+          <Link to="/scan">
+            <ScanEye size={18} />
+            <span>Inspection coverage</span>
+            <strong>{k ? `${k.roomCoverage}%` : '—'}</strong>
+            <small>{k ? `${k.roomsScanned} of ${k.totalRooms} rooms` : 'Loading records'}</small>
+          </Link>
+        )}
+        {can('hazards:read') && (
+          <Link to="/hazards">
+            <ShieldAlert size={18} />
+            <span>Open findings</span>
+            <strong>{k?.unresolved ?? '—'}</strong>
+            <small>
+              {k
+                ? `${findings.filter((h) => h.status === 'new' || h.status === 'pending_review').length} mapped, unverified`
+                : 'Loading records'}
+            </small>
+          </Link>
+        )}
+        <Link to={can('incidents:read') ? '/incidents' : '/sos'}>
+          <ClipboardCheck size={18} />
+          <span>Active incidents</span>
+          <strong>{k?.activeIncidents ?? '—'}</strong>
+          <small>{k?.activeIncidents ? 'Response in progress' : 'Reported in RADAR'}</small>
+        </Link>
+      </section>
+      <div className="desk-main">
+        <CampusScene map={map} revision={data?.generatedAt} />
+        <aside className="desk-focus">
+          <header className="desk-section-heading">
+            <div>
+              <p className="desk-eyebrow">NEXT UP</p>
+              <h2>{findings.length ? 'Needs a closer look' : 'Keep the momentum'}</h2>
+            </div>
+            <span className="desk-small-index">01 / FOCUS</span>
+          </header>
+          {can('hazards:read') && findings.length > 0 ? (
+            <div className="desk-focus-list">
+              {findings.slice(0, 4).map((h) => (
+                <Link to={`/hazards?open=${h.id}`} key={h.id}>
+                  <span
+                    className="desk-severity"
+                    style={{ background: SEVERITY_META[h.severity].hex }}
+                  />
+                  <div>
+                    <small>
+                      {h.buildingName || 'Campus observation'} · {h.severity}
+                    </small>
+                    <strong>{h.title}</strong>
+                    <span>
+                      {h.status === 'pending_review' || h.status === 'new'
+                        ? 'Needs human review'
+                        : 'Follow-up in progress'}
+                    </span>
+                  </div>
+                  <ArrowUpRight size={17} />
+                </Link>
+              ))}
+              <Link className="desk-link" to="/hazards">
+                All findings <ArrowRight size={15} />
+              </Link>
+            </div>
+          ) : (
+            <div className="desk-checklist">
+              <p>
+                {loading
+                  ? 'Checking your campus records…'
+                  : k?.totalRooms
+                    ? 'No open findings are listed on the map. Keep records fresh with regular inspections.'
+                    : 'Build your workspace around your actual school. No sample campus records are added here.'}
+              </p>
+              {[
+                {
+                  title: 'Register your spaces',
+                  text: 'Buildings, floors and rooms.',
+                  done: Boolean(k?.totalRooms),
+                  to: '/buildings',
+                  show: can('buildings:read'),
+                },
+                {
+                  title: 'Review your campus imagery',
+                  text: 'A photo or video frame people recognize.',
+                  done: false,
+                  to: '/operations?tab=advanced&tool=video',
+                  show: can('buildings:read'),
+                },
+                {
+                  title: 'Make your first inspection',
+                  text: 'Start with one familiar room.',
+                  done: Boolean(k?.roomsScanned),
+                  to: '/scan',
+                  show: can('scan:read'),
+                },
+              ]
+                .filter((t) => t.show)
+                .map((t, i) => (
+                  <Link key={t.title} to={t.to}>
+                    <span className={t.done ? 'is-done' : ''}>
+                      {t.done ? <Check size={14} /> : i + 1}
+                    </span>
+                    <div>
+                      <strong>{t.title}</strong>
+                      <small>{t.text}</small>
+                    </div>
+                    <ArrowRight size={14} />
+                  </Link>
+                ))}
+            </div>
+          )}
+          <div className="desk-focus-footer">
+            <span className="desk-label">GOOD TO KNOW</span>
+            <p>
+              Recorded conditions can change. Staff verification and the school’s response plan come
+              first.
+            </p>
+          </div>
+        </aside>
+      </div>
+      <section className="desk-shortcuts">
+        <header className="desk-section-heading">
+          <div>
+            <p className="desk-eyebrow">LESS SEARCHING. MORE DOING.</p>
+            <h2>Pick up where it matters.</h2>
+          </div>
+          <Link className="desk-link" to="/operations">
+            All tools <ArrowUpRight size={16} />
+          </Link>
+        </header>
+        <div>
+          {tools.map((t) => (
+            <Link to={t.to} key={t.title}>
+              <t.icon size={24} strokeWidth={1.5} />
+              <strong>{t.title}</strong>
+              <p>{t.text}</p>
+              <ArrowUpRight size={18} />
+            </Link>
+          ))}
         </div>
       </section>
-      <div className="command-right"><section className="command-panel"><PanelTitle title="Recent Alerts" action="View all" onClick={() => navigate(can('alerts:read') ? '/alerts' : '/notifications')}/><div className="command-alerts">{alerts?.active.length ? alerts.active.slice(0,4).map(a => <button key={a.id} onClick={() => navigate('/alerts')}><span className={`command-alert-icon ${a.level}`}><Bell size={20}/></span><span><strong>{a.title}</strong><small>{a.audienceLabel} · {relativeTime(a.publishedAt)}</small></span><span className={`command-level ${a.level}`}>{a.level}</span></button>) : <div className="command-empty"><CheckCircle2 size={28}/><strong>{can('alerts:read') ? 'No active alerts' : 'Stay connected'}</strong><p>{can('alerts:read') ? 'Published campus alerts will appear here.' : 'Your campus notifications are one click away.'}</p></div>}</div></section>
-      <section className="command-panel command-quick"><PanelTitle title="Quick Actions"/><div>{actions.filter(a => a.show).map(a => <button key={a.href} className={`command-action ${a.tone}`} onClick={() => navigate(a.href)}><a.icon size={18}/>{a.label}</button>)}<button className="command-action blue" onClick={() => navigate('/notifications')}><Bell size={18}/> Notifications</button></div></section></div>
+      <footer className="desk-footer">
+        <span>
+          RADAR <span>/</span> Safer schools, together.
+        </span>
+        <Link to="/offline">
+          Offline & saved work <ArrowUpRight size={13} />
+        </Link>
+      </footer>
     </div>
-    <div className="command-bottom-grid">
-      {can('scan:read') && <section className="command-panel command-workflow"><PanelTitle title="Room Scanning"/><div className="command-steps">{['Select Room','Capture Images','Review Findings','Submit'].map((step,i) => <span key={step}><b>{i+1}</b>{step}</span>)}</div><div className="command-workflow-body"><span className="command-feature-icon"><ScanEye size={34}/></span><div><h3>Your next inspection starts here</h3><p>Document room conditions, attach evidence, and submit findings for review.</p></div><button className="command-action blue" onClick={() => navigate('/scan')}>Start scanning <ArrowRight size={16}/></button></div><div className="command-progress"><span style={{width:`${k?.roomCoverage ?? 0}%`}}/></div><small>{k?.roomsScanned ?? '—'} of {k?.totalRooms ?? '—'} rooms inspected</small></section>}
-      {can('hazards:read') && <section className="command-panel"><PanelTitle title="Hazard Reports" action="View all" onClick={() => navigate('/hazards')}/><div className="command-findings">{map?.hazards.length ? map.hazards.slice(0,3).map(h => <button key={h.id} onClick={() => navigate(`/hazards?open=${h.id}`)}><span className="command-finding-symbol" style={{color:SEVERITY_META[h.severity].hex}}><AlertTriangle size={23}/></span><span><strong>{h.title}</strong><small>{h.buildingName ?? h.locationNote} · {h.severity}</small></span><ArrowRight size={15}/></button>) : <div className="command-empty"><ShieldCheck size={28}/><p>No findings recorded.</p></div>}</div></section>}
-      <section className="command-panel"><PanelTitle title="Emergency Command Center"/><div className={`command-incident ${k?.activeIncidents ? 'has-incident' : ''}`}><Siren size={30}/><div><small>Campus response</small><h3>{k ? `${k.activeIncidents} active incident${k.activeIncidents === 1 ? '' : 's'}` : 'Loading status…'}</h3><p>Call local emergency services for immediate danger.</p></div></div><div className="command-response-stats"><div><Users size={19}/><strong>{k?.rollcallCompletion ?? '—'}%</strong><small>Roll call</small></div><div><ShieldCheck size={19}/><strong>{k?.safetyNeedHelp ?? '—'}</strong><small>Need assistance</small></div></div><button className="command-text-link" onClick={() => navigate(can('incidents:read') ? '/incidents' : '/sos')}>Open emergency workspace <ArrowRight size={15}/></button></section>
-    </div>
-    <footer className="command-footer">{[{icon:MapPinned,title:'Interactive Maps',text:'Your campus at a glance'},{icon:ScanEye,title:'Guided Inspections',text:'Capture and review findings'},{icon:Bell,title:'Campus Alerts',text:'Stay informed and aware'},{icon:ShieldCheck,title:'Role-Based Access',text:'Secure, accountable workflows'},{icon:Wifi,title:'Offline Support',text:'Read saved campus snapshots'}].map(f => <div key={f.title}><f.icon size={22}/><span><strong>{f.title}</strong><small>{f.text}</small></span></div>)}</footer>
-  </div>;
+  );
 }
-function PanelTitle({title,action,onClick}:{title:string;action?:string;onClick?:()=>void}) { return <div className="command-panel-title"><h2>{title}</h2>{action && <button onClick={onClick}>{action} <ArrowRight size={12}/></button>}</div>; }
-function Metric({icon:Icon,title,value,hint,tone,onClick}:{icon:ElementType;title:string;value?:number;hint:string;tone:string;onClick:()=>void}) { return <button className={`command-metric ${tone}`} onClick={onClick}><span className="command-metric-icon"><Icon size={25}/></span><span><small>{title}</small><strong>{value ?? '—'}</strong><em>{hint}</em></span></button>; }

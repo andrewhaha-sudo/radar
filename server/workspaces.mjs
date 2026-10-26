@@ -28,6 +28,32 @@ export async function workspaceAccess(id, userId) {
     .get(id, userId);
   return member ? { role: member.role, owner: false } : null;
 }
+export async function preferredWorkspace(userId) {
+  const account = await coreDb
+    .prepare('SELECT last_workspace_id,workspace_selected FROM users WHERE id=?')
+    .get(userId);
+  if (account?.workspace_selected && account.last_workspace_id === null) return null;
+  if (account?.last_workspace_id && (await workspaceAccess(account.last_workspace_id, userId)))
+    return account.last_workspace_id;
+  const recent = await coreDb
+    .prepare(
+      'SELECT workspace_id FROM sessions WHERE user_id=? AND workspace_id IS NOT NULL ORDER BY created_at DESC LIMIT 10',
+    )
+    .all(userId);
+  for (const row of recent)
+    if (await workspaceAccess(row.workspace_id, userId)) return row.workspace_id;
+  const available = await coreDb
+    .prepare(
+      'SELECT DISTINCT w.beis_id FROM school_workspaces w LEFT JOIN workspace_members m ON m.workspace_id=w.beis_id AND m.user_id=? AND m.active=1 WHERE w.owner_user_id=? OR m.user_id IS NOT NULL',
+    )
+    .all(userId, userId);
+  return available.length === 1 ? available[0].beis_id : null;
+}
+export async function rememberWorkspace(userId, id) {
+  await coreDb
+    .prepare('UPDATE users SET last_workspace_id=?,workspace_selected=1 WHERE id=?')
+    .run(id, userId);
+}
 export function workspaceSchool(id) {
   return schools.find((s) => s.id === id);
 }

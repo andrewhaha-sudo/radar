@@ -1,3 +1,6 @@
+import { visionApiKey, visionProvider, selectedVisionModel } from './vision-provider.mjs';
+import { queueSosSms, drainSosSms } from './emergency-delivery.mjs';
+import { advancedHandlers } from './advanced.mjs';
 import { productHandlers } from './product.mjs';
 import { queueAlertDelivery, drainDeliveryJobs } from './delivery.mjs';
 import { inspectionReminders } from './maintenance.mjs';
@@ -13,6 +16,7 @@ import {
 import fs from 'node:fs';
 import {
   workspaceRecord,
+  rememberWorkspace,
   workspaceAccess,
   workspaceSchool,
   createWorkspace,
@@ -489,7 +493,9 @@ async function assessmentRows(whereSql = '', params = []) {
 
 function csvEscape(value) {
   if (value == null) return '';
-  const text = String(value).replace(/"/g, '""');
+  const raw = String(value);
+  const safe = typeof value === 'string' && /^[\s]*[=+@-]/.test(raw) ? "'" + raw : raw;
+  const text = safe.replace(/"/g, '""');
   return /[",\n\r]/.test(text) ? `"${text}"` : text;
 }
 
@@ -610,6 +616,7 @@ const handlers = {};
 handlers['GET /api/auth/config'] = async (ctx) =>
   json(ctx.res, 200, {
     provider: usesSupabase ? 'supabase' : 'local',
+    training: process.env.RADAR_TEST_LAB === '1',
     signupEnabled: usesSupabase || process.env.RADAR_ALLOW_LOCAL_SIGNUP !== 'false',
     recoveryEnabled: usesSupabase,
     largeCloudUploads: Boolean(process.env.VERCEL) && usesSupabase,
@@ -694,27 +701,25 @@ handlers['POST /api/auth/login'] = async (ctx) => {
   const row = usesSupabase
     ? await cloudSignIn(email, password)
     : await db.prepare('SELECT * FROM users WHERE lower(email) = ?').get(email);
-  if (!row || (!usesSupabase && !verifyPassword(password, row.password_hash))) {
+  if (!row || row.active === 0 || (!usesSupabase && !verifyPassword(password, row.password_hash))) {
     throw new HttpError(401, 'Those credentials do not match an active account.');
   }
-  const { token, expires } = await createSession(row.id);
+  const { token, expires, workspaceId } = await createSession(row.id);
   await audit(row.id, 'auth.login', 'user', row.id, { email: row.email });
   ctx.res.setHeader('Set-Cookie', sessionCookie(token, expires));
-  const user = {
-    id: row.id,
-    accountScope: usesSupabase ? `supabase:${row.supabase_auth_id}` : `local:${row.id}`,
-    email: row.email,
-    name: row.name,
-    role: row.role,
-    title: row.title,
-    phone: row.phone,
-    schoolId: row.school_id,
+  const payload = async () => {
+    const user = await getUserFromRequest({ headers: { cookie: `radar_session=${token}` } });
+    if (!user) {
+      await destroySession(token);
+      throw new HttpError(401, 'This account or school membership is no longer active.');
+    }
+    return {
+      user: publicUser(user),
+      school: await getSchool(user),
+      activeWorkspaceId: user.workspaceId ?? null,
+    };
   };
-  return json(ctx.res, 200, {
-    user: publicUser(user),
-    school: await getSchool(user),
-    activeWorkspaceId: user.workspaceId ?? null,
-  });
+  return json(ctx.res, 200, workspaceId ? await runInWorkspace(workspaceId, payload) : await payload());
 };
 
 handlers['POST /api/auth/logout'] = async (ctx) => {
@@ -775,6 +780,7 @@ handlers['POST /api/workspaces/select'] = async (ctx) => {
   await coreDb
     .prepare('UPDATE sessions SET workspace_id = ? WHERE token = ?')
     .run(id, user.sessionToken);
+  await rememberWorkspace(user.id, id);
   return json(ctx.res, 200, { activeWorkspaceId: id });
 };
 
@@ -2710,6 +2716,7 @@ handlers['PATCH /api/hazards/:hazardId/actions/:actionId'] = async (ctx) => {
 export async function maintenanceTick() {
   await materializeAlerts();
   await drainDeliveryJobs();
+  await drainSosSms();
   return inspectionReminders();
 }
 
@@ -2717,16 +2724,14 @@ export async function maintenanceTick() {
 
 handlers['GET /api/ai/status'] = async (ctx) => {
   await requireUser(ctx.req);
-  // Honest capability reporting: no vision model is configured in this build.
+  // Configuration presence does not prove a successful provider analysis.
   return json(ctx.res, 200, {
-    configured: Boolean(process.env.RADAR_VISION_API_KEY),
-    provider: process.env.RADAR_VISION_API_KEY ? 'OpenAI' : null,
-    model: process.env.RADAR_VISION_API_KEY
-      ? (process.env.RADAR_VISION_MODEL ?? 'gpt-4.1-mini')
-      : null,
+    configured: Boolean(visionApiKey()) && process.env.RADAR_TEST_LAB !== '1',
+    provider: visionApiKey() ? (visionProvider() === 'gemini' ? 'Google Gemini' : 'OpenAI') : null,
+    model: visionApiKey() ? selectedVisionModel() : null,
     checkedAt: nowIso(),
-    message: process.env.RADAR_VISION_API_KEY
-      ? 'A vision provider is configured but must be verified by a successful photo analysis. All suggestions require human review; reported confidence is not a safety certification.'
+    message: visionApiKey()
+      ? `${visionProvider() === 'gemini' ? 'Google Gemini' : 'OpenAI'} is selected. Service access needs a successful photo analysis. Review the provider’s data-use terms before sending school photos. All suggestions require human review.`
       : 'No vision model is configured. Suggestions are disabled; observations you add are recorded as manual findings and still require verification.',
   });
 };
@@ -2948,6 +2953,11 @@ handlers['POST /api/scans/:id/submit'] = async (ctx) => {
     await db
       .prepare('UPDATE scan_observations SET hazard_id = ? WHERE id = ?')
       .run(hazardId, obs.id);
+    if (obs.mapped_x != null && obs.mapped_y != null)
+      await db
+        .prepare('UPDATE hazards SET pin_x=?,pin_y=? WHERE id=?')
+        .run(obs.mapped_x, obs.mapped_y, hazardId);
+    await db.prepare('UPDATE hazards SET category=? WHERE id=?').run(obs.category??'other',hazardId);
     created.push({ id: hazardId, ref });
   }
 
@@ -3884,6 +3894,7 @@ handlers['POST /api/sos'] = async (ctx) => {
     `${user.name} raised an SOS at ${location}.`,
     '/incidents',
   );
+  await queueSosSms(incidentId);
   await audit(user.id, 'sos.create', 'incident', incidentId, { ref, kind, location });
 
   return json(ctx.res, 201, {
@@ -4032,6 +4043,21 @@ Object.assign(
     finiteNumber,
   }),
 );
+Object.assign(
+  handlers,
+  advancedHandlers({
+    requireUser,
+    requirePermission,
+    readJson,
+    json,
+    HttpError,
+    camel,
+    camelAll,
+    str,
+    oneOf,
+    finiteNumber,
+  }),
+);
 async function checkAuthRate(req, email) {
   const address = process.env.VERCEL
     ? String(req.headers['x-vercel-forwarded-for'] ?? req.socket.remoteAddress)
@@ -4101,6 +4127,7 @@ export async function handleApi(req, res) {
     const control =
       url.pathname.startsWith('/api/workspaces') ||
       url.pathname === '/api/notifications/sms-status' ||
+      url.pathname === '/api/device/occupancy' ||
       (url.pathname.startsWith('/api/auth/') && url.pathname !== '/api/auth/me');
     const active = account?.workspaceId ?? null;
     if (

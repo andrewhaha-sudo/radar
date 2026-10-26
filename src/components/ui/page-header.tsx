@@ -20,7 +20,7 @@ export function PageHeader({
   return (
     <div
       className={cn(
-        'flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between',
+        'notebook-page-header flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between',
         className,
       )}
     >

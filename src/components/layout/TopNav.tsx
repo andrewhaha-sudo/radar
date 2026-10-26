@@ -6,6 +6,7 @@ import {
   User,
   Menu,
   ChevronDown,
+  Compass,
   PhoneCall,
   Settings as SettingsIcon,
   LogOut as LogOutIcon,
@@ -155,6 +156,7 @@ export function TopNav({ onMenuToggle }: TopNavProps) {
                   {roleLabel} · {user?.title ?? 'Member'}
                 </p>
               </div>
+              <button role="menuitem" className="flex w-full items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-accent" onClick={()=>{setUserMenuOpen(false);window.dispatchEvent(new Event('radar:show-tour'));}}><Compass className="h-4 w-4"/> What’s new &amp; getting started</button>
               <button
                 onClick={() => {
                   setUserMenuOpen(false);

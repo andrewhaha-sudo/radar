@@ -1,6 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { WelcomeIntro, LoginShowcase } from '@/components/layout/PreparednessCarousel';
+
+import { BrandLaunch } from '@/components/layout/BrandLaunch';
+import { useCallback, useEffect, useState } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -8,29 +11,54 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/context/AuthContext';
 import { api, errorMessage } from '@/lib/api';
-import {
-  Mail,
-  Lock,
-  Eye,
-  EyeOff,
-  ShieldCheck,
-  MapPinned,
-  ScanEye,
-  AlertTriangle,
-  ChevronDown,
-} from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, ChevronDown } from 'lucide-react';
 
 const SEEDED_ACCOUNTS = [
-  { role: 'Administrator', email: 'admin@northridge.edu', password: 'Admin#2026' },
-  { role: 'Inspector', email: 'inspector@northridge.edu', password: 'Inspect#2026' },
+  {
+    role: 'Administrator',
+    email: 'admin@northridge.edu',
+    password: 'Admin#2026',
+  },
+  {
+    role: 'Inspector',
+    email: 'inspector@northridge.edu',
+    password: 'Inspect#2026',
+  },
   { role: 'Teacher', email: 'teacher@northridge.edu', password: 'Teach#2026' },
-  { role: 'Responder', email: 'responder@northridge.edu', password: 'Respond#2026' },
-  { role: 'Student', email: 'student@northridge.edu', password: 'Student#2026' },
+  {
+    role: 'Responder',
+    email: 'responder@northridge.edu',
+    password: 'Respond#2026',
+  },
+  {
+    role: 'Student',
+    email: 'student@northridge.edu',
+    password: 'Student#2026',
+  },
   { role: 'Parent', email: 'parent@northridge.edu', password: 'Parent#2026' },
 ];
 
 export function LoginPage() {
   const { user, loading: authLoading, login } = useAuth();
+  const [replayingOpening, setReplayingOpening] = useState(false);
+  const finishLaunch = useCallback(() => setReplayingOpening(false), []);
+  function replayOpening() {
+    setWelcomeSeen(false);
+    setReplayingOpening(true);
+  }
+  const [welcomeSeen, setWelcomeSeen] = useState(() => {
+    try {
+      return sessionStorage.getItem('radar:welcome:v1') === '1';
+    } catch {
+      return false;
+    }
+  });
+  function continueToLogin() {
+    try {
+      sessionStorage.setItem('radar:welcome:v1', '1');
+    } catch {}
+    setWelcomeSeen(true);
+  }
   const [signupEnabled, setSignupEnabled] = useState(false);
   const [recoveryEnabled, setRecoveryEnabled] = useState(false);
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -41,9 +69,11 @@ export function LoginPage() {
   const [notice, setNotice] = useState('');
   useEffect(() => {
     api
-      .get<{ signupEnabled: boolean; provider: string; recoveryEnabled?: boolean }>(
-        '/api/auth/config',
-      )
+      .get<{
+        signupEnabled: boolean;
+        provider: string;
+        recoveryEnabled?: boolean;
+      }>('/api/auth/config')
       .then((config) => {
         setSignupEnabled(config.signupEnabled);
         setRecoveryEnabled(config.recoveryEnabled ?? config.provider === 'supabase');
@@ -105,88 +135,12 @@ export function LoginPage() {
     setShowAccounts(false);
   };
 
+  if (replayingOpening) return <BrandLaunch onComplete={finishLaunch} />;
+  if (!welcomeSeen)
+    return <WelcomeIntro onContinue={continueToLogin} onReplayLogo={replayOpening} />;
   return (
-    <div className="grid min-h-svh bg-background lg:grid-cols-2">
-      {/* Brand panel */}
-      <div className="relative hidden flex-col justify-between overflow-hidden bg-sidebar p-12 lg:flex">
-        <div
-          className="pointer-events-none absolute -left-24 -top-24 h-96 w-96 rounded-full opacity-20 blur-3xl"
-          style={{ background: 'var(--primary)' }}
-        />
-        <div
-          className="pointer-events-none absolute -bottom-32 right-0 h-96 w-96 rounded-full opacity-10 blur-3xl"
-          style={{ background: 'var(--accent-solid)' }}
-        />
-
-        <div className="relative flex items-center gap-3">
-          <span className="radar-mark radar-mark--lg" aria-hidden="true">
-            <span className="radar-mark__sweep" />
-            <span className="radar-mark__ring radar-mark__ring--1" />
-            <span className="radar-mark__ring radar-mark__ring--2" />
-            <span className="radar-mark__core">R</span>
-          </span>
-          <div>
-            <p className="text-sm font-semibold tracking-[0.16em]">RADAR</p>
-            <p className="text-xs text-muted-foreground">Campus safety & disaster response</p>
-          </div>
-        </div>
-
-        <div className="relative max-w-md space-y-6">
-          <h1 className="text-balance text-4xl font-semibold leading-tight text-foreground">
-            One operational picture for a safer campus.
-          </h1>
-          <p className="text-sm leading-relaxed text-muted-foreground">
-            Map every building and room, run guided inspections, and keep hazard findings, evidence
-            and corrective actions in a single auditable record.
-          </p>
-
-          <ul className="space-y-4">
-            {[
-              {
-                icon: MapPinned,
-                title: 'Live campus map',
-                body: 'Buildings, rooms, equipment and evacuation routes.',
-              },
-              {
-                icon: ScanEye,
-                title: 'Guided room scans',
-                body: 'Capture evidence and track findings to verification.',
-              },
-              {
-                icon: AlertTriangle,
-                title: 'Hazard workspace',
-                body: 'Severity, ownership, timelines and corrective actions.',
-              },
-              {
-                icon: ShieldCheck,
-                title: 'Role-based access',
-                body: 'Server-enforced permissions and an audit trail.',
-              },
-            ].map((feature) => {
-              const Icon = feature.icon;
-              return (
-                <li key={feature.title} className="flex items-start gap-3">
-                  <span className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-accent text-accent-foreground">
-                    <Icon className="h-4 w-4" />
-                  </span>
-                  <span>
-                    <span className="block text-sm font-medium text-foreground">
-                      {feature.title}
-                    </span>
-                    <span className="block text-xs text-muted-foreground">{feature.body}</span>
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-
-        <p className="relative text-xs text-muted-foreground">
-          RADAR does not contact emergency services automatically. Always call your local emergency
-          number when there is immediate danger.
-        </p>
-      </div>
-
+    <div className="login-experience grid min-h-svh bg-background lg:grid-cols-2">
+      <LoginShowcase />
       {/* Form panel */}
       <div className="flex items-center justify-center px-4 py-10 sm:px-8">
         <div className="w-full max-w-md">
@@ -203,6 +157,9 @@ export function LoginPage() {
             </div>
           </div>
 
+          <button className="login-welcome-replay" onClick={replayOpening}>
+            Replay opening animation
+          </button>
           <Card hover={false} className="shadow-xl">
             <CardHeader>
               <CardTitle>{signup ? 'Create your account' : 'Sign in'}</CardTitle>

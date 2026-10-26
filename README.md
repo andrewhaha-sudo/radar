@@ -160,14 +160,32 @@ Sign in as an administrator, click the school selector in the top bar, and choos
 
 On the new dashboard, choose **Add buildings & rooms**. Expand **Add buildings, floors & rooms**, then add a building with its real latitude/longitude, a floor, and rooms. The first building supplies the campus map's initial center. Until then, map views show a labelled Camarines Norte overview; no school coordinates or inspection results are fabricated. Buildings, rooms, hazards, alerts and other operational records are never copied from the demonstration campus.
 
-The directory remains a historical 2020–2021 masterlist, with the source documented in `src/data/README.md`. Creating a workspace is local RADAR setup, not verification of official school affiliation. At present, only the administrator account that creates a workspace can open it; invitations and additional school-member accounts are not implemented.
+The directory remains a historical 2020–2021 masterlist, with the source documented in `src/data/README.md`. Creating a workspace is local RADAR setup, not verification of official school affiliation. School administrators can approve membership requests and assign school-specific roles. Approved members can open that school workspace; new membership requests still require approval.
 
 The original account database stays in `server/data/radar.db` (or `RADAR_DB_DIR/radar.db`). School databases are stored at `RADAR_DB_DIR/workspaces/<BEIS ID>/radar.db`, with each school's uploaded files in that directory's `uploads/` subfolder. Back up the entire data directory, including SQLite WAL files when present, and the original `server/uploads/` directory. Workspace databases are created without demo seeding. Existing original-campus records are retained; schema upgrades add workspace registration, session selection, and school-location metadata automatically on server startup.
 
-Workspace selection belongs to the signed-in session. A request's workspace expectation prevents stale tabs and queued writes from being applied to another school after a switch. Offline data packs and outboxes are separated by account and workspace; older unscoped data packs and queued items are not automatically migrated or replayed. Downloads and uploads use the selected school scope. New workspace uploads require the owner's authenticated session and are not publicly cached.
+The last authorized workspace selection is remembered on the account and restored at sign-in, including school-specific roles. Each session carries its active school scope. A request's workspace expectation prevents stale tabs and queued writes from being applied to another school after a switch. Offline data packs and outboxes are separated by account and workspace; older unscoped data packs and queued items are not automatically migrated or replayed. Downloads and uploads use the selected school scope. New workspace uploads require the owner's authenticated session and are not publicly cached.
 
 After updating this code, stop the old development server with Ctrl+C and run `npm run dev` again so the API loads the new routes and migrations. `npm test` includes integration checks for ownership, empty-school creation, campus record creation, isolation, stale requests, uploads, and persistence across server restart.
 
 ## Supabase accounts and cloud storage
 
 RADAR can use Supabase Auth, PostgreSQL and private Storage instead of local SQLite/files. See [Supabase connection instructions](docs/SUPABASE.md). Copy `.env.example` to `.env` and configure the server-only database connection, storage key and administrator email before enabling `RADAR_DATABASE_DRIVER=postgres`. Local records are retained and are not automatically migrated or uploaded.
+
+## Advanced tools and isolated testing
+
+Open **Campus operations → Advanced tools & testing** for campus video survey, roster imports, custom reports, official datasets, measured footprint models, calibrated pins, aggregate count devices, foreground GPS and peer relay. See [Testing and configuration](docs/TESTING-AND-CONFIGURATION.md) for prerequisites and honest integration limits.
+
+Run `npm run build` then `npm run test:lab` for disposable local practice on port 8799. Use `npm run setup:integrations` to configure private optional providers locally and `npm run config:check` for presence diagnostics. No live deployment or private provider activation is implied.
+
+## Interface refresh
+
+The dashboard now uses one bounded campus panel, and **Tools & setup** provides searchable tasks and pinned shortcuts. The new Photo Route Studio supports manual image sketches, optional AI proposals, field notes and school-scoped saving. [See the interface preview and workflow guide](docs/INTERFACE-REFRESH.md). Image sketches remain separate from verified evacuation routes.
+
+## Welcome and account continuity
+
+Animated preparedness slides introduce the sign-in screen, followed by a role-aware getting-started tour. The selected authorized school now survives logout and login. [See behavior, previews and update instructions](docs/WELCOME-AND-ACCOUNT-RESTORATION.md).
+
+## GIS hazard mapping
+
+Upload a school photo or video and generate an editable image-map draft with the configured vision provider, or draw manually. Optionally place a top-down draft using three known coordinates. Compare building pins with geographic hazard areas and separately reviewed CNN segmentation outputs. Export overlap results to QGIS. [GIS workflow and CNN prerequisites](docs/GIS-AND-CNN.md). CNN training/inference is external; RADAR does not bundle a trained hazard model.

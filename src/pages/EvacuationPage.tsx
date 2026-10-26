@@ -204,8 +204,8 @@ export function EvacuationPage() {
       {data && data.school.lat == null && <p role="status" className="text-xs text-muted-foreground">Camarines Norte overview. This school has no recorded map location or approved evacuation routes yet.</p>}
       <PageHeader
         eyebrow="Evacuation & assembly"
-        title="Every route, every assembly area"
-        description="Live status for mapped evacuation routes and assembly points, with accessible alternatives and the current roll-call snapshot. Approved school plans and on-scene responders always take precedence."
+        title="Know where to go."
+        description="Explore registered walkways and gathering points. Check current conditions and follow your school’s approved response plan."
         icon={DoorOpen}
         actions={
           <>
@@ -308,7 +308,7 @@ export function EvacuationPage() {
                   </button>
                 </div>
               </div>
-              <div className="h-[420px] w-full">
+              <div className="evacuation-map-frame h-[420px] w-full">
                 <MapContainer
                   center={center}
                   zoom={data?.school.lat == null ? 10 : 17}
@@ -494,9 +494,9 @@ export function EvacuationPage() {
             {routes.length === 0 ? (
               <div className="px-4 py-10 text-center">
                 <RouteIcon className="mx-auto mb-2 h-7 w-7 text-muted-foreground" />
-                <p className="text-sm font-medium">No routes match this filter</p>
+                <p className="text-sm font-medium">{data.routes.length?'No routes match this filter':'No walkways have been mapped yet.'}</p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Clear the building or accessibility filter to see every mapped route.
+                  {data.routes.length?'Clear the building or accessibility filter to see every mapped route.':'School planners can register verified walkways. Photo sketches help prepare a field walk, but do not activate routes.'}
                 </p>
               </div>
             ) : (

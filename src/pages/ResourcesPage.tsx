@@ -290,8 +290,8 @@ export function ResourcesPage() {
     <div className="stack-page space-y-5">
       <PageHeader
         eyebrow="Emergency resources"
-        title="Know what is ready before you need it"
-        description="AEDs, extinguishers, first-aid stations, eyewash units, spill kits, emergency lighting and radios with quantities, expiry dates and last-checked times. Inspection changes are audited."
+        title="Ready when it matters."
+        description="Keep track of emergency equipment, supplies and expiry dates. Know what needs checking before it is needed."
         icon={Package}
         actions={
           <>
@@ -461,7 +461,7 @@ export function ResourcesPage() {
             {visible.length === 0 ? (
               <div className="px-4 py-12 text-center">
                 <Package className="mx-auto mb-2 h-7 w-7 text-muted-foreground" />
-                <p className="text-sm font-medium">No resources match this view</p>
+                <p className="text-sm font-medium">{data.items.length?'No equipment matches these filters':'Give your equipment a place on the map.'}</p>
                 <p className="mt-1 text-xs text-muted-foreground">
                   Clear the filters, or record a new resource if this location has none on file.
                 </p>

@@ -14,7 +14,9 @@ export const usesPostgres = process.env.RADAR_DATABASE_DRIVER === 'postgres';
 export const DATA_DIR = process.env.RADAR_DB_DIR
   ? path.resolve(process.env.RADAR_DB_DIR)
   : path.join(__dirname, 'data');
-export const UPLOAD_DIR = path.join(__dirname, 'uploads');
+export const UPLOAD_DIR = process.env.RADAR_UPLOAD_DIR
+  ? path.resolve(process.env.RADAR_UPLOAD_DIR)
+  : path.join(__dirname, 'uploads');
 
 if (!usesPostgres) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -435,6 +437,17 @@ CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id);
   await ensureColumn('assembly_points', 'accessible', 'INTEGER NOT NULL DEFAULT 1');
   await ensureColumn('assembly_points', 'updated_at', 'TEXT');
   await db.exec(FEATURE_SCHEMA);
+  await ensureColumn('occupancy_devices', 'room_id', 'INTEGER');
+  await ensureColumn('floors','layout_verified','INTEGER NOT NULL DEFAULT 0');
+  await ensureColumn('floors', 'scale_px_per_m', 'REAL');
+  await ensureColumn('floors', 'elevation_m', 'REAL');
+  await ensureColumn('floors', 'survey_source', "TEXT NOT NULL DEFAULT ''");
+  await ensureColumn('rollcall_people', 'import_key', 'TEXT');
+  await db.exec(
+    'CREATE UNIQUE INDEX IF NOT EXISTS idx_roster_import ON rollcall_people(class_id,import_key)',
+  );
+  await ensureColumn('scan_observations', 'mapped_x', 'REAL');
+  await ensureColumn('scan_observations', 'mapped_y', 'REAL');
   await ensureColumn('rooms', 'width_m', 'REAL');
   await ensureColumn('rooms', 'length_m', 'REAL');
   await ensureColumn('rooms', 'intended_use', "TEXT NOT NULL DEFAULT ''");
@@ -447,6 +460,7 @@ CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id);
   await ensureColumn('hazards', 'pin_y', 'REAL');
   await ensureColumn('hazards', 'anonymous', 'INTEGER NOT NULL DEFAULT 0');
   await ensureColumn('hazards', 'category', "TEXT NOT NULL DEFAULT 'other'");
+  await ensureColumn('scan_observations','category',"TEXT NOT NULL DEFAULT 'other'");
   await ensureColumn('scan_observations', 'confidence', 'REAL');
   await ensureColumn('scans', 'client_request_id', 'TEXT');
   await ensureColumn('hazards', 'client_request_id', 'TEXT');
@@ -483,6 +497,12 @@ await coreDb.exec(`CREATE TABLE IF NOT EXISTS school_workspaces (
 const sessionColumns = await coreDb.prepare('PRAGMA table_info(sessions)').all();
 if (!sessionColumns.some((c) => c.name === 'workspace_id'))
   await coreDb.exec('ALTER TABLE sessions ADD COLUMN workspace_id TEXT');
+
+const accountColumns = await coreDb.prepare('PRAGMA table_info(users)').all();
+if (!accountColumns.some((c) => c.name === 'last_workspace_id'))
+  await coreDb.exec('ALTER TABLE users ADD COLUMN last_workspace_id TEXT');
+if (!accountColumns.some((c) => c.name === 'workspace_selected'))
+  await coreDb.exec('ALTER TABLE users ADD COLUMN workspace_selected INTEGER NOT NULL DEFAULT 0');
 
 if (coreDb.dialect === 'postgres') await coreDb.protectTables();
 

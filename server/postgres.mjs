@@ -42,6 +42,8 @@ const noIdentity = new Set([
   'school_settings',
   'student_guardians',
   'auth_rate_limits',
+  'photo_calibrations',
+  'foreground_sessions',
 ]);
 pg.types.setTypeParser(20, Number);
 pg.types.setTypeParser(1700, Number);

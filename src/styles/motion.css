@@ -1,0 +1,492 @@
+/* Motion uses opacity/transform only; map panels never receive a transform. */
+.brand-launch {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  min-height: 100svh;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  isolation: isolate;
+  color: #dffffb;
+  background: radial-gradient(ellipse at 50% 42%, #0c2839 0, #04121f 42%, #020a12 85%);
+  animation: launch-open 0.25s ease-out both;
+}
+.launch-grid {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  opacity: 0.2;
+  background-image:
+    linear-gradient(#1c657a22 1px, transparent 1px),
+    linear-gradient(90deg, #1c657a22 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: radial-gradient(ellipse, black, transparent 65%);
+}
+.launch-skip {
+  position: absolute;
+  right: max(24px, env(safe-area-inset-right));
+  top: max(24px, env(safe-area-inset-top));
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  color: #a2c6d2;
+  font-size: 12px;
+  cursor: pointer;
+  transition:
+    color 0.2s,
+    background 0.2s;
+}
+.launch-skip:hover {
+  color: white;
+  background: #ffffff0a;
+}
+.launch-skip:focus-visible {
+  outline: 2px solid #47d6d2;
+  outline-offset: 3px;
+}
+.launch-composition {
+  position: relative;
+  width: min(400px, 88vw);
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+}
+.launch-shield {
+  width: clamp(135px, 25vw, 184px);
+  height: 202px;
+  overflow: visible;
+  filter: drop-shadow(0 0 18px #2dcce533);
+  animation: launch-emerge 1.1s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.launch-shield-trace {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: launch-trace 1s cubic-bezier(0.45, 0, 0.2, 1) 0.1s forwards;
+}
+.launch-shield-fill {
+  animation: launch-fill 1s 0.2s both;
+}
+.launch-rings {
+  transform-origin: 100px 103px;
+  animation: launch-rings 1s 0.45s both;
+}
+.launch-sweep {
+  transform-origin: 100px 103px;
+  animation: launch-sweep 1.6s 0.7s both;
+}
+.launch-letter {
+  animation: launch-fill 0.5s 0.95s both;
+}
+.launch-detection {
+  animation: launch-detect 0.8s 1.35s both;
+}
+.launch-wordmark {
+  display: flex;
+  gap: 0.22em;
+  padding-left: 0.22em;
+  margin-top: 20px;
+  font-size: clamp(32px, 7vw, 42px);
+  line-height: 1.2;
+  font-weight: 750;
+  letter-spacing: 0.06em;
+}
+.launch-wordmark span {
+  animation: launch-letter 0.65s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.launch-tagline {
+  margin-top: 14px;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: #8cabbc;
+  animation: launch-letter 0.7s 1.25s both;
+  text-align: center;
+}
+.launch-line {
+  width: 48px;
+  height: 2px;
+  margin-top: 30px;
+  background: #3cd3d0;
+  box-shadow: 0 0 20px #34d4cc88;
+  transform-origin: left;
+  animation: launch-line 0.7s 1.5s both;
+}
+.launch-orbit {
+  position: absolute;
+  width: 340px;
+  height: 340px;
+  top: -66px;
+  pointer-events: none;
+}
+.launch-orbit i {
+  position: absolute;
+  inset: 0;
+  border: 1px solid #3ce5dd18;
+  border-radius: 50%;
+  animation: launch-orbit 2.6s ease-out both;
+}
+.launch-orbit i:nth-child(2) {
+  inset: 38px;
+  animation-delay: 0.15s;
+}
+.launch-orbit i:nth-child(3) {
+  inset: -45px;
+  border-style: dashed;
+  animation-delay: 0.3s;
+}
+.launch-footnote {
+  position: absolute;
+  bottom: max(32px, env(safe-area-inset-bottom));
+  font-size: 9px;
+  letter-spacing: 0.24em;
+  color: #597b8b;
+  animation: launch-fill 0.8s 0.5s both;
+}
+.brand-launch.is-leaving {
+  animation: launch-exit 0.35s cubic-bezier(0.4, 0, 1, 1) both;
+  pointer-events: none;
+}
+.brand-launch.is-leaving .launch-composition {
+  transition: transform 0.35s cubic-bezier(0.4, 0, 1, 1);
+  transform: scale(1.12);
+}
+@keyframes launch-open {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes launch-exit {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+@keyframes launch-trace {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes launch-fill {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes launch-emerge {
+  from {
+    transform: scale(0.68);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+@keyframes launch-rings {
+  from {
+    transform: scale(0.55) rotate(-45deg);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1) rotate(0);
+    opacity: 1;
+  }
+}
+@keyframes launch-sweep {
+  from {
+    transform: rotate(-100deg);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  to {
+    transform: rotate(260deg);
+    opacity: 0.8;
+  }
+}
+@keyframes launch-detect {
+  from {
+    opacity: 0;
+    r: 0;
+  }
+  50% {
+    r: 7;
+  }
+  to {
+    opacity: 1;
+    r: 4;
+  }
+}
+@keyframes launch-letter {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+    filter: blur(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+@keyframes launch-line {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+@keyframes launch-orbit {
+  from {
+    opacity: 0;
+    transform: scale(0.65);
+  }
+  45% {
+    opacity: 1;
+  }
+  to {
+    opacity: 0.4;
+    transform: scale(1.06);
+  }
+}
+
+/* Panel presence: one entrance per mounted panel, including lazy tab content. */
+.radar-panel-arrive {
+  animation: radar-panel-arrive 0.48s cubic-bezier(0.22, 1, 0.36, 1) var(--panel-delay, 0ms)
+    backwards;
+}
+@keyframes radar-panel-arrive {
+  from {
+    opacity: 0.15;
+  }
+  to {
+    opacity: 1;
+  }
+}
+/* Small interactive controls can move; full maps, tables and forms stay steady. */
+:where(.desk-button, .command-action, .task-card, .desk-quick-link, .school-option, .sidebar-link) {
+  transition:
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.22s ease,
+    scale 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+:where(.desk-button, .command-action):active {
+  scale: 0.97;
+}
+:where(.task-card, .school-option):active {
+  scale: 0.99;
+}
+@media (hover: hover) and (pointer: fine) {
+  :where(.task-card, .command-panel, .ops-card):hover {
+    box-shadow: 0 6px 24px #0000000a;
+  }
+  .desk-button.primary:hover {
+    box-shadow: 0 4px 20px color-mix(in srgb, var(--desk-accent, #38c9c3) 22%, transparent);
+  }
+}
+#main-content :where([role='menu'], [role='listbox']) {
+  animation: radar-menu-arrive 0.16s ease-out both;
+  transform-origin: top center;
+}
+:where(.school-directory-dialog, .getting-started-dialog)[open] {
+  animation: radar-menu-arrive 0.24s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes radar-menu-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(-5px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.login-experience {
+  animation: launch-open 0.35s ease-out both;
+}
+@media (max-width: 600px) {
+  .launch-orbit {
+    width: 280px;
+    height: 280px;
+    top: -36px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .brand-launch,
+  .brand-launch *,
+  .radar-panel-arrive,
+  .login-experience,
+  #main-content :where([role='menu'], [role='listbox']),
+  :where(.school-directory-dialog, .getting-started-dialog)[open] {
+    animation: none !important;
+    transition: none !important;
+  }
+  .launch-shield-trace {
+    stroke-dashoffset: 0;
+  }
+  .brand-launch.is-leaving {
+    opacity: 0;
+  }
+  .brand-launch.is-leaving .launch-composition {
+    transform: none;
+  }
+  :where(
+    .desk-button,
+    .command-action,
+    .task-card,
+    .desk-quick-link,
+    .school-option,
+    .sidebar-link
+  ) {
+    transition: none;
+  }
+  :where(.desk-button, .command-action, .task-card, .school-option):active {
+    scale: none;
+  }
+}
+/* Compact cards get a little lift; campus viewers keep the opacity-only entrance. */
+:where(
+  .task-card,
+  .metric-card,
+  .stat-card,
+  .desk-focus,
+  .desk-shortcuts,
+  .desk-numbers
+).radar-panel-arrive {
+  animation-name: radar-card-arrive;
+}
+@keyframes radar-card-arrive {
+  from {
+    opacity: 0.15;
+    translate: 0 8px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+/* Route transitions fade without creating a transformed containing block for maps. */
+#main-content.page-enter {
+  animation: radar-content-enter 0.22s ease-out;
+}
+@keyframes radar-content-enter {
+  from {
+    opacity: 0.5;
+  }
+  to {
+    opacity: 1;
+  }
+}
+header [role='menu'] {
+  animation: radar-menu-arrive 0.16s ease-out both;
+  transform-origin: top right;
+}
+@media (prefers-reduced-motion: reduce) {
+  #main-content.page-enter,
+  header [role='menu'] {
+    animation: none !important;
+  }
+}
+/* Shared tab selection travels between controls; their content stays in flow. */
+.desk-view-tabs button {
+  position: relative;
+  isolation: isolate;
+  transition: color 0.18s ease;
+}
+.desk-view-tabs button[aria-selected='true'] {
+  background: transparent;
+}
+.campus-tab-indicator {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--desk-accent) 13%, var(--card));
+  box-shadow: 0 1px 3px #00000008;
+}
+.campus-view-enter {
+  animation: radar-content-enter 0.24s ease-out;
+}
+.radar-mobile-dock a {
+  position: relative;
+  isolation: isolate;
+  border-radius: 12px;
+  transition: color 0.2s ease;
+}
+.dock-active-indicator {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--desk-accent) 9%, transparent);
+}
+.dock-active-indicator::before {
+  content: '';
+  position: absolute;
+  height: 2px;
+  width: 18px;
+  top: 0;
+  left: calc(50% - 9px);
+  border-radius: 2px;
+  background: var(--desk-accent);
+}
+.radar-mobile-dock a[aria-current='page'] > svg {
+  animation: dock-icon-arrive 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes dock-icon-arrive {
+  from {
+    translate: 0 2px;
+    scale: 0.9;
+  }
+  to {
+    translate: 0 0;
+    scale: 1;
+  }
+}
+@supports (interpolate-size: allow-keywords) {
+  .action-disclosure {
+    interpolate-size: allow-keywords;
+  }
+  .action-disclosure::details-content {
+    block-size: 0;
+    overflow: clip;
+    transition:
+      block-size 0.28s ease,
+      content-visibility 0.28s allow-discrete;
+  }
+  .action-disclosure[open]::details-content {
+    block-size: auto;
+  }
+}
+/* A longer sweep keeps the five-second introduction alive before its handoff. */
+.launch-sweep {
+  animation-duration: 3.4s;
+}
+.launch-orbit i {
+  animation-duration: 4.3s;
+}
+@media (prefers-reduced-motion: reduce) {
+  .campus-view-enter,
+  .radar-mobile-dock a[aria-current='page'] > svg {
+    animation: none;
+  }
+  .desk-view-tabs button,
+  .radar-mobile-dock a,
+  .action-disclosure::details-content {
+    transition: none;
+  }
+}

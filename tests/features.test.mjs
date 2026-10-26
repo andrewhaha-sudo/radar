@@ -1060,6 +1060,87 @@ test('bulk roster import previews, preserves attendance, deduplicates and enforc
     400,
   );
 });
+test('school image-map drafts require staff review, remain private to the school, and only export with measured anchors', async () => {
+  assert.equal((await api(student, '/api/advanced/campus-map-provider')).status, 403);
+  assert.equal(
+    typeof assertOK(await api(admin, '/api/advanced/campus-map-provider')).configured,
+    'boolean',
+  );
+  const frames = [{ time: 0, image: 'data:image/jpeg;base64,AA==', kind: 'photo' }];
+  const features = [
+    {
+      frameIndex: 0,
+      kind: 'building',
+      geometryType: 'Polygon',
+      points: [
+        [0.2, 0.2],
+        [0.6, 0.2],
+        [0.6, 0.6],
+        [0.2, 0.6],
+      ],
+      confidence: 0.8,
+      label: 'Synthetic building candidate',
+      note: 'API fixture, not an actual detected school building',
+    },
+  ];
+  const input = {
+    title: 'TEST FIXTURE image draft',
+    frames,
+    features,
+    uncertainties: [],
+    reviewed: true,
+  };
+  assert.equal((await post(student, '/api/advanced/campus-maps', input)).status, 403);
+  assert.equal((await api(student, '/api/advanced/campus-maps')).status, 403);
+  assert.equal(
+    (await post(admin, '/api/advanced/campus-maps/generate', { frames, consent: false })).status,
+    400,
+  );
+  assert.equal(
+    (await post(admin, '/api/advanced/campus-maps', { ...input, reviewed: false })).status,
+    400,
+  );
+  const before = assertOK(await api(admin, '/api/map')).buildings.length;
+  const saved = assertOK(await post(admin, '/api/advanced/campus-maps', input), 201);
+  const record = assertOK(await api(admin, `/api/advanced/campus-maps/${saved.id}`));
+  assert.equal(record.payload.status, 'unverified_image_draft');
+  assert.equal(record.payload.features.length, 1);
+  const anchors = [
+    { x: 0.2, y: 0.2, lat: 14.12, lng: 122.95 },
+    { x: 0.8, y: 0.2, lat: 14.12, lng: 122.951 },
+    { x: 0.2, y: 0.8, lat: 14.119, lng: 122.95 },
+  ];
+  assert.equal(
+    (
+      await post(admin, `/api/advanced/campus-maps/${saved.id}/georeference`, {
+        frameIndex: 0,
+        anchors,
+      })
+    ).status,
+    400,
+  );
+  const placed = assertOK(
+    await post(admin, `/api/advanced/campus-maps/${saved.id}/georeference`, {
+      frameIndex: 0,
+      anchors,
+      topDownConfirmed: true,
+      sourceNote: 'Synthetic measured-point fixture only.',
+    }),
+  );
+  assert.equal(placed.geojson.features[0].properties.status, 'unverified_image_draft');
+  assert.equal(
+    assertOK(await api(admin, '/api/map')).buildings.length,
+    before,
+    'drafts never register actual buildings automatically',
+  );
+  assert.ok(
+    assertOK(await api(admin, `/api/advanced/campus-maps/${saved.id}`)).payload.georeferences[0],
+  );
+  await select(admin, null);
+  assert.equal((await api(admin, `/api/advanced/campus-maps/${saved.id}`)).status, 404);
+  await select(admin, SCHOOL);
+});
+
 test('school GIS separates reviewed model suggestions, applies thresholds, and protects imports and tenant scope', async () => {
   const geojson = {
     type: 'FeatureCollection',

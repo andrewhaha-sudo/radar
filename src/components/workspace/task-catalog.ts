@@ -35,7 +35,7 @@ const catalog: Array<WorkspaceTask & { permission?: string }> = [
   {
     id: 'gis',
     title: 'GIS hazard mapping',
-    description: 'Compare building pins with hazard areas and reviewed CNN imagery results.',
+    description: 'Upload school imagery, generate a campus draft, or compare geographic hazard layers.',
     group: 'Campus views',
     icon: Layers,
     permission: 'map:read',

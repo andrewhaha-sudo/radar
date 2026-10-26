@@ -188,4 +188,4 @@ Animated preparedness slides introduce the sign-in screen, followed by a role-aw
 
 ## GIS hazard mapping
 
-Compare school building pins with geographic hazard areas and separately reviewed CNN segmentation outputs. Export overlap results to QGIS. [GIS workflow and CNN prerequisites](docs/GIS-AND-CNN.md). CNN training/inference is external; RADAR does not bundle a trained hazard model.
+Upload a school photo or video and generate an editable image-map draft with the configured vision provider, or draw manually. Optionally place a top-down draft using three known coordinates. Compare building pins with geographic hazard areas and separately reviewed CNN segmentation outputs. Export overlap results to QGIS. [GIS workflow and CNN prerequisites](docs/GIS-AND-CNN.md). CNN training/inference is external; RADAR does not bundle a trained hazard model.

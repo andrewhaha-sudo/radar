@@ -1,8 +1,24 @@
 # GIS hazard mapping and CNN output integration
 
-Open **Campus map → GIS mapping**, or **Tools & setup → Explore & plan → GIS hazard mapping**. This tool works with school-scoped building coordinates and actual geographic area datasets. Nothing is copied from a demonstration campus.
+Open **Campus map → GIS mapping**, or **Tools & setup → Explore & plan → GIS hazard mapping**. The main screen is now **Generate from photo / video**. Choose **GIS layers & model results** for the geographic-layer comparison workbench. Both work with school-scoped records. Nothing is copied from a demonstration campus.
 
 [Desktop preview](previews/gis-desktop.png) · [Mobile preview](previews/gis-mobile.png). Previews show synthetic data in an isolated training workspace, with basemap tile requests unavailable in this environment. No school damage is implied.
+
+[Image-map generator preview](previews/campus-generator-desktop.png) · [Mobile generator](previews/campus-generator-mobile.png). These show a synthetic test picture and mocked AI output, not real campus detection.
+
+## Generate from a school photo or video
+
+1. As authorized inspection staff, choose a school photo or video. Use a clear overview; aerial/top-down imagery works best for campus outlines. Full video stays on the device.
+2. Confirm permission to send the selected views to the configured vision provider, then press **Generate GIS draft**. A video is sampled into three chronological JPEG views; the provider receives these bounded frames, not the whole video. The current configured OpenAI/Gemini vision integration is used. Automatic proposals are bounded to 18 features and 12 points per feature to keep the response manageable; reviewed/manual drafts can contain up to 40 features. This is not a bundled CNN segmentation model. If the provider is not connected, the UI says so and manual drawing remains available; it never fabricates detections.
+3. Review polygons and lines drawn directly over the image: visible campus area, provisional building outlines, visible walkways and possible concerns such as debris or standing water. Rename/remove proposals and draw missing features. Building candidate numbers are provisional labels, not registered building identities. Duplicate buildings across video views are not deduplicated automatically. Empty AI results remain empty.
+4. Check the review box and save the draft. Images, frame-specific geometry and notes are stored in the selected school database. Saving does not create buildings, verified hazards, official boundaries or evacuation routes. Draft imagery requires `scan:read`; generation/save/placement requires `scan:write`. Approved students do not acquire private imagery access merely through `map:read`.
+5. Reopen a saved school draft later, or export a normalized image-space JSON plan. Unplaced drafts intentionally have no GPS coordinates.
+
+**Optional geographic placement:** For a top-down or orthorectified view, open **Place this view on a GIS map**. Mark three well-spaced, non-collinear image points with known latitude/longitude and document their source. Save the reviewed image draft first. After confirming the view/alignment, place it and export approximate EPSG:4326 GeoJSON. Anchors and the placed output persist with the saved draft. Degenerate and campus-scale-inconsistent anchors are rejected. The three-anchor affine transform does not correct perspective, terrain, lens distortion or camera motion, and is not a survey or photogrammetric reconstruction.
+
+A normal walking video cannot automatically become a top-down GIS map. This workflow produces a separate editable image draft for each selected view; it does not stitch a mosaic or infer unknown GPS/scale. A visible campus area is not the school's legal parcel boundary. Real orthomosaics still require suitable aerial capture, camera geometry and photogrammetry/georeferencing.
+
+The button sends an actual request only when a configured provider and permission are present. Timeouts preserve the previous geometry; no automatic retry is sent. Live provider results and model accuracy have not been verified in this cloud environment.
 
 ## What works now
 
@@ -64,4 +80,6 @@ Basemap imagery is internet-dependent and is not analyzed by this workflow. Impo
 
 No new API key or server setting is required for GIS or model-output imports. Startup adds `gis_model_layers` through the existing additive SQLite/PostgreSQL school schema. Restart the old backend after pulling this branch. A trained model, calibrated imagery and real field validation remain prerequisites for genuine CNN-derived data.
 
-Validated with synthetic geometry only: 82 automated tests pass; 35 feature tests also pass against embedded PostgreSQL. Checks cover polygon holes/boundaries, invalid model inputs, confidence thresholds, pending/rejected exclusion, school isolation, role restrictions and provenance preservation. Chromium checks cover import, review, map display, assessment, threshold changes, GeoJSON download and the 390px layout. No model accuracy or actual school hazard detection has been measured.
+Validated with synthetic geometry only: 86 automated tests pass; 36 feature tests also pass against embedded PostgreSQL. Checks cover polygon holes/boundaries, invalid model inputs, confidence thresholds, pending/rejected exclusion, school isolation, role restrictions and provenance preservation. Chromium checks cover import, review, map display, assessment, threshold changes, GeoJSON download and the 390px layout. No model accuracy or actual school hazard detection has been measured.
+
+Generator checks additionally cover image-space geometry validation, mocked provider output validation, three-anchor placement and rejection cases, staff permissions, private draft persistence and school isolation. Browser checks use a synthetic campus picture and mocked AI response, followed by real draft-save/export endpoints; local MP4 sampling and a provider-free manual-drawing fallback are exercised. These are software checks, not evidence of real campus detection accuracy.

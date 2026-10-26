@@ -1,3 +1,4 @@
+import { CampusMapGenerator } from './CampusMapGenerator';
 import { Link } from 'react-router-dom';
 import { useEffect, useState, type FormEvent } from 'react';
 import { MapContainer, TileLayer, GeoJSON, CircleMarker, Popup } from 'react-leaflet';
@@ -16,6 +17,30 @@ type Dataset = {
   generatedAt: string;
 };
 export function GisHazardMapping() {
+  const [mode, setMode] = useState('generate');
+  return (
+    <div className="gis-tool">
+      <div className="gis-mode-tabs" role="group" aria-label="GIS workflow">
+        <button
+          className="desk-button"
+          aria-pressed={mode === 'generate'}
+          onClick={() => setMode('generate')}
+        >
+          Generate from photo / video
+        </button>
+        <button
+          className="desk-button"
+          aria-pressed={mode === 'layers'}
+          onClick={() => setMode('layers')}
+        >
+          GIS layers & model results
+        </button>
+      </div>
+      {mode === 'generate' ? <CampusMapGenerator /> : <GisLayersWorkbench />}
+    </div>
+  );
+}
+function GisLayersWorkbench() {
   const { school, can } = useAuth();
   const [data, setData] = useState<Dataset | null>(null),
     [selected, setSelected] = useState<string[]>([]),

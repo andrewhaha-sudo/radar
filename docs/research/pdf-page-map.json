@@ -1,0 +1,142 @@
+[
+  {
+    "page": 1,
+    "title": "Cover"
+  },
+  {
+    "page": 2,
+    "title": "Contents"
+  },
+  {
+    "page": 3,
+    "title": "What this document commits to"
+  },
+  {
+    "page": 4,
+    "title": "Status legend and code baseline"
+  },
+  {
+    "page": 5,
+    "title": "Accounts, schools and permissions"
+  },
+  {
+    "page": 6,
+    "title": "Room inspection and evidence"
+  },
+  {
+    "page": 7,
+    "title": "Campus maps and spatial records"
+  },
+  {
+    "page": 8,
+    "title": "School imagery, GIS and model-output workflows"
+  },
+  {
+    "page": 9,
+    "title": "Alerts, emergencies and consent"
+  },
+  {
+    "page": 10,
+    "title": "Evacuation, accessibility and occupancy"
+  },
+  {
+    "page": 11,
+    "title": "People, reports and school operations"
+  },
+  {
+    "page": 12,
+    "title": "Resources, recovery and analytics"
+  },
+  {
+    "page": 13,
+    "title": "Interface, offline continuity and deployment"
+  },
+  {
+    "page": 14,
+    "title": "Unfinished activation and development"
+  },
+  {
+    "page": 15,
+    "title": "The photo/video-to-map study workflow"
+  },
+  {
+    "page": 16,
+    "title": "Beyond a single CNN: use the right method"
+  },
+  {
+    "page": 17,
+    "title": "A hybrid, evidence-linked architecture"
+  },
+  {
+    "page": 18,
+    "title": "Survey-quality GIS and site context"
+  },
+  {
+    "page": 19,
+    "title": "Stronger visual perception and human correction"
+  },
+  {
+    "page": 20,
+    "title": "Reconstruction and evidence-linked digital twins"
+  },
+  {
+    "page": 21,
+    "title": "Multimodal detection and preventive maintenance"
+  },
+  {
+    "page": 22,
+    "title": "Routing and scenario-based preparedness"
+  },
+  {
+    "page": 23,
+    "title": "Research quality and reproducible experiments"
+  },
+  {
+    "page": 24,
+    "title": "People, inclusion and learning"
+  },
+  {
+    "page": 25,
+    "title": "Reliability, governance and sustainable operations"
+  },
+  {
+    "page": 26,
+    "title": "A defensible study design"
+  },
+  {
+    "page": 27,
+    "title": "Data collection, labels and experimental splits"
+  },
+  {
+    "page": 28,
+    "title": "Metrics that can support an honest conclusion"
+  },
+  {
+    "page": 29,
+    "title": "Human study, inclusion and acceptance"
+  },
+  {
+    "page": 30,
+    "title": "Delivery roadmap with evidence gates"
+  },
+  {
+    "page": 31,
+    "title": "Configuration and operational readiness"
+  },
+  {
+    "page": 32,
+    "title": "Risks, limitations and stop conditions"
+  },
+  {
+    "page": 33,
+    "title": "Research references: method starting points"
+  },
+  {
+    "page": 34,
+    "title": "Technical references and repository evidence"
+  },
+  {
+    "page": 35,
+    "title": "Backlog handover and study decision log"
+  }
+]

@@ -1,0 +1,2 @@
+# Preserve PDF bytes and object offsets across platform line-ending settings.
+*.pdf binary

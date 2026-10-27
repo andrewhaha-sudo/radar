@@ -332,7 +332,7 @@ for index, item in enumerate(pages,1):
                 if row_index==0: lines.append('| '+' | '.join('---' for _ in cells)+' |')
             lines.append('')
         elif isinstance(element,Drawing): lines += ['Architecture: source records + permitted imagery + proposed validated inputs → geography/provenance + perception/experiments → human review → reviewed records, tasks and plans.','']
-MD.write_text('\n'.join(lines)+'\n')
+MD.write_text('\n'.join(lines).rstrip()+'\n')
 class Doc(SimpleDocTemplate):
     def afterFlowable(self,flow):
         if hasattr(flow,'_bookmark'):

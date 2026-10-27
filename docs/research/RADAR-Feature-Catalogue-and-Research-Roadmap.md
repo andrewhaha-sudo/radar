@@ -1256,4 +1256,3 @@ Before a proposal becomes a development commitment
 | This PDF is accompanied by an editable Markdown document, a machine-readable feature catalogue and an optional PDF-build script. The audited application baseline remains 44d511f; the new document commit does not make the 64 proposed additions operational. |
 
 Recommended conclusion style: “The selected workflow was evaluated under these data, device and participant conditions, with these limitations.” Any stronger claim needs additional evidence.
-

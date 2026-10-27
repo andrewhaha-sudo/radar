@@ -189,7 +189,3 @@ Animated preparedness slides introduce the sign-in screen, followed by a role-aw
 ## GIS hazard mapping
 
 Upload a school photo or video and generate an editable image-map draft with the configured vision provider, or draw manually. Optionally place a top-down draft using three known coordinates. Compare building pins with geographic hazard areas and separately reviewed CNN segmentation outputs. Export overlap results to QGIS. [GIS workflow and CNN prerequisites](docs/GIS-AND-CNN.md). CNN training/inference is external; RADAR does not bundle a trained hazard model.
-
-## Research feature catalogue and proposed roadmap
-
-[Download the 35-page research PDF](docs/research/RADAR-Feature-Catalogue-and-Research-Roadmap.pdf) or open the [editable catalogue and planning sources](docs/research/README.md). The report covers 84 current feature families and 64 explicitly unimplemented proposals, with research methods, prerequisites, metrics and acceptance gates. This documentation does not activate the proposed features or claim model accuracy/school safety certification.

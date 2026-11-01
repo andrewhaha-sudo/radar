@@ -141,6 +141,22 @@ provider is unreachable the map degrades rather than inventing features.
 
 ## Project layout
 
+### Illustrated campus explorer
+
+Open **Campus map → Campus explorer** to use the original campus and indoor artwork
+supplied in the design-reference PDF. Click buildings or classroom destinations,
+walk with WASD / arrow keys or the touch controls, and press **E** at entrances,
+stairs, or exits. The classroom selector follows connected paths through Building A
+or B; Building 6 is available through **Indoor floor plans** because its outdoor
+entrance is not identified in the campus artwork. **Geographic map** retains the
+database-backed map view.
+
+**Original artwork only** hides the character and interactive layers. These are
+illustration-based exploration routes, not verified evacuation guidance. Asset
+provenance and geometry configuration are documented in [public/maps/README.md](public/maps/README.md).
+
+### Source directories
+
 ```
 server/            Node HTTP API, SQLite schema, seed data, uploads
 src/components/    Reusable UI, layout and domain components
